@@ -1,14 +1,9 @@
 import dotenv from 'dotenv';
 
-dotenv.config();
+dotenv.config({ quiet: true });
 
 export default {
-  port: process.env.PORT || 3000,
-  db: {
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'quimora',
-  },
+  port: process.env.PORT || 5000,
+  mongoURI: process.env.MONGO_URI,
   jwtSecret: process.env.JWT_SECRET || 'your_jwt_secret',
 };
