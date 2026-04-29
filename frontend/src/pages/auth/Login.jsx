@@ -19,6 +19,10 @@ const LoginPage = () => {
     }
   };
 
+  const handleRegisterRedirect = () => {
+    navigate("/register");
+  };
+
   return (
     <div 
       className="bg-cover w-full bg-center min-h-screen"
@@ -75,7 +79,7 @@ const LoginPage = () => {
 
             <div className="mt-6 text-center text-sm text-[#969696]">
               Don't have an account?{' '}
-              <span className="cursor-pointer font-medium text-[#7337FF] hover:underline">
+              <span className="cursor-pointer font-medium text-[#7337FF] hover:underline" onClick={handleRegisterRedirect}>
                 Sign up
               </span>
             </div>

@@ -10,6 +10,7 @@ import Profile from "./pages/profile/Profile";
 import Home from "./pages/home/Home";
 import Unauthorized from "./pages/Unauthorized";
 import Navbar from "./shared/Navbar";
+import RegisterPage from "./pages/auth/Register";
 
 const ProtectedLayout = () => (
   <>
@@ -28,25 +29,28 @@ function App() {
   return (
     <>
       <Toaster position="top-center" reverseOrder={false} />
-      <Routes>
-        {/* Public only */}
-        <Route element={<PublicRoutes />}>
-          <Route path="/login" element={<LoginPage />} />
-        </Route>
-
-        {/* Public normal */}
-
-        {/* Protected */}
-        <Route element={<ProtectedRoutes allowedRoles={["user", "admin"]} />}>
-          <Route element={<ProtectedLayout />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/profile" element={<Profile />} />
-            {/* <Route path="/dashboard" element={<Dashboard />} /> */}
+      <div className="min-h-screen bg-slate-50 dark:bg-neutral-800">
+        <Routes>
+          {/* Public only */}
+          <Route element={<PublicRoutes />}>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
           </Route>
-        </Route>
 
-        <Route path="/unauthorized" element={<Unauthorized />} />
-      </Routes>
+          {/* Public normal */}
+
+          {/* Protected */}
+          <Route element={<ProtectedRoutes allowedRoles={["user", "admin"]} />}>
+            <Route element={<ProtectedLayout />}>
+              <Route path="/" element={<Home />} />
+              <Route path="/profile" element={<Profile />} />
+              {/* <Route path="/dashboard" element={<Dashboard />} /> */}
+            </Route>
+          </Route>
+
+          <Route path="/unauthorized" element={<Unauthorized />} />
+        </Routes>
+      </div>
     </>
   );
 }

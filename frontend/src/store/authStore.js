@@ -6,6 +6,7 @@ const useAuthStore = create((set, get) => ({
   user: null,
   isAuthenticated: false,
   loading: false,
+  authInitialized: false,
   token: localStorage.getItem("token") || null,
   url: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
 
@@ -40,12 +41,18 @@ const useAuthStore = create((set, get) => ({
       const response = await axios.post(`${get().url}/auth/register`, formData);
 
       if (response.data.success) {
+        toast.success(response.data.message || "Registration successful. Please log in.");
         console.log("Registration successful:", response.data.message);
+        return true;
       } else {
+        toast.error(response.data.message || "Registration failed. Please try again.");
         console.error("Registration failed:", response.data.message);
+        return false;
       }
     } catch (error) {
+      toast.error("An error occurred during registration.");
       console.error("Registration failed:", error);
+      return false;
     } finally {
       set({ loading: false });
     }
@@ -68,13 +75,17 @@ const useAuthStore = create((set, get) => ({
     }
   },
 
-  checkAuth: () => {
+  checkAuth: async () => {
     const token = get().token;
+
     if (token) {
-      get().getProfile();
+      set({ loading: true });
+      await get().getProfile();
     } else {
       get().logout();
     }
+
+    set({ authInitialized: true });
   },
 
   logout: () => {
