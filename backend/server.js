@@ -3,6 +3,7 @@ import cors from "cors";
 import connectDB from './config/connectDB.js';
 import config from './config/config.js';
 import authRoutes from './routes/auth.routes.js';
+import userRoutes from './routes/user.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
 
 const app = express();
@@ -10,6 +11,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
 
 // Global error handler
 app.use(errorHandler);
