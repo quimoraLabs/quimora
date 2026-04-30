@@ -48,11 +48,11 @@ const RegisterPage = () => {
 
           {/* Form Card */}
           <div 
-            className="w-96 rounded-[20px] bg-white p-8" 
+            className="w-96 rounded-[20px] bg-white p-8 dark:bg-neutral-800 dark:border-neutral-700 border border-slate-200" 
             style={{ boxShadow: '1px 3px 4px #00000057' }}
           >
             <h1 
-              className="mb-6 text-center text-3xl font-bold text-black" 
+              className="mb-6 text-center text-3xl font-bold text-black dark:text-gray-300" 
               style={{ textShadow: '0px 3px 5px #00000063' }}
             >
               Create an Account

@@ -77,6 +77,7 @@ export default function Card() {
   };
 
   return (
+    <div className="max-h-screen">
     <div className="mx-auto mt-10 w-full max-w-md bg-white border border-slate-200 shadow-xl rounded-2xl overflow-hidden dark:bg-neutral-900 dark:border-neutral-800">
       
       {/* Header Profile Section */}
@@ -131,6 +132,7 @@ export default function Card() {
           }}
         />
       )}
+    </div>
     </div>
   );
 }
