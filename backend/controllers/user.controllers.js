@@ -1,15 +1,15 @@
 import User from "../models/user.model.js";
 
-export const getAllUsers = async (req, res) => {
+export const getAllUsers = async (req, res, next) => {
   try {
     const users = await User.find().select("-password");
     res.json(users);
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    next(err);
   }
 };
 
-export const getUserById = async (req, res) => {
+export const getUserById = async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id).select("-password");
     if (!user) {
@@ -19,11 +19,11 @@ export const getUserById = async (req, res) => {
     }
     res.json(user);
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    next(err);
   }
 };
 
-export const updateUser = async (req, res) => {
+export const updateUser = async (req, res, next) => {
   try {
     const data = req.body;
     const user = await User.findById(req.params.id);
@@ -34,7 +34,6 @@ export const updateUser = async (req, res) => {
     }
 
     if (data.role) {
-      toast.error("Role updates are not allowed.");
       delete data.role; // Prevent role updates
     }
 
@@ -42,11 +41,11 @@ export const updateUser = async (req, res) => {
     await user.save();
     res.json({ success: true, message: "User updated successfully" });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    next(err);
   }
 };
 
-export const deleteUser = async (req, res) => {
+export const deleteUser = async (req, res, next) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
     if (!user) {
@@ -56,11 +55,11 @@ export const deleteUser = async (req, res) => {
     }
     res.json({ success: true, message: "User deleted successfully" });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    next(err);
   }
 };
 
-export const deactivateUser = async (req, res) => {
+export const deactivateUser = async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user) {
@@ -72,11 +71,11 @@ export const deactivateUser = async (req, res) => {
     await user.save();
     res.json({ success: true, message: "User deactivated successfully" });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    next(err);
   }
 };
 
-export const activateUser = async (req, res) => {
+export const activateUser = async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user) {
@@ -88,6 +87,6 @@ export const activateUser = async (req, res) => {
     await user.save();
     res.json({ success: true, message: "User activated successfully" });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    next(err);
   }
 };

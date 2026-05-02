@@ -2,9 +2,9 @@ import User from "../models/user.model.js";
 import jwt from "jsonwebtoken";
 import config from "../config/config.js";
 
-export const registerUser = async (req, res) => {
+export const registerUser = async (req, res, next) => {
   try {
-    const { username, email, password,name } = req.body;
+    const { username, email, password, name } = req.body;
     const existingUser = await User.findOne({ email: email || username });
     if (existingUser) {
       return res
@@ -17,11 +17,11 @@ export const registerUser = async (req, res) => {
       .status(201)
       .json({ success: true, message: "User registered successfully" });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    next(err);
   }
 };
 
-export const loginUser = async (req, res) => {
+export const loginUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
@@ -43,11 +43,11 @@ export const loginUser = async (req, res) => {
     );
     res.json({ success: true, token });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    next(err);
   }
 };
 
-export const getMe = async (req, res) => {
+export const getMe = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
     if (!user) {
@@ -57,6 +57,6 @@ export const getMe = async (req, res) => {
     }
     res.json(user);
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    next(err);
   }
 };
