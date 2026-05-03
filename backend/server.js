@@ -6,6 +6,8 @@ import authRoutes from './routes/auth.routes.js';
 import userRoutes from './routes/user.routes.js';
 import quizRoutes from './routes/quiz.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
+import questionRoutes from './routes/question.routes.js';
+import { validateObjectId } from "./middleware/validObjectId.middleware.js";
 
 const app = express();
 
@@ -14,7 +16,7 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/quizzes", quizRoutes);
-
+app.use("/api/quiz/:quizId/questions",validateObjectId("quizId"), questionRoutes);
 // Global error handler
 app.use(errorHandler);
 

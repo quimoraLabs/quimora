@@ -1,9 +1,14 @@
-import Quiz from "../models/quiz.models.js";
+import Quiz from "../models/quiz.model.js";
+import User from "../models/user.model.js";
 import mongoose from "mongoose";
 
 export const createQuiz = async (req, res, next) => {
   try {
     const { title, description, questions } = req.body;
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
     const quiz = new Quiz({
       title,
       description,
@@ -14,7 +19,11 @@ export const createQuiz = async (req, res, next) => {
     // next();
     res
       .status(201)
-      .json({ success: true, message: "Quiz created successfully", data: quiz });
+      .json({
+        success: true,
+        message: "Quiz created successfully",
+        data: quiz,
+      });
   } catch (error) {
     console.error("Create Quiz Error:", error);
     next(error);
@@ -24,6 +33,11 @@ export const createQuiz = async (req, res, next) => {
 export const getQuizzes = async (req, res, next) => {
   try {
     const quizzes = await Quiz.find({ createdBy: req.user.id });
+    if (!quizzes) {
+      return res.status(404).json({
+        message: "Quizzes not found",
+      });
+    }
     res.status(200).json({ success: true, data: quizzes });
   } catch (error) {
     console.error("Get Quizzes Error:", error);
@@ -31,12 +45,22 @@ export const getQuizzes = async (req, res, next) => {
   }
 };
 
+export const getAllQuizzes = async (req, res, next) => {
+  try {
+    const quizzes = await Quiz.find().populate("createdBy", "username email");
+    res.status(200).json({ success: true, data: quizzes });
+  } catch (error) {
+    console.error("Get All Quizzes Error:", error);
+    next(error);
+  }
+};
+
 export const getQuizById = async (req, res, next) => {
   try {
     const quiz = await Quiz.findOne({
-      _id: req.params.id,
+      _id: req.params.quizId,
       createdBy: req.user.id,
-    })
+    }).populate("createdBy", "username email");
     if (!quiz) {
       return res.status(404).json({ error: "Quiz not found" });
     }
@@ -83,7 +107,7 @@ export const updateQuiz = async (req, res, next) => {
     }
 
     const quiz = await Quiz.findOne({
-      _id: req.params.id,
+      _id: req.params.quizId,
       createdBy: req.user.id,
     });
 
@@ -98,10 +122,10 @@ export const updateQuiz = async (req, res, next) => {
     }
 
     const updatedQuiz = await Quiz.findOneAndUpdate(
-      { _id: req.params.id, createdBy: req.user.id },
+      { _id: req.params.quizId, createdBy: req.user.id },
       { $set: filteredData },
       { new: true, runValidators: true },
-    )
+    );
 
     if (!updatedQuiz) {
       return res.status(404).json({ error: "Quiz not found" });
@@ -122,12 +146,13 @@ export const updateQuiz = async (req, res, next) => {
 export const deleteQuiz = async (req, res, next) => {
   try {
     const quiz = await Quiz.findOneAndDelete({
-      _id: req.params.id,
-      createdBy: req.user.id,
+      _id: req.params.quizId,
     });
+
     if (!quiz) {
       return res.status(404).json({ error: "Quiz not found" });
     }
+
     res
       .status(200)
       .json({ success: true, message: "Quiz deleted successfully" });
@@ -152,7 +177,7 @@ export const changeQuizStatus = async (req, res, next) => {
     }
 
     const quiz = await Quiz.findOne({
-      _id: req.params.id,
+      _id: req.params.quizId,
       createdBy: req.user.id,
     });
     if (!quiz) {
@@ -175,8 +200,10 @@ export const changeQuizStatus = async (req, res, next) => {
     await quiz.save();
     res
       .status(200)
-      .json({ success: true, message: `Quiz status updated successfully` ,
-        data: { status: quiz.status }
+      .json({
+        success: true,
+        message: `Quiz status updated successfully`,
+        data: { status: quiz.status },
       });
   } catch (error) {
     if (error instanceof mongoose.Error.CastError) {
@@ -189,7 +216,7 @@ export const changeQuizStatus = async (req, res, next) => {
 export const changeQuizActivity = async (req, res, next) => {
   try {
     const quiz = await Quiz.findOne({
-      _id: req.params.id,
+      _id: req.params.quizId,
       createdBy: req.user.id,
     });
     if (!quiz) {
