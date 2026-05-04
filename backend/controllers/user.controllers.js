@@ -1,4 +1,5 @@
 import User from "../models/user.model.js";
+import crypto from "crypto";
 
 export const getAllUsers = async (req, res, next) => {
   try {
@@ -34,12 +35,12 @@ export const updateUser = async (req, res, next) => {
     }
 
     if (data.role) {
-      delete data.role; // Prevent role updates
+      delete data.role;
     }
 
     Object.assign(user, data);
     await user.save();
-    res.json({ success: true, message: "User updated successfully" });
+    res.json({ success: true, message: "User updated successfully", user });
   } catch (err) {
     next(err);
   }
@@ -88,5 +89,27 @@ export const activateUser = async (req, res, next) => {
     res.json({ success: true, message: "User activated successfully" });
   } catch (err) {
     next(err);
+  }
+};
+
+export const forgetPasswordRequest = async (req, res, next) => {
+  try {
+    const { email, username } = req.body;
+    const user = await User.findOne({ email }).select("+otp.code");
+    const generateOTP = () => {
+      return crypto.randomInt(100000, 1000000).toString();
+    };
+
+    const otp = {
+      code:generateOTP(),
+      expire:new Date.now(),
+      type:"reset"
+    }
+
+    user.push(otp);
+    await user.save();
+    res.status(200).json({success:true,message:"Otp request send successfully"});
+  } catch (error) {
+    next(error);
   }
 };

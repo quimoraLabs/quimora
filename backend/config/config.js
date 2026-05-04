@@ -6,4 +6,6 @@ export default {
   port: process.env.PORT || 5000,
   mongoURI: process.env.MONGO_URI,
   jwtSecret: process.env.JWT_SECRET || 'your_jwt_secret',
+  emailPass: process.env.EMAIL_PASS,
+  emailUser: process.env.EMAIL_USER,
 };

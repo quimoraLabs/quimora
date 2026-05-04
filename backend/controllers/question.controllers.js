@@ -7,7 +7,7 @@ import { getQuizAccess } from "../utils/getQuizAccess.utils.js";
 export const createQuestion = async (req, res) => {
   const data = req.body;
   const quizId = req.params.quizId;
-  const userId = req.user.id;
+  const userId = req.auth.userId;
 
   try {
     const { quiz } = await getQuizAccess({
@@ -38,7 +38,7 @@ export const getQuestionById = async (req, res) => {
   const questionId = req.params.questionId;
   try {
     const { quiz } = await getQuizAccess({
-      userId: req.user.id,
+      userId: req.auth.userId,
       quizId: req.params.quizId,
     });
     const question = quiz.questions.id(questionId);
@@ -55,7 +55,7 @@ export const getAllQuestions = async (req, res) => {
   const quizId = req.params.quizId;
   try {
     const { quiz } = await getQuizAccess({
-      userId: req.user.id,
+      userId: req.auth.userId,
       quizId,
     });
     res.status(200).json({ success: true, questions: quiz.questions });
@@ -68,7 +68,7 @@ export const updateQuestion = async (req, res) => {
   const data = req.body;
   const quizId = req.params.quizId;
   const questionId = req.params.questionId;
-  const userId = req.user.id;
+  const userId = req.auth.userId;
 
   try {
     const { quiz } = await getQuizAccess({
@@ -97,7 +97,7 @@ export const deleteQuestion = async (req, res, next) => {
   const data = req.body;
   const quizId = req.params.quizId;
   const questionId = req.params.questionId;
-  const userId = req.user.id;
+  const userId = req.auth.userId;
   try {
     const { quiz } = await getQuizAccess({
       userId,
@@ -123,7 +123,7 @@ export const deleteQuestion = async (req, res, next) => {
 export const deleteMultipleQuestions = async (req, res, next) => {
   const data = req.body;
   const quizId = req.params.quizId;
-  const userId = req.user.id;
+  const userId = req.auth.userId;
   const {questionIds} = req.body;
   try {
     const { quiz } = await getQuizAccess({

@@ -15,16 +15,58 @@ export const registerUser = async (req, res, next) => {
     await user.save();
     res
       .status(201)
-      .json({ success: true, message: "User registered successfully" });
+      .json({ success: true, message: "User registered successfully",user });
   } catch (err) {
     next(err);
   }
 };
 
+export const createUserByAdmin = async (req, res, next) => {
+  try {
+    const { username, email, password, name, role } = req.body;
+
+    // 🔥 only allow safe roles
+    const allowedRoles = ["user", "instructor"];
+
+    if (!allowedRoles.includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid role",
+      });
+    }
+
+    const existingUser = await User.findOne({ email });
+
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "User already exists",
+      });
+    }
+
+    const user = new User({
+      username,
+      email,
+      password,
+      name,
+      role, // admin controlled
+    });
+
+    await user.save();
+
+    res.status(201).json({
+      success: true,
+      message: "User created by admin",
+    });
+  } catch (err) {
+    next(err);
+  }
+}; 
+
 export const loginUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select("+password");
     if (!user) {
       return res
         .status(400)
@@ -37,7 +79,7 @@ export const loginUser = async (req, res, next) => {
         .json({ success: false, message: "Invalid credentials" });
     }
     const token = jwt.sign(
-      { id: user._id, role: user.role },
+      { id: user._id, },
       config.jwtSecret,
       { expiresIn: "1d" },
     );
@@ -49,7 +91,7 @@ export const loginUser = async (req, res, next) => {
 
 export const getMe = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id).select("-password");
+    const user = await User.findById(req.auth.userId).select("-password -__v");
     if (!user) {
       return res
         .status(404)
@@ -60,3 +102,11 @@ export const getMe = async (req, res, next) => {
     next(err);
   }
 };
+
+export const forgetPassword = async (req,res,next) =>{
+  try {
+    const user = await User
+  } catch (error) {
+    next(err);
+  }
+}

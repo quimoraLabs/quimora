@@ -5,7 +5,7 @@ import mongoose from "mongoose";
 export const createQuiz = async (req, res, next) => {
   try {
     const { title, description, questions } = req.body;
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.auth.userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -13,7 +13,7 @@ export const createQuiz = async (req, res, next) => {
       title,
       description,
       questions,
-      createdBy: req.user.id,
+      createdBy: req.auth.userId,
     });
     await quiz.save();
     // next();
@@ -32,7 +32,7 @@ export const createQuiz = async (req, res, next) => {
 
 export const getQuizzes = async (req, res, next) => {
   try {
-    const quizzes = await Quiz.find({ createdBy: req.user.id });
+    const quizzes = await Quiz.find({ createdBy: req.auth.userId });
     if (!quizzes) {
       return res.status(404).json({
         message: "Quizzes not found",
@@ -59,7 +59,7 @@ export const getQuizById = async (req, res, next) => {
   try {
     const quiz = await Quiz.findOne({
       _id: req.params.quizId,
-      createdBy: req.user.id,
+      createdBy: req.auth.userId,
     }).populate("createdBy", "username email");
     if (!quiz) {
       return res.status(404).json({ error: "Quiz not found" });
@@ -108,7 +108,7 @@ export const updateQuiz = async (req, res, next) => {
 
     const quiz = await Quiz.findOne({
       _id: req.params.quizId,
-      createdBy: req.user.id,
+      createdBy: req.auth.userId,
     });
 
     const hasChanges = Object.keys(filteredData).some(
@@ -122,7 +122,7 @@ export const updateQuiz = async (req, res, next) => {
     }
 
     const updatedQuiz = await Quiz.findOneAndUpdate(
-      { _id: req.params.quizId, createdBy: req.user.id },
+      { _id: req.params.quizId, createdBy: req.auth.userId },
       { $set: filteredData },
       { new: true, runValidators: true },
     );
@@ -178,7 +178,7 @@ export const changeQuizStatus = async (req, res, next) => {
 
     const quiz = await Quiz.findOne({
       _id: req.params.quizId,
-      createdBy: req.user.id,
+      createdBy: req.auth.userId,
     });
     if (!quiz) {
       return res.status(404).json({ error: "Quiz not found" });
@@ -217,7 +217,7 @@ export const changeQuizActivity = async (req, res, next) => {
   try {
     const quiz = await Quiz.findOne({
       _id: req.params.quizId,
-      createdBy: req.user.id,
+      createdBy: req.auth.userId,
     });
     if (!quiz) {
       return res.status(404).json({ error: "Quiz not found" });
