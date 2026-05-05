@@ -2,8 +2,8 @@ import User from "../models/user.model.js";
 import Quiz from "../models/quiz.model.js";
 import mongoose from "mongoose";
 
-export const getQuizAccess = async ({ userId, quizId }) => {
-
+export const getQuizAccess = async (  quizId,userId ) => {
+  // console.log(quizId,userId)
   if (!mongoose.Types.ObjectId.isValid(userId)) {
     const err = new Error("User not found");
     err.statusCode = 404;
@@ -25,11 +25,11 @@ export const getQuizAccess = async ({ userId, quizId }) => {
     throw err;
   }
 
-  if (quiz.createdBy.toString() !== userId) {
+  if (!quiz.createdBy.equals(userId)) {
     const err = new Error("Unauthorized");
     err.statusCode = 403;
     throw err;
   }
 
-  return { user, quiz };
+  return quiz;
 };

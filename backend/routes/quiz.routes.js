@@ -45,7 +45,7 @@ router.delete(
   "/:quizId",
   validateObjectId("quizId"),
   authMiddleware,
-  authorizeRoles("instructor"),
+  authorizeRoles("instructor","admin"),
   deleteQuiz,
 );
 

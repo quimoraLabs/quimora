@@ -3,6 +3,7 @@ import User from "../models/user.model.js";
 import Quiz from "../models/quiz.model.js";
 
 export const assertUserExists = async (userId) => {
+  console.log(userId);
   if (!mongoose.Types.ObjectId.isValid(userId)) {
     const err = new Error("User not found");
     err.statusCode = 404;
@@ -20,28 +21,12 @@ export const assertUserExists = async (userId) => {
   return user;
 };
 
-export const assertQuizExists = async (quizId, userId) => {
-  const quiz = await Quiz.findById(quizId);
-  if (!quiz) {
-    const err = new Error("Quiz not found");
+export const assertQuestionExists = async (quiz, questionId) => {
+  const question = await quiz.questions.id(questionId);
+  if (!question) {
+    const err = new Error("Question not found");
     err.statusCode = 404;
     throw err;
   }
-
-  if (
-    (quiz.createdBy.toString() !== userId && user.role !== "admin" )
-  ) {
-    const err = new Error("Unauthorized");
-    err.statusCode = 403;
-    throw err;
-  }
-  return quiz;
-};
-
-export const assertQuestionExists = async (quiz, questionId) => {
-  const question = quiz.questions.id(questionId);
-  if (!question) {
-    return res.status(404).json({ message: "Question not found" });
-  }
-  return { question };
+  return question;
 };

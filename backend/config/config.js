@@ -8,4 +8,7 @@ export default {
   jwtSecret: process.env.JWT_SECRET || 'your_jwt_secret',
   emailPass: process.env.EMAIL_PASS,
   emailUser: process.env.EMAIL_USER,
+  imagekitPublic : process.env.IMAGEKIT_PUBLIC_KEY,
+  imagekitPrivate : process.env.IMAGEKIT_PRIVATE_KEY,
+  imagekitEndpoint : process.env.IMAGEKIT_URL_ENDPOINT,
 };

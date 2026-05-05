@@ -1,14 +1,12 @@
 import Quiz from "../models/quiz.model.js";
 import User from "../models/user.model.js";
 import mongoose from "mongoose";
+import { assertUserExists } from "../utils/assertion.utils.js";
 
 export const createQuiz = async (req, res, next) => {
   try {
     const { title, description, questions } = req.body;
-    const user = await User.findById(req.auth.userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+    const user = await assertUserExists(req.params.userId);
     const quiz = new Quiz({
       title,
       description,
@@ -32,13 +30,13 @@ export const createQuiz = async (req, res, next) => {
 
 export const getQuizzes = async (req, res, next) => {
   try {
-    const quizzes = await Quiz.find({ createdBy: req.auth.userId });
+    const quizzes = await Quiz.find({ createdBy: req.auth.userId }).populate("createdBy", "username email");
     if (!quizzes) {
       return res.status(404).json({
         message: "Quizzes not found",
       });
     }
-    res.status(200).json({ success: true, data: quizzes });
+    res.status(200).json({ success: true, data: quizzes || [] });
   } catch (error) {
     console.error("Get Quizzes Error:", error);
     next(error);
@@ -48,6 +46,7 @@ export const getQuizzes = async (req, res, next) => {
 export const getAllQuizzes = async (req, res, next) => {
   try {
     const quizzes = await Quiz.find().populate("createdBy", "username email");
+
     res.status(200).json({ success: true, data: quizzes });
   } catch (error) {
     console.error("Get All Quizzes Error:", error);

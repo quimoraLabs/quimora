@@ -95,6 +95,22 @@ The API is structured into the following modules:
 * **Personal Dashboard:** View active quizzes, completed attempts, and score history.
 * **Leaderboard:** See global ranking based on quiz performance (Optional).
 
+## 🔐 Forgot Password Flow
+
+We use **Email OTP** for password resets to ensure security, reliability, and accessibility across all devices.
+
+### Why Email?
+*   **Accessible:** Works even if the user's phone is lost or stolen.
+*   **Secure:** Protects against SIM-swapping attacks.
+*   **Scalable:** More cost-effective and reliable than SMS.
+
+### Logic
+1.  **Request:** User submits email.
+2.  **Generate:** A secure 6-digit OTP is created (10-minute expiry).
+3.  **Send:** OTP is sent via `Nodemailer` using a professional HTML template.
+4.  **Verify:** User enters OTP and new password; backend validates by email.
+
+
 
 
 ## 🗺️ Roadmap & Future Enhancements

@@ -1,10 +1,16 @@
 import User from "../models/user.model.js";
-import crypto from "crypto";
+import imagekit, { deleteMedia } from "../utils/imagekit.utils.js";
+import { assertUserExists as checkUser } from "../utils/assertion.utils.js";
 
 export const getAllUsers = async (req, res, next) => {
   try {
     const users = await User.find().select("-password");
-    res.json(users);
+    if (!users) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Empty collection" });
+    }
+    res.status(200).json(users);
   } catch (err) {
     next(err);
   }
@@ -12,13 +18,8 @@ export const getAllUsers = async (req, res, next) => {
 
 export const getUserById = async (req, res, next) => {
   try {
-    const user = await User.findById(req.params.userId).select("-password");
-    if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
-    }
-    res.json(user);
+    const user = await checkUser(req.params.userId);
+    res.status(200).json(user);
   } catch (err) {
     next(err);
   }
@@ -27,12 +28,7 @@ export const getUserById = async (req, res, next) => {
 export const updateUser = async (req, res, next) => {
   try {
     const data = req.body;
-    const user = await User.findById(req.params.userId);
-    if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
-    }
+    const user = await checkUser(req.params.userId);
 
     if (data.role) {
       delete data.role;
@@ -40,7 +36,9 @@ export const updateUser = async (req, res, next) => {
 
     Object.assign(user, data);
     await user.save();
-    res.json({ success: true, message: "User updated successfully", user });
+    res
+      .status(200)
+      .json({ success: true, message: "User updated successfully", user });
   } catch (err) {
     next(err);
   }
@@ -54,7 +52,9 @@ export const deleteUser = async (req, res, next) => {
         .status(404)
         .json({ success: false, message: "User not found" });
     }
-    res.json({ success: true, message: "User deleted successfully" });
+    res
+      .status(200)
+      .json({ success: true, message: "User deleted successfully" });
   } catch (err) {
     next(err);
   }
@@ -62,15 +62,12 @@ export const deleteUser = async (req, res, next) => {
 
 export const deactivateUser = async (req, res, next) => {
   try {
-    const user = await User.findById(req.params.userId);
-    if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
-    }
+    const user = await checkUser(req.params.userId);
     user.active = false;
     await user.save();
-    res.json({ success: true, message: "User deactivated successfully" });
+    res
+      .status(200)
+      .json({ success: true, message: "User deactivated successfully" });
   } catch (err) {
     next(err);
   }
@@ -78,37 +75,47 @@ export const deactivateUser = async (req, res, next) => {
 
 export const activateUser = async (req, res, next) => {
   try {
-    const user = await User.findById(req.params.userId);
-    if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
-    }
+    const user = await checkUser(req.params.userId);
     user.active = true;
     await user.save();
-    res.json({ success: true, message: "User activated successfully" });
+    res
+      .status(200)
+      .json({ success: true, message: "User activated successfully" });
   } catch (err) {
     next(err);
   }
 };
 
-export const forgetPasswordRequest = async (req, res, next) => {
+export const upadteAvatar = async (req, res, next) => {
   try {
-    const { email, username } = req.body;
-    const user = await User.findOne({ email }).select("+otp.code");
-    const generateOTP = () => {
-      return crypto.randomInt(100000, 1000000).toString();
-    };
+    const user = await checkUser(req.params.userId);
 
-    const otp = {
-      code:generateOTP(),
-      expire:new Date.now(),
-      type:"reset"
+    if (!req.file) {
+      return res.status(400).json({ message: "Please upload an image" });
     }
 
-    user.push(otp);
+    // 1. Delete the OLD avatar from ImageKit if it exists
+    if (user.avatar && user.avatar.fileId) {
+      await deleteMedia(user.avatar.fileId);
+    }
+
+    const uploadResponse = await imagekit.upload({
+      file: req.file.buffer,
+      fileName: `avatar-${user._id}`,
+      folder: "/quimora/profile",
+    });
+
+    user.avatar = {
+      url: uploadResponse.url,
+      fileId: uploadResponse.fileId,
+    };
+
     await user.save();
-    res.status(200).json({success:true,message:"Otp request send successfully"});
+    res.status(200).json({
+      success: true,
+      message: "Avatar updated successfully",
+      avatar: user.avatar,
+    });
   } catch (error) {
     next(error);
   }

@@ -12,8 +12,18 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
     username: { type: String, required: true, unique: true, trim: true },
-    avatar: { type: String, default: "" },
-    password: { type: String, required: true,select:false },
+    avatar: {
+      url: {
+        type: String,
+        default:
+          "https://ik.imagekit.io/wlikbydy9/quimora/Profile/user-avatar.png",
+      },
+      fileId: {
+        type: String,
+        default:"69f9d27b5c7cd75eb8529105"
+      },
+    },
+    password: { type: String, required: true, select: false },
     role: {
       type: String,
       enum: ["user", "admin", "instructor"],
@@ -42,7 +52,6 @@ userSchema.pre("save", async function () {
 
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
-
 });
 
 userSchema.methods.comparePassword = function (candidatePassword) {
