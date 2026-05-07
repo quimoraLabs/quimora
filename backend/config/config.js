@@ -1,14 +1,15 @@
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 
 dotenv.config({ quiet: true });
 
 export default {
   port: process.env.PORT || 5000,
   mongoURI: process.env.MONGO_URI,
-  jwtSecret: process.env.JWT_SECRET || 'your_jwt_secret',
+  jwtSecret: process.env.JWT_SECRET || "your_jwt_secret",
   emailPass: process.env.EMAIL_PASS,
   emailUser: process.env.EMAIL_USER,
-  imagekitPublic : process.env.IMAGEKIT_PUBLIC_KEY,
-  imagekitPrivate : process.env.IMAGEKIT_PRIVATE_KEY,
-  imagekitEndpoint : process.env.IMAGEKIT_URL_ENDPOINT,
+  imagekitPublic: process.env.IMAGEKIT_PUBLIC_KEY,
+  imagekitPrivate: process.env.IMAGEKIT_PRIVATE_KEY,
+  imagekitEndpoint: process.env.IMAGEKIT_URL_ENDPOINT,
+  nodeENV: process.env.NODE_ENV,
 };

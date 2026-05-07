@@ -16,7 +16,7 @@ const HeroSection = () => {
 
         <div className="mt-6 flex justify-center gap-4">
           <Link
-            to="/quiz"
+            to="/student/quiz"
             className="px-6 py-2.5 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition"
           >
             Start Quiz

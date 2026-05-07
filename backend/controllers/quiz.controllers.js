@@ -6,7 +6,7 @@ import { assertUserExists } from "../utils/assertion.utils.js";
 export const createQuiz = async (req, res, next) => {
   try {
     const { title, description, questions } = req.body;
-    const user = await assertUserExists(req.params.userId);
+    const user = await assertUserExists(req.auth.userId);
     const quiz = new Quiz({
       title,
       description,

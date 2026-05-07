@@ -76,7 +76,7 @@ quizSchema.set("toJSON", {
         q.options.forEach((opt) => {
           delete opt._id;
           delete opt.__v;
-          delete opt.isCorrect; // 🔒 hide correct answer in JSON output
+          // delete opt.isCorrect; // 🔒 hide correct answer in JSON output
         });
       }));
     return ret;

@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { cacheBusterHeaders } from "../utils/httpHeaders";
 
 const useUserStore = create((set, get) => ({
   user: null,
@@ -18,6 +19,7 @@ const useUserStore = create((set, get) => ({
       const response = await axios.get(`${get().url}/auth/me`, {
         headers: {
           Authorization: `Bearer ${token}`,
+          ...cacheBusterHeaders
         },
       });
       set({ user: response.data });
@@ -36,6 +38,7 @@ const useUserStore = create((set, get) => ({
       const response = await axios.get(`${get().url}/users/get/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
+          ...cacheBusterHeaders
         },
       });
       set({ user: response.data });
@@ -58,6 +61,7 @@ const useUserStore = create((set, get) => ({
         {
           headers: {
             Authorization: `Bearer ${token}`,
+            ...cacheBusterHeaders
           },
         },
       );

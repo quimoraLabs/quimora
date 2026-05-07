@@ -14,3 +14,16 @@ button:disabled {
     cursor: not-allowed;
     opacity: 0.6;
 }
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: Inter, sans-serif;
+}
+
+.dark {
+  background: #0f172a;
+  color: white;
+}

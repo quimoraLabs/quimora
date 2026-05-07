@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { cacheBusterHeaders } from "../utils/httpHeaders";
 
 const useAuthStore = create((set, get) => ({
   user: null,
@@ -64,6 +65,7 @@ const useAuthStore = create((set, get) => ({
       const res = await axios.get(`${get().url}/auth/me`, {
         headers: {
           Authorization: `Bearer ${get().token}`,
+          ...cacheBusterHeaders
         },
       });
       set({ user: res.data, isAuthenticated: true });
