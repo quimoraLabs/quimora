@@ -1,4 +1,4 @@
-import { useEffect,useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
 import { Route, Routes, Outlet } from "react-router-dom";
 import ProtectedRoutes from "./routes/ProtectedRoutes";
@@ -17,14 +17,22 @@ import StudentQuizQuestions from "./pages/student/dashboard/quiz/QuizQuestions";
 import LandingPage from "./pages/public/LandingPage";
 import About from "./pages/public/AboutUs";
 import ContactUs from "./pages/public/ContactUs";
+import Sidebar from "./components/Sidebar";
+import { Header } from "./components/Header";
+import StudentDashboard from "./pages/student/dashboard/StudentDashboard";
+import StudentResult from "./pages/student/result/StudentResult";
 
-const GlobalLayout = ({ darkMode, toggleDarkMode,navLinks }) => {
-  const user = useAuthStore((state) => state.user); // Reactive state
-  
+const PublicLayout = ({ darkMode, toggleDarkMode, navLinks }) => {
+  // const user = useAuthStore((state) => state.user);
   return (
     <div className="min-h-screen flex flex-col dark:bg-neutral-900">
-      <Navbar darkMode={darkMode} isLoggedIn={!!user} toggleDarkMode={toggleDarkMode} navLinks={navLinks}/>
-      <main className="flex-1 mt-30">
+      {/* <Sidebar /> */}
+      <Navbar
+        darkMode={darkMode}
+        toggleDarkMode={toggleDarkMode}
+        navLinks={navLinks}
+      />
+      <main className="pt-20">
         <Outlet />
       </main>
       <Footer />
@@ -32,8 +40,29 @@ const GlobalLayout = ({ darkMode, toggleDarkMode,navLinks }) => {
   );
 };
 
+const DashboardLayout = ({ darkMode, toggleDarkMode }) => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  return (
+    <div className="min-h-screen dark:bg-[#0f172a] bg-slate-100  text-neutral-200 selection:bg-blue-500/30">
+      <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
+      <div className="flex flex-col min-h-screen px-2">
+        <Header
+          darkMode={darkMode}
+          toggleDarkMode={toggleDarkMode}
+          title={"Student"}
+          setSidebarOpen={setIsSidebarOpen}
+        />
+        <main className="lg:ml-64 flex-1 pt-10">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
+};
+
 function App() {
   const checkAuth = () => useAuthStore.getState().checkAuth();
+  console.log(checkAuth);
   const [darkMode, setDarkMode] = useState(() => {
     // Check if window is defined (SSR safety, though we are in a client environment)
     if (typeof window !== "undefined") {
@@ -67,12 +96,11 @@ function App() {
     checkAuth();
   }, []);
 
-    const navLinks = [
-    { name: "Home", href: "/home" },
+  const navLinks = [
+    { name: "Home", href: "/public" },
     { name: "About", href: "/about" },
     { name: "Contact", href: "/contact" },
   ];
-
 
   return (
     <>
@@ -86,23 +114,58 @@ function App() {
         </Route>
 
         {/* --- 2. LAYOUT NAVBAR/FOOTER KE SAATH (Everything else) --- */}
-        <Route element={<GlobalLayout darkMode={darkMode} toggleDarkMode={toggleDarkMode} navLinks={navLinks}/>}>
-          
+        <Route
+          element={
+            <PublicLayout
+              darkMode={darkMode}
+              toggleDarkMode={toggleDarkMode}
+              navLinks={navLinks}
+            />
+          }
+        >
           {/* Public Pages with Navbar */}
           <Route element={<PublicRoutes />}>
-          <Route path="/" element={<LandingPage />} />
+            <Route path="/contact" element={<ContactUs />} />
+            {/* <Route path="/" element={checkAuth ? <Home/> : <LandingPage />} /> */}
+            <Route path="/public" element={<LandingPage />} />
+            <Route path="/about" element={<About />} />
           </Route>
-          <Route path="/contact" element={<ContactUs />} />
-          <Route path="/about" element={<About />} />
-          
-          {/* Protected Pages with Navbar */}
-          <Route element={<ProtectedRoutes allowedRoles={["user", "instructor", "admin"]} />}>
-            <Route path="/home" element={<Home />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/student/quiz" element={<StudentQuiz />} />
-            <Route path="/student/quiz/test/:quizId" element={<StudentQuizQuestions />} />
-          </Route>
+        </Route>
 
+        <Route
+          element={
+            <DashboardLayout
+              navLinks={navLinks}
+              darkMode={darkMode}
+              toggleDarkMode={toggleDarkMode}
+            />
+          }
+        >
+          {/* Protected Pages with Navbar */}
+          <Route
+            element={
+              <ProtectedRoutes allowedRoles={["user", "instructor", "admin"]} />
+            }
+          >
+            <Route path="/" element={<Home />} />
+            <Route path="/profile" element={<Profile />} />
+
+            <Route path="/student">
+              {/* Matches "/student" exactly */}
+              <Route index element={<StudentDashboard />} />
+
+              {/* Matches "/student/quizzes" */}
+              <Route path="quizzes" element={<StudentQuiz />} />
+
+              <Route path="result" element={<StudentResult />} />
+
+              {/* Matches "/student/quiz/test/:quizId" */}
+              <Route
+                path="quiz/test/:quizId"
+                element={<StudentQuizQuestions />}
+              />
+            </Route>
+          </Route>
         </Route>
 
         {/* Error Pages (Usually no navbar) */}
@@ -110,7 +173,6 @@ function App() {
       </Routes>
     </>
   );
-};
-
+}
 
 export default App;

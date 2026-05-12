@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import { Link } from "react-router-dom";
 import ProfileDropdown from "../components/ProfileDropDown";
+import logo from "../assets/quimora.png"
 
 const Navbar = ({ darkMode, toggleDarkMode, navLinks, isLoggedIn }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -14,17 +15,7 @@ const Navbar = ({ darkMode, toggleDarkMode, navLinks, isLoggedIn }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           {/* Logo */}
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center">
-              <span className="text-white font-display font-bold text-xl">
-                Q
-              </span>
-            </div>
-            <span className="font-display font-bold text-2xl text-gray-900 dark:text-white">
-              Quimora
-            </span>
-          </div>
-
+          <img src={logo} className="h-2/3"/>
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (

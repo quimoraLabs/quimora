@@ -28,7 +28,7 @@ export const createQuiz = async (req, res, next) => {
   }
 };
 
-export const getQuizzes = async (req, res, next) => {
+export const getQuizzesByInstructor = async (req, res, next) => {
   try {
     const quizzes = await Quiz.find({ createdBy: req.auth.userId }).populate("createdBy", "username email");
     if (!quizzes) {
@@ -58,7 +58,7 @@ export const getQuizById = async (req, res, next) => {
   try {
     const quiz = await Quiz.findOne({
       _id: req.params.quizId,
-      createdBy: req.auth.userId,
+      // createdBy: req.auth.userId,
     }).populate("createdBy", "username email");
     if (!quiz) {
       return res.status(404).json({ error: "Quiz not found" });

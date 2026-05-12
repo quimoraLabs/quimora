@@ -1,54 +1,95 @@
 // import React from "react";
-import { X, AlertCircle } from "lucide-react"; // lightweight icons
+import { Trash2, AlertTriangle, UserMinus, FileX } from "lucide-react";
 
-const DeleteConfirmModal = ({ onClose, onConfirm, type }) => {
-  // if (!isOpen) return null;
+/**
+ * Shared Delete/Block Modal
+ * @param {string} type - 'account', 'user', 'quiz', 'general'
+ * @param {string} title - Optional custom title
+ * @param {string} message - Optional custom message
+ * @param {function} onClose - Function to close modal
+ * @param {function} onConfirm - Function to execute delete logic
+ */
+const DeleteConfirmModal = ({ 
+  onClose, 
+  onConfirm, 
+  type = "general", 
+  title, 
+  message 
+}) => {
+
+  // Configuration based on the "Sense" of what is being deleted
+  const config = {
+    account: {
+      icon: <Trash2 size={36} />,
+      title: title || "Critical System Warning",
+      message: message || "Executing a Core Purge will disconnect your profile from the Quimora Mesh. This action requires L3 clearance.",
+      confirmText: "Confirm Execution",
+      color: "red"
+    },
+    user: {
+      icon: <UserMinus size={36} />,
+      title: title || "Restrict Access",
+      message: message || "Are you sure you want to block this identity? They will lose all uplink privileges to your data.",
+      confirmText: "Execute Block",
+      color: "orange"
+    },
+    quiz: {
+      icon: <FileX size={36} />,
+      title: title || "Purge Data Set",
+      message: message || "This quiz data will be wiped from the local grid. This operation is irreversible.",
+      confirmText: "Confirm Delete",
+      color: "red"
+    },
+    general: {
+      icon: <AlertTriangle size={36} />,
+      title: title || "Confirm Operation",
+      message: message || "Are you sure you want to proceed with this protocol?",
+      confirmText: "Confirm",
+      color: "red"
+    }
+  };
+
+  const current = config[type] || config.general;
 
   return (
-    <div
-      id="popup-modal"
-      tabIndex="-1"
-      className="fixed inset-0 z-50 flex justify-center items-center "
-    >
-      <div className="relative p-4 w-full max-w-md">
-        <div className="relative bg-white rounded-lg shadow-sm dark:bg-gray-700">
-          {/* Close button */}
-          <button
-            type="button"
-            onClick={onClose}
-            className="absolute top-3 right-2.5 text-gray-400 hover:bg-gray-200 hover:text-gray-900 rounded-lg w-8 h-8 flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-6 bg-slate-900/60 dark:bg-black/95 backdrop-blur-2xl animate-in fade-in duration-300">
+      <div className="w-full max-w-lg p-10 md:p-12 bg-white dark:bg-[#0d0d0d] rounded-[3rem] md:rounded-[4rem] border border-slate-200 dark:border-white/10 text-center shadow-3xl">
+        
+        {/* Dynamic Icon Container */}
+        <div className={`w-20 h-20 md:w-24 md:h-24 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 md:mb-10 border transition-all shadow-2xl
+          ${current.color === 'red' 
+            ? 'bg-red-600/10 text-red-600 border-red-600/20 shadow-red-600/10' 
+            : 'bg-orange-600/10 text-orange-600 border-orange-600/20 shadow-orange-600/10'}`}>
+          {current.icon}
+        </div>
+
+        {/* Dynamic Text */}
+        <h2 className="text-3xl md:text-4xl font-black tracking-tighter uppercase mb-6 italic text-slate-900 dark:text-white leading-tight">
+          {current.title}
+        </h2>
+        
+        <p className="text-slate-500 dark:text-white/40 text-sm mb-10 md:mb-12 leading-relaxed font-bold tracking-wide max-w-sm mx-auto">
+          {current.message}
+        </p>
+
+        {/* Action Buttons */}
+        <div className="flex flex-col gap-4">
+          <button 
+            onClick={() => {
+              onConfirm();
+              onClose();
+            }} 
+            className="py-4 md:py-5 bg-red-600 text-white rounded-4xl font-black text-[10px] md:text-xs uppercase tracking-[0.3em] hover:bg-red-700 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-red-600/20"
           >
-            <X className="w-4 h-4 text-black" />
-            <span className="sr-only">Close modal</span>
+            {current.confirmText}
           </button>
-
-          {/* Modal content */}
-          <div className="p-4 md:p-5 text-center">
-            <AlertCircle className="mx-auto mb-4 text-gray-400 w-12 h-12 dark:text-gray-200" />
-
-            <h3 className="mb-5 text-lg font-normal text-gray-500 dark:text-gray-400">
-              Are you sure you want to delete this {type}?
-            </h3>
-
-            <button
-              onClick={() => {
-                onConfirm();
-                onClose();
-              }}
-              type="button"
-              className="text-white bg-red-600 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 dark:focus:ring-red-800 font-medium rounded-lg text-sm inline-flex items-center px-5 py-2.5 text-center"
-            >
-              Yes, I'm sure
-            </button>
-
-            <button
-              onClick={onClose}
-              type="button"
-              className="py-2.5 px-5 ms-3 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 hover:text-blue-700 focus:outline-none focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
-            >
-              No, cancel
-            </button>
-          </div>
+          
+          <button 
+            onClick={onClose} 
+            className="py-4 md:py-5 bg-slate-100 dark:bg-white/5 text-slate-900 dark:text-white rounded-4xl font-black text-[10px] md:text-xs uppercase tracking-[0.3em] hover:bg-slate-200 dark:hover:bg-white/10 active:scale-95 transition-all"
+          >
+            Abort Protocol
+          </button>
         </div>
       </div>
     </div>

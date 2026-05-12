@@ -15,12 +15,9 @@ const userSchema = new mongoose.Schema(
     avatar: {
       url: {
         type: String,
-        default:
-          "https://ik.imagekit.io/wlikbydy9/quimora/Profile/user-avatar.png",
       },
       fileId: {
         type: String,
-        default:"69f9d27b5c7cd75eb8529105"
       },
     },
     password: { type: String, required: true, select: false },
@@ -49,7 +46,9 @@ const userSchema = new mongoose.Schema(
 
 userSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
-
+  if (!this.avatar.url) {
+    this.avatar.url = `https://api.dicebear.com/9.x/identicon/svg?seed=${this.username}`;
+  }
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
 });

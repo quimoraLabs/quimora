@@ -35,7 +35,7 @@ const useUserStore = create((set, get) => ({
     try {
       const token = localStorage.getItem("token");
 
-      const response = await axios.get(`${get().url}/users/get/${id}`, {
+      const response = await axios.get(`${get().url}/users/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           ...cacheBusterHeaders
@@ -56,7 +56,7 @@ const useUserStore = create((set, get) => ({
       const token = localStorage.getItem("token");
 
       const response = await axios.patch(
-        `${get().url}/users/update/${id}`,
+        `${get().url}/users/${id}`,
         data,
         {
           headers: {

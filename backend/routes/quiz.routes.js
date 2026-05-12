@@ -2,7 +2,7 @@ import express from "express";
 import {
   createQuiz,
   getQuizById,
-  getQuizzes,
+  getQuizzesByInstructor,
   updateQuiz,
   changeQuizStatus,
   changeQuizActivity,
@@ -17,8 +17,8 @@ import { validateObjectId } from "../middleware/validObjectId.middleware.js";
 const router = express.Router();
 
 router.post("/", authMiddleware, authorizeRoles("instructor"), createQuiz);
-router.get("/", authMiddleware, getQuizzes);
-router.get("/all", authMiddleware, authorizeRoles("admin"), getAllQuizzes);
+router.get("/", authMiddleware, getQuizzesByInstructor,);
+router.get("/all", authMiddleware, getAllQuizzes);
 router.get("/:quizId", validateObjectId("quizId"), authMiddleware, getQuizById);
 router.patch(
   "/:quizId",

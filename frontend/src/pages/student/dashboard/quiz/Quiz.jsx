@@ -13,7 +13,7 @@ function StudentQuiz() {
   useEffect(() => {
     const getQuizzes = async () => {
       try {
-        const response = await axios.get(`${url}/quizzes`, {
+        const response = await axios.get(`${url}/quizzes/all`, {
           headers: {
             Authorization: `Bearer ${token}`,
             ...cacheBusterHeaders,
