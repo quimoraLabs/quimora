@@ -5,7 +5,7 @@ import { assertUserExists as checkUser } from "../utils/assertion.utils.js";
 export const getAllUsers = async (req, res, next) => {
   try {
     const users = await User.find().select("-password");
-    if (!users) {
+    if (!users || users.length === 0) {
       return res
         .status(404)
         .json({ success: false, message: "Empty collection" });
@@ -27,18 +27,31 @@ export const getUserById = async (req, res, next) => {
 
 export const updateUser = async (req, res, next) => {
   try {
+    const { userId } = req.params;
     const data = req.body;
-    const user = await checkUser(req.params.userId);
+    // Here we only check user exists or not
+    const user = await checkUser(userId, "false");
 
-    if (data.role) {
-      delete data.role;
-    }
+    const allowedUpdates = {};
+    const safeFields = ["username", "email", "name", "avatar"];
 
-    Object.assign(user, data);
-    await user.save();
-    res
-      .status(200)
-      .json({ success: true, message: "User updated successfully", user });
+    safeFields.forEach((field) => {
+      if (data[field] !== undefined) {
+        allowedUpdates[field] = data[field];
+      }
+    });
+
+    const updatedUser = await User.findOneAndUpdate(
+      { _id: userId },
+      { $set: allowedUpdates },
+      { new: true, runValidators: true },
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "User updated successfully",
+      user: updatedUser,
+    });
   } catch (err) {
     next(err);
   }
@@ -52,6 +65,11 @@ export const deleteUser = async (req, res, next) => {
         .status(404)
         .json({ success: false, message: "User not found" });
     }
+
+    if (user.avatar && user.avatar.fileId) {
+      await deleteMedia(user.avatar.fileId);
+    }
+
     res
       .status(200)
       .json({ success: true, message: "User deleted successfully" });
@@ -62,9 +80,19 @@ export const deleteUser = async (req, res, next) => {
 
 export const deactivateUser = async (req, res, next) => {
   try {
-    const user = await checkUser(req.params.userId);
-    user.active = false;
-    await user.save();
+    const { userId } = req.params;
+
+    const user = await User.findOneAndUpdate(
+      { _id: userId },
+      { $set: { active: false } },
+      { new: true },
+    );
+
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+
     res
       .status(200)
       .json({ success: true, message: "User deactivated successfully" });
@@ -75,9 +103,18 @@ export const deactivateUser = async (req, res, next) => {
 
 export const activateUser = async (req, res, next) => {
   try {
-    const user = await checkUser(req.params.userId);
-    user.active = true;
-    await user.save();
+    const { userId } = req.params;
+    const user = await User.findOneAndUpdate(
+      { _id: userId },
+      { $set: { active: true } },
+      { new: true },
+    );
+
+    if (!user)
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+
     res
       .status(200)
       .json({ success: true, message: "User activated successfully" });
@@ -88,7 +125,8 @@ export const activateUser = async (req, res, next) => {
 
 export const upadteAvatar = async (req, res, next) => {
   try {
-    const user = await checkUser(req.params.userId);
+    // Here we need only avatar field
+    const user = await checkUser(req.params.userId,"avatar");
 
     if (!req.file) {
       return res.status(400).json({ message: "Please upload an image" });
@@ -110,7 +148,9 @@ export const upadteAvatar = async (req, res, next) => {
       fileId: uploadResponse.fileId,
     };
 
+
     await user.save();
+
     res.status(200).json({
       success: true,
       message: "Avatar updated successfully",

@@ -5,9 +5,11 @@ import config from "./config/config.js";
 import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import quizRoutes from "./routes/quiz.routes.js";
+import attemptQuizRoutes from "./routes/attempQuiz.routes.js"
 import { errorHandler } from "./middleware/error.middleware.js";
 import questionRoutes from "./routes/question.routes.js";
 import { validateObjectId } from "./middleware/validObjectId.middleware.js";
+
 
 const app = express();
 if (config.nodeENV !== "production") {
@@ -28,6 +30,7 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/quizzes", quizRoutes);
+app.use("/api",attemptQuizRoutes);
 app.use(
   "/api/quiz/:quizId/questions",
   validateObjectId("quizId"),

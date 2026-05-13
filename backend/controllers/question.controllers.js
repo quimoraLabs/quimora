@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Quiz from "../models/quiz.model.js";
 import User from "../models/user.model.js";
 import { isDuplicateQuestion } from "../utils/question.utils.js";
+
 import {
   assertQuestionExists,
   assertUserExists,
@@ -13,6 +14,7 @@ export const createQuestion = async (req, res) => {
     const data = req.body;
 
     const quiz = await getQuizAccess(req.params.quizId, req.auth.userId);
+
     // console.log(user);
     if (isDuplicateQuestion(quiz.questions, data)) {
       return res.status(409).json({ message: "Duplicate question" });
@@ -21,6 +23,7 @@ export const createQuestion = async (req, res) => {
     quiz.questions.push({
       ...data,
     });
+    
     await quiz.save();
     res.status(201).json({
       success: true,

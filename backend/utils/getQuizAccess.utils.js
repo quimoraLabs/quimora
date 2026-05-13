@@ -1,32 +1,24 @@
-import User from "../models/user.model.js";
-import Quiz from "../models/quiz.model.js";
-import mongoose from "mongoose";
 
-export const getQuizAccess = async (  quizId,userId ) => {
-  // console.log(quizId,userId)
-  if (!mongoose.Types.ObjectId.isValid(userId)) {
-    const err = new Error("User not found");
-    err.statusCode = 404;
-    throw err;
-  }
-  // Check if quizId is a valid ObjectId is already done in the route using validateObjectId middleware
+import { assertUserExists, assertQuizExists } from "../utils/assertion.utils.js"
 
-  const user = await User.findById(userId);
-  if (!user) {
-    const err = new Error("User not found");
-    err.statusCode = 404;
-    throw err;
-  }
+/**
+ * Validates user existence and verifies quiz ownership authorization.
+ * @param {String} quizId - The MongoDB ID of the target quiz.
+ * @param {String} userId - The MongoDB ID of the requesting user.
+ * @returns {Promise<Object>} Returns the fully validated Quiz document if authorized.
+ * @throws {Error} 404 if user/quiz is not found, or 403 if unauthorized.
+ */
 
-  const quiz = await Quiz.findById(quizId);
-  if (!quiz) {
-    const err = new Error("Quiz not found");
-    err.statusCode = 404;
-    throw err;
-  }
+export const getQuizAccess = async (quizId, userId) => {
+  // 1. Check user existence with zero memory overhead
+  await assertUserExists(userId, "false");
 
+  // 2. Fetch the full quiz document safely using the new assertion helper
+  const quiz = await assertQuizExists(quizId);
+
+  // 3. Evaluate ownership boundaries
   if (!quiz.createdBy.equals(userId)) {
-    const err = new Error("Unauthorized");
+    const err = new Error("Unauthorized access to this resource");
     err.statusCode = 403;
     throw err;
   }

@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import config from "../config/config.js";
 import crypto from "crypto";
 import { sendOTPEmail } from "../utils/nodemailer.utils.js";
+import bcrypt from "bcrypt";
 
 export const registerUser = async (req, res, next) => {
   try {
@@ -140,18 +141,35 @@ export const verifyOTP = async (req, res, next) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    
+
+    if (!newPassword) {
+      return res
+        .status(400)
+        .json({ success: false, message: "New password is required" });
+    }
     const isMatch = user.otp.code === otpCode;
     const isNotExpired = user.otp.expiresAt > Date.now();
-    console.log(user.otp.expiresAt)
+    console.log(user.otp.expiresAt);
 
     if (!isMatch || !isNotExpired) {
       return res.status(400).json({ message: "Invalid or expired OTP" });
     }
 
-    user.password = newPassword;
-    user.otp = undefined;
-    await user.save();
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // 4. ATOMIC UPDATE: Yeh sirf targeted fields ko badlega, baaki data safe rahega
+    await User.findOneAndUpdate(
+      { email },
+      {
+        $set: {
+          password: hashedPassword,
+          "otp.code": "",
+          "otp.expiresAt": 0,
+          "otp.type": "",
+        },
+      },
+    );
 
     res.status(200).json({ success: true, message: "Password updated" });
   } catch (error) {

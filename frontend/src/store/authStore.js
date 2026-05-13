@@ -28,7 +28,10 @@ const useAuthStore = create((set, get) => ({
       toast.success("Logged in successfully.");
       return true;
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Login failed. Please check your credentials.");
+      toast.error(
+        error?.response?.data?.message ||
+          "Login failed. Please check your credentials.",
+      );
       console.error("Login failed:", error);
       return false;
     } finally {
@@ -42,11 +45,15 @@ const useAuthStore = create((set, get) => ({
       const response = await axios.post(`${get().url}/auth/register`, formData);
 
       if (response.data.success) {
-        toast.success(response.data.message || "Registration successful. Please log in.");
+        toast.success(
+          response.data.message || "Registration successful. Please log in.",
+        );
         console.log("Registration successful:", response.data.message);
         return true;
       } else {
-        toast.error(response.data.message || "Registration failed. Please try again.");
+        toast.error(
+          response.data.message || "Registration failed. Please try again.",
+        );
         console.error("Registration failed:", response.data.message);
         return false;
       }
@@ -59,13 +66,53 @@ const useAuthStore = create((set, get) => ({
     }
   },
 
+  requestSendOTP: async (email) => {
+    set({ loading: true });
+    try {
+      const response = await axios.patch(`${get().url}/auth/request-otp`, {"email":email});
+      if (response.data.success) {
+        toast.success(
+          response.data.message || "Otp request send successfully",
+        );
+      }
+      console.log("OTP request send :", response.data.message);
+      return true;
+    } catch (error) {
+      toast.error("An error occurred during send OTP.");
+      console.error("Request OTP send failed:", error);
+      return false;
+    } finally {
+      set({ loading: false });
+    }
+  },
+
+  verifyOTPAndChangePassword: async (body) => {
+    set({ loading: true });
+    try {
+      const response = await axios.patch(`${get().url}/auth/verify-otp`, body);
+      if (response.data.success) {
+        toast.success(
+          response.data.message || "Change password successfully",
+        );
+      }
+      console.log("Password changed successfully:", response.data.message);
+      return true;
+    } catch (error) {
+      toast.error("An error occurred during registration.");
+      console.error("Password changed failed:", error);
+      return false;
+    } finally {
+      set({ loading: false });
+    }
+  },
+
   getProfile: async () => {
     set({ loading: true });
     try {
       const res = await axios.get(`${get().url}/auth/me`, {
         headers: {
           Authorization: `Bearer ${get().token}`,
-          ...cacheBusterHeaders
+          ...cacheBusterHeaders,
         },
       });
       set({ user: res.data, isAuthenticated: true });

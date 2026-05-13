@@ -21,6 +21,9 @@ import Sidebar from "./components/Sidebar";
 import { Header } from "./components/Header";
 import StudentDashboard from "./pages/student/dashboard/StudentDashboard";
 import StudentResult from "./pages/student/result/StudentResult";
+import RequestOTP from "./pages/auth/forgetPassword/RequestOTP";
+// import ChangePassword from "./pages/auth/forgetPassword/ChangePassword";
+import VerifyOTP from "./pages/auth/forgetPassword/VerifyOTP";
 
 const PublicLayout = ({ darkMode, toggleDarkMode, navLinks }) => {
   // const user = useAuthStore((state) => state.user);
@@ -113,6 +116,11 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
         </Route>
 
+        <Route path="/auth" element={<PublicRoutes />}>
+          <Route path="forget-password" element={<RequestOTP />} />
+          <Route path="reset-password" element={<VerifyOTP />} />
+        </Route>
+
         {/* --- 2. LAYOUT NAVBAR/FOOTER KE SAATH (Everything else) --- */}
         <Route
           element={
@@ -148,6 +156,7 @@ function App() {
             }
           >
             <Route path="/" element={<Home />} />
+
             <Route path="/profile" element={<Profile />} />
 
             <Route path="/student">
