@@ -24,6 +24,8 @@ import StudentResult from "./pages/student/result/StudentResult";
 import RequestOTP from "./pages/auth/forgetPassword/RequestOTP";
 // import ChangePassword from "./pages/auth/forgetPassword/ChangePassword";
 import VerifyOTP from "./pages/auth/forgetPassword/VerifyOTP";
+import { QuizLanding } from "./pages/student/dashboard/quiz/InstructionQuiz";
+import { ResultCard } from "./pages/student/dashboard/quiz/TestResult";
 
 const PublicLayout = ({ darkMode, toggleDarkMode, navLinks }) => {
   // const user = useAuthStore((state) => state.user);
@@ -65,7 +67,7 @@ const DashboardLayout = ({ darkMode, toggleDarkMode }) => {
 
 function App() {
   const checkAuth = () => useAuthStore.getState().checkAuth();
-  console.log(checkAuth);
+  // console.log(checkAuth);
   const [darkMode, setDarkMode] = useState(() => {
     // Check if window is defined (SSR safety, though we are in a client environment)
     if (typeof window !== "undefined") {
@@ -159,22 +161,27 @@ function App() {
 
             <Route path="/profile" element={<Profile />} />
 
+            {/* Student Routes */}
             <Route path="/student">
               {/* Matches "/student" exactly */}
               <Route index element={<StudentDashboard />} />
-
               {/* Matches "/student/quizzes" */}
               <Route path="quizzes" element={<StudentQuiz />} />
-
               <Route path="result" element={<StudentResult />} />
-
               {/* Matches "/student/quiz/test/:quizId" */}
-              <Route
-                path="quiz/test/:quizId"
-                element={<StudentQuizQuestions />}
-              />
             </Route>
           </Route>
+        </Route>
+        <Route
+          path="/student"
+          element={
+            <ProtectedRoutes allowedRoles={["user", "instructor", "admin"]} />
+          }
+        >
+          <Route path="quiz-rules" element={<QuizLanding />} />
+          <Route path="start-quiz" element={<StudentQuizQuestions />} />
+          <Route path="quiz-results" element={<ResultCard />} />
+
         </Route>
 
         {/* Error Pages (Usually no navbar) */}

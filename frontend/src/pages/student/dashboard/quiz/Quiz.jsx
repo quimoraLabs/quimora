@@ -4,6 +4,8 @@ import axios from "axios";
 import useAuthStore from "../../../../store/authStore";
 import { cacheBusterHeaders } from "../../../../utils/httpHeaders";
 import { useNavigate } from "react-router-dom";
+import { enterFullScreen } from "../../components/enterFullScreen";
+import QuizCard from "../../components/QuizCard";
 
 function StudentQuiz() {
   const [quizzes, setQuizzes] = useState([]);
@@ -20,7 +22,6 @@ function StudentQuiz() {
           },
         });
 
-
         if (response.status === 200) {
           setQuizzes(response.data.data || []);
         }
@@ -33,31 +34,43 @@ function StudentQuiz() {
     getQuizzes();
   }, [token, url]);
 
-    const handleStart = (quizId) =>{
-    if(!quizId){
+    const handleStartExamFlow = () => {
+    try {
+      // 2. Execute your global fullscreen utility natively inside this safe click thread boundary
+      enterFullScreen();
+      
+      // 3. Fire your quiz state activation callback immediately after entering fullscreen
+    } catch (error) {
+      console.error(error);
+      toast.error("Security validation failed. Please check browser permissions.");
+    }
+  };
+
+  const handleStart = (quiz) => {
+    if (!quiz || !quiz.id) {
       toast.error("Invalid Question");
       return;
     }
-    navigate("/student/quiz/test/"+quizId);
-  }
+    handleStartExamFlow();
+
+    navigate("/student/quiz-rules/", { state: { quizId: quiz.id,title: quiz.title,timeLimit: quiz.timeLimit,totalQuestions: quiz.questions.length } });
+  };
 
   return (
-    <div className="p-6 text-white bg-neutral-900 min-h-screen">
+    <div className="p-6 text-white bg-transparent min-h-screen">
       <h1 className="text-2xl font-bold mb-4">Available Quizzes</h1>
 
       {quizzes.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {quizzes.map((quiz) => (
-            <div
+            <QuizCard
               key={quiz.id}
-              className="p-4 border border-neutral-700 rounded-lg bg-neutral-800"
-            >
-              <h2 className="text-xl font-semibold">{quiz.title}</h2>
-              <p className="text-neutral-400">{quiz.description}</p>
-              <button className="mt-4 bg-blue-600 px-4 py-2 rounded hover:bg-blue-700" onClick={()=>handleStart(quiz.id)}>
-                Start Quiz
-              </button>
-            </div>
+              title={quiz.title}
+              description={quiz.description}
+              timeLimit={quiz.timeLimit}
+              totalQuestions={quiz.questions.length}
+              handleStart={() => handleStart(quiz)}
+            />
           ))}
         </div>
       ) : (

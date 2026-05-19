@@ -45,7 +45,7 @@ const quizAttemptSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
-  corectAnswerCount: {
+  correctAnswersCount: {
     type: Number,
     required: true,
     default: 0,

@@ -30,7 +30,7 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/quizzes", quizRoutes);
-app.use("/api",attemptQuizRoutes);
+app.use("/api/attempts",attemptQuizRoutes);
 app.use(
   "/api/quiz/:quizId/questions",
   validateObjectId("quizId"),

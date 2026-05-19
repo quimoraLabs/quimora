@@ -5,6 +5,7 @@ import {
   assertQuizExists,
   assertUserExists,
 } from "../utils/assertion.utils.js";
+import { formatCleanResponse } from "../utils/arrayHelper.js";
 
 export const createQuiz = async (req, res, next) => {
   try {
@@ -30,10 +31,35 @@ export const createQuiz = async (req, res, next) => {
   }
 };
 
+export const getQuizDetails = async (req, res, next) => {
+  try {
+    const quiz = await Quiz.findById(req.params.quizId).populate(
+      "createdBy",
+      "username email",
+    );
+    if (!quiz) {
+      return res.status(404).json({ error: "Quiz not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        title: quiz.title,
+        description: quiz.description,
+        questions: quiz.questions.length,
+        timeLimit: quiz.timeLimit,
+      },
+    });
+  } catch (error) {
+    // Mongoose CastErrors are already intercepted at the application layer by your route middleware layout
+    next(error);
+  }
+};
+
 export const getQuizzesByInstructor = async (req, res, next) => {
   try {
     await assertUserExists(req.auth.userId, false);
-    const quizzes = await Quiz.find({ createdBy: req.auth.userId }).populate(
+    const quizzes = await Quiz.find({ createdBy: req.auth.userId.toString() }).populate(
       "createdBy",
       "username email",
     );
@@ -42,12 +68,17 @@ export const getQuizzesByInstructor = async (req, res, next) => {
         message: "Quizzes not found",
       });
     }
-    res.status(200).json({ success: true, data: quizzes || [] });
+    res.status(200).json({
+      success: true,
+      data:
+        formatCleanResponse(quizzes, "createdBy", "questions")
+    });
   } catch (error) {
     // console.error("Get Quizzes Error:", error);
     next(error);
   }
 };
+
 
 export const getAllQuizzes = async (req, res, next) => {
   try {
@@ -57,7 +88,13 @@ export const getAllQuizzes = async (req, res, next) => {
       res.status(404).json({ success: false, message: "Quizzes are empty" });
     }
 
-    res.status(200).json({ success: true, data: quizzes });
+    const publishedQuizzes = quizzes.filter((quiz) => quiz.status === "published");
+
+    res.status(200).json({
+      success: true,
+      data:
+        formatCleanResponse(publishedQuizzes, "createdBy", "questions")
+    });
   } catch (error) {
     // console.error("Get All Quizzes Error:", error);
     next(error);
@@ -213,11 +250,9 @@ export const changeQuizStatus = async (req, res, next) => {
       status === "published" &&
       (!quiz.questions || quiz.questions.length === 0)
     ) {
-      return res
-        .status(400)
-        .json({
-          error: "Cannot publish a quiz containing zero active questions",
-        });
+      return res.status(400).json({
+        error: "Cannot publish a quiz containing zero active questions",
+      });
     }
 
     // 5. Update and apply save mutations securely
