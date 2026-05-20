@@ -4,6 +4,7 @@ import {
   getQuizAttemptResults,
   startQuizAttempt,
   submitQuizAttempt,
+  getQuizAttemptDetails
   //   getUserDashboardStats,
   //   getAttemptHistory
 } from "../controllers/attemptQuiz.controllers.js";
@@ -22,8 +23,8 @@ router.post(
   authorizeRoles("user"),
   submitQuizAttempt,
 );
-router.get("/results", authMiddleWare, authorizeRoles("user"), getAllQuizAttemptsForUser);
-router.get("/results/:attemptId", authMiddleWare, authorizeRoles("user"), getQuizAttemptResults);
+router.get("/my-results", authMiddleWare, authorizeRoles("user"), getAllQuizAttemptsForUser);
+router.get("/results/:attemptId", authMiddleWare, authorizeRoles("user"), getQuizAttemptDetails);
 
 // Analytics & Dashboard Processing Layer
 // router.get("/dashboard/stats", getUserDashboardStats);

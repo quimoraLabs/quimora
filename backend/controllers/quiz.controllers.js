@@ -5,7 +5,7 @@ import {
   assertQuizExists,
   assertUserExists,
 } from "../utils/assertion.utils.js";
-import { formatCleanResponse } from "../utils/arrayHelper.js";
+import { formatUniversalResponse } from "../utils/universalFormatter.js";
 
 export const createQuiz = async (req, res, next) => {
   try {
@@ -35,7 +35,7 @@ export const getQuizDetails = async (req, res, next) => {
   try {
     const quiz = await Quiz.findById(req.params.quizId).populate(
       "createdBy",
-      "username email",
+      "name email",
     );
     if (!quiz) {
       return res.status(404).json({ error: "Quiz not found" });
@@ -61,7 +61,7 @@ export const getQuizzesByInstructor = async (req, res, next) => {
     await assertUserExists(req.auth.userId, false);
     const quizzes = await Quiz.find({ createdBy: req.auth.userId.toString() }).populate(
       "createdBy",
-      "username email",
+      "name email",
     );
     if (!quizzes) {
       return res.status(404).json({
@@ -71,7 +71,7 @@ export const getQuizzesByInstructor = async (req, res, next) => {
     res.status(200).json({
       success: true,
       data:
-        formatCleanResponse(quizzes, "createdBy", "questions")
+        formatUniversalResponse(quizzes, "createdBy", ["name", "email"])
     });
   } catch (error) {
     // console.error("Get Quizzes Error:", error);
@@ -82,7 +82,7 @@ export const getQuizzesByInstructor = async (req, res, next) => {
 
 export const getAllQuizzes = async (req, res, next) => {
   try {
-    const quizzes = await Quiz.find().populate("createdBy", "username email");
+    const quizzes = await Quiz.find().populate("createdBy", "name email");
 
     if (!quizzes || !quizzes.length === 0) {
       res.status(404).json({ success: false, message: "Quizzes are empty" });
@@ -93,7 +93,7 @@ export const getAllQuizzes = async (req, res, next) => {
     res.status(200).json({
       success: true,
       data:
-        formatCleanResponse(publishedQuizzes, "createdBy", "questions")
+        formatUniversalResponse(publishedQuizzes, "createdBy", ["name", "email"])
     });
   } catch (error) {
     // console.error("Get All Quizzes Error:", error);
@@ -110,7 +110,8 @@ export const getQuizById = async (req, res, next) => {
     if (!quiz) {
       return res.status(404).json({ error: "Quiz not found" });
     }
-    res.status(200).json({ success: true, data: quiz });
+    const result = formatUniversalResponse(quiz, "createdBy", ["name", "email"]);
+    res.status(200).json({ success: true, data: result });
   } catch (error) {
     // Mongoose CastErrors are already intercepted at the application layer by your route middleware layout
     next(error);

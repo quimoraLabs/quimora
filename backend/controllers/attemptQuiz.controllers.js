@@ -4,6 +4,7 @@ import {
   assertUserExists,
   assertQuizExists,
 } from "../utils/assertion.utils.js";
+import { formatUniversalResponse } from "../utils/universalFormatter.js";
 
 /**
  * Initializes a secure quiz taking session for an authorized user profile.
@@ -248,6 +249,7 @@ export const submitQuizAttempt = async (req, res, next) => {
       success: true,
       message: "Quiz session evaluated and processed successfully",
       summary: {
+        title: quiz.title,
         totalQuestions: quiz.questions.length,
         correctAnswersCount,
         score: attempt.score,
@@ -265,7 +267,17 @@ export const getQuizAttemptDetails = async (req, res, next) => {
   try {
     const { attemptId } = req.params;
     const userId = req.auth.userId;
-    const attempt = await QuizAttempt.findOne({ _id: attemptId, userId });
+
+    // Ab populate bilkul makhan ki tarah chalega
+    const attempt = await QuizAttempt.findOne({ _id: attemptId, userId }).populate({
+      path: "quizId",
+      select: "title"
+    }).populate({
+      path:"userId",
+      select: "name email"
+    });
+
+    const result = formatUniversalResponse([attempt], "userId", ["name", "email"]);
 
     if (!attempt) {
       return res
@@ -275,40 +287,29 @@ export const getQuizAttemptDetails = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      attemptDetails: {
-        quizId: attempt.quizId,
-        totalQuestions: attempt.totalQuestions,
-        correctAnswersCount: attempt.correctAnswersCount,
-        score: attempt.score,
-        timeTakenInSeconds: attempt.timeTaken,
-        status: attempt.status,
-        answers: attempt.answers,
-        startedAt: attempt.startedAt,
-        completedAt: attempt.completedAt,
-      },
+      attemptDetails: result
     });
   } catch (error) {
     next(error);
   }
 };
+
 export const getAllQuizAttemptsForUser = async (req, res, next) => {
   try {
     const userId = req.auth.userId;
-    const attempts = await QuizAttempt.find({ userId }).sort({ startedAt: -1 });
+    const attempts = await QuizAttempt.find({ userId }).sort({ startedAt: -1 }).populate({
+      path: "quizId",
+      select: "title"
+    }).populate({
+      path: "userId",
+      select: "name email"
+    });
+
+    const result = formatUniversalResponse(attempts, "userId", ["name", "email"]);
 
     res.status(200).json({
       success: true,
-      attempts: attempts.map((attempt) => ({
-        attemptId: attempt._id,
-        quizId: attempt.quizId,
-        totalQuestions: attempt.totalQuestions,
-        correctAnswersCount: attempt.correctAnswersCount,
-        score: attempt.score,
-        timeTakenInSeconds: attempt.timeTaken,
-        status: attempt.status,
-        startedAt: attempt.startedAt,
-        completedAt: attempt.completedAt,
-      })),
+      attempts: result
     });
   } catch (error) {
     next(error);

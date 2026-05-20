@@ -67,7 +67,9 @@ const useAttemptQuizStore = create((set, get) => ({
       answers: {
         ...state.answers,
         // Keep it clean as an array or comma-separated string depending on selection source
-        [questionId]: Array.isArray(selectedOptions) ? selectedOptions.toString() : selectedOptions.toString(),
+        [questionId]: Array.isArray(selectedOptions)
+          ? selectedOptions.toString()
+          : selectedOptions.toString(),
       },
     }));
   },
@@ -95,7 +97,7 @@ const useAttemptQuizStore = create((set, get) => ({
         toast.error(
           "You have exceeded the maximum number of warnings. Your quiz will be submitted.",
         );
-       get().submitAttempt(navigate);
+        get().submitAttempt(navigate);
       }
       return { warningCount: newCount };
     });
@@ -118,23 +120,25 @@ const useAttemptQuizStore = create((set, get) => ({
 
   //   6. Submit quiz attempt
   submitAttempt: async (navigate) => {
-    const { attemptId,attemptQuiz, answers,isFinished,loading } = get();
-    if (!attemptId||!attemptQuiz) {
+    const { attemptId, attemptQuiz, answers, isFinished, loading } = get();
+    if (!attemptId || !attemptQuiz) {
       toast.error("Attempt ID is required to submit an attempt.");
       return;
     }
-    if(isFinished || loading){
+    if (isFinished || loading) {
       toast.error("This quiz attempt has already been submitted.");
       return;
     }
 
     set({ loading: true });
     try {
-        const formattedAnswers = Object.entries(answers).map(([questionId, selectedOptions]) => ({
+      const formattedAnswers = Object.entries(answers).map(
+        ([questionId, selectedOptions]) => ({
           questionId,
-          selectedOptions: selectedOptions ? selectedOptions.split(",") : []
-        }));
-        
+          selectedOptions: selectedOptions ? selectedOptions.split(",") : [],
+        }),
+      );
+
       const response = await axios.post(
         `${get().url}/attempts/submit`,
         { attemptId, answers: formattedAnswers },
@@ -148,9 +152,13 @@ const useAttemptQuizStore = create((set, get) => ({
       if (response.data.success) {
         toast.success("Quiz submitted successfully!");
         // Store results in state for display on results page
-        set({ quizResults: response.data.summary, isFinished: true,loading: false });
+        set({
+          quizResults: response.data.summary,
+          isFinished: true,
+          loading: false,
+        });
         // Navigate to results page after submission
-        navigate("/student/quiz-results",{replace: true}); // Use replace to prevent going back to quiz interface
+        navigate("/student/quiz-results", { replace: true }); // Use replace to prevent going back to quiz interface
       }
     } catch (error) {
       console.error("Error submitting quiz attempt:", error);
@@ -160,29 +168,32 @@ const useAttemptQuizStore = create((set, get) => ({
     }
   },
 
-  studentAllResults: async (navigate) => {
+  studentAllResults: async () => {
+    set({ loading: true });
     const { token } = get();
     try {
-      const response = await axios.get(
-        `${get().url}/attempts/my-results`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            ...cacheBusterHeaders,
-          },
+      const response = await axios.get(`${get().url}/attempts/my-results`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          ...cacheBusterHeaders,
         },
-      );
+      });
+      // console.log(response.data.attempts.data);
+
       if (response.data.success) {
-        set({ quizResults: response.data.results });
-        navigate("/student/my-results");
+        set({ quizResults: response.data.attempts.data });
+        // navigate("/student/my-results");
       }
     } catch (error) {
       console.error("Error fetching all quiz results:", error);
       toast.error("Failed to fetch quiz results.");
+    } finally {
+      set({ loading: false });
     }
-    },
+  },
 
   studentResults: async (navigate) => {
+    set({ loading: true });
     const { attemptId, token } = get();
     if (!attemptId) {
       toast.error("Attempt ID is required to fetch results.");
@@ -205,8 +216,10 @@ const useAttemptQuizStore = create((set, get) => ({
     } catch (error) {
       console.error("Error fetching quiz results:", error);
       toast.error("Failed to fetch quiz results.");
+    } finally {
+      set({ loading: false });
     }
-    },
+  },
 }));
 
 export default useAttemptQuizStore;

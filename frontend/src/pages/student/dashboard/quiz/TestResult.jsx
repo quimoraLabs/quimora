@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import useAttemptQuizStore from "../../../../store/useAttemptQuizStore";
+import Loader from "../../../../components/Loader";
 
 export const ResultCard = () => {
   const navigate = useNavigate();
@@ -19,12 +20,7 @@ export const ResultCard = () => {
   // 1. If the store is still processing the network transaction, show a clean loader
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 text-slate-600 p-6">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900 mb-4"></div>
-        <p className="font-semibold text-lg">
-          Compiling official proctoring metrics...
-        </p>
-      </div>
+     <Loader/>
     );
   }
 

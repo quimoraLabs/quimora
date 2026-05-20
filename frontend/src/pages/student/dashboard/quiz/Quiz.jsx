@@ -1,38 +1,20 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import toast from "react-hot-toast";
-import axios from "axios";
-import useAuthStore from "../../../../store/authStore";
-import { cacheBusterHeaders } from "../../../../utils/httpHeaders";
 import { useNavigate } from "react-router-dom";
 import { enterFullScreen } from "../../components/enterFullScreen";
 import QuizCard from "../../components/QuizCard";
+import useQuizStore from "../../../../store/quizStore";
+
 
 function StudentQuiz() {
-  const [quizzes, setQuizzes] = useState([]);
-  const { token } = useAuthStore();
-  const url = import.meta.env.VITE_API_URL;
+
   const navigate = useNavigate();
+  const {fetchQuizzes} = useQuizStore();
   useEffect(() => {
-    const getQuizzes = async () => {
-      try {
-        const response = await axios.get(`${url}/quizzes/all`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            ...cacheBusterHeaders,
-          },
-        });
+    fetchQuizzes();
+  }, [fetchQuizzes]);
+  const {quizzes} = useQuizStore();
 
-        if (response.status === 200) {
-          setQuizzes(response.data.data || []);
-        }
-      } catch (error) {
-        console.error("API Error:", error);
-        toast.error("Failed to fetch quizzes");
-      }
-    };
-
-    getQuizzes();
-  }, [token, url]);
 
     const handleStartExamFlow = () => {
     try {
@@ -53,7 +35,7 @@ function StudentQuiz() {
     }
     handleStartExamFlow();
 
-    navigate("/student/quiz-rules/", { state: { quizId: quiz.id,title: quiz.title,timeLimit: quiz.timeLimit,totalQuestions: quiz.questions.length } });
+    navigate("/student/quiz-rules/", { state: { quizId: quiz.id,title: quiz.title,timeLimit: quiz.timeLimit,totalQuestions: quiz.questionsCount } });
   };
 
   return (
@@ -68,7 +50,7 @@ function StudentQuiz() {
               title={quiz.title}
               description={quiz.description}
               timeLimit={quiz.timeLimit}
-              totalQuestions={quiz.questions.length}
+              totalQuestions={quiz.questionsCount}
               handleStart={() => handleStart(quiz)}
             />
           ))}

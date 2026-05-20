@@ -60,13 +60,16 @@ userSchema.methods.comparePassword = function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-userSchema.methods.toJSON = function () {
-  const user = this.toObject();
-  delete user.password;
-  delete user.otp;
-  delete user.__v;
-  return user;
-};
+userSchema.set("toJSON", {
+  virtuals: true,
+  transform: function (doc, ret) {
+    delete ret.password;
+    delete ret._id;
+    delete ret.otp;
+    delete ret.__v;
+    return ret;
+  },
+});
 
 const User = mongoose.model("User", userSchema);
 export default User;

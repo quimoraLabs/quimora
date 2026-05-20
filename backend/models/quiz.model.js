@@ -24,7 +24,7 @@ const quizSchema = new mongoose.Schema(
     },
     isActive: {
       type: Boolean,
-      default: true,
+      default: false,
     },
     tags: { type: [String], default: [] },
     timeLimit: {
@@ -68,17 +68,26 @@ const quizSchema = new mongoose.Schema(
 quizSchema.set("toJSON", {
   virtuals: true,
   transform: function (doc, ret) {
-    (delete ret._id,
-      delete ret.__v,
+    delete ret._id;
+    delete ret.__v;
+    delete ret.isAvailable;
+    delete ret.totalMarks;
+    // ⚡ Safe check: Agar questions array exist karta hai, tabhi loop chalayein
+    if (ret.questions && Array.isArray(ret.questions)) {
       ret.questions.forEach((q) => {
         delete q._id;
         delete q.__v;
-        q.options.forEach((opt) => {
-          delete opt._id;
-          delete opt.__v;
-          delete opt.isCorrect; // 🔒 hide correct answer in JSON output
-        });
-      }));
+
+        // ⚡ Safe check 2: Agar options array exist karta hai
+        if (q.options && Array.isArray(q.options)) {
+          q.options.forEach((opt) => {
+            delete opt._id;
+            delete opt.__v;
+            delete opt.isCorrect; // 🔒 hide correct answer in JSON output
+          });
+        }
+      });
+    }
     return ret;
   },
 });

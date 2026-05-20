@@ -1,96 +1,149 @@
-// import React from 'react'
+import { useEffect, useState } from "react";
+import { ArrowUpRight, Calendar, Clock } from "lucide-react";
+import ResultModal from "../components/ResultModal";
+import useAttemptQuizStore from "../../../store/useAttemptQuizStore";
+import Loader from "../../../components/Loader";
+import { formatDate } from "../../../utils/formatDate";
 
-import { ArrowUpRight, Calendar } from "lucide-react";
-import { motion } from "motion/react";
+// const dummyAttempts = [
+//   {
+//     id: "1",
+//     quizTitle: "JavaScript Fundamentals",
+//     category: "Coding",
+//     score: 85,
+//     totalQuestions: 20,
+//     correctAnswers: 17,
+//     incorrectAnswers: 3,
+//     timeTaken: "12:45",
+//     date: "2026-05-18",
+//     status: "Passed",
+//   },
+//   {
+//     id: "2",
+//     quizTitle: "Git & GitHub Basics",
+//     category: "Coding",
+//     score: 40,
+//     totalQuestions: 10,
+//     correctAnswers: 4,
+//     incorrectAnswers: 6,
+//     timeTaken: "05:20",
+//     date: "2026-05-19",
+//     status: "Failed",
+//   },
+// ];
 
-const distributionData = [
-  { category: "Math", score: 88, average: 72 },
-  { category: "Science", score: 94, average: 65 },
-  { category: "History", score: 76, average: 80 },
-  { category: "Coding", score: 92, average: 70 },
-  { category: "English", score: 82, average: 75 },
-];
-function StudentResult() {
-  return (
-    <div className="space-y-8 pb-20">
-              <div className="lg:col-span-4 space-y-8">
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="p-8 bg-neutral-900 border border-neutral-800 rounded-3xl relative overflow-hidden"
-          >
-             {/* Circular mastery widget */}
-            <h2 className="text-lg font-bold text-white mb-8">Subject Mastery</h2>
-            <div className="space-y-6">
-              {distributionData.map((item, i) => (
-                <div key={item.category} className="space-y-2">
-                  <div className="flex justify-between text-[11px] font-mono uppercase tracking-widest">
-                    <span className="text-neutral-500 font-bold">{item.category}</span>
-                    <span className="text-white">{item.score}%</span>
-                  </div>
-                  <div className="h-1 w-full bg-neutral-800 rounded-full overflow-hidden">
-                    <motion.div 
-                      initial={{ width: 0 }}
-                      animate={{ width: `${item.score}%` }}
-                      transition={{ duration: 1, delay: i * 0.1 }}
-                      className="h-full bg-blue-600"
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
+export default function StudentResult() {
+  const { studentAllResults } = useAttemptQuizStore();
 
-          <motion.div 
-            whileHover={{ y: -5 }}
-            className="p-8 bg-linear-to-br from-indigo-600 to-blue-700 rounded-3xl text-white shadow-xl shadow-blue-500/20 flex flex-col justify-between min-h-75"
-          >
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <Calendar className="w-5 h-5 text-blue-200" />
-                <span className="text-xs font-mono font-bold uppercase tracking-widest text-blue-100">Next Deadline</span>
-              </div>
-              <h3 className="text-3xl font-bold leading-tight">Advanced Biochemistry Terminal</h3>
-              <p className="text-blue-100 mt-2 text-sm opacity-80 leading-relaxed font-serif">Comprehensive module covering protein synthesis and enzymatic pathways.</p>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="flex justify-between items-end">
-                <div className="space-y-1">
-                  <p className="text-[10px] font-mono uppercase font-bold text-blue-200">Time Remaining</p>
-                  <p className="text-2xl font-bold font-mono">14:24:08</p>
-                </div>
-                <button className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-blue-600 shadow-lg hover:scale-105 transition-transform active:scale-95">
-                  <ArrowUpRight size={24} />
-                </button>
-              </div>
-            </div>
-          </motion.div>
-          
-          <div className="p-8 bg-neutral-900 border border-neutral-800 rounded-3xl">
-            <h2 className="text-lg font-bold text-white mb-6">Peer Activity</h2>
-            <div className="space-y-6">
-              {[
-                { name: "Sarah K.", activity: "Scored 98% in Math", time: "2m ago" },
-                { name: "David L.", activity: "Started Science Quiz", time: "15m ago" },
-                { name: "Alex M.", activity: "Reached Tier 1 Rank", time: "1h ago" },
-              ].map((peer, i) => (
-                <div key={i} className="flex items-start gap-4">
-                  <div className="w-8 h-8 rounded-full bg-neutral-800 border border-neutral-700 flex items-center justify-center text-[10px] font-bold text-neutral-400 uppercase">
-                    {peer.name.split(' ').map(n => n[0]).join('')}
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-neutral-200">{peer.name}</p>
-                    <p className="text-[10px] text-neutral-500 font-mono italic mt-0.5">{peer.activity}</p>
-                  </div>
-                  <span className="ml-auto text-[8px] font-mono text-neutral-700 uppercase">{peer.time}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-    </div>
-  )
+useEffect(() => {
+  studentAllResults();
+}, [studentAllResults]);
+
+const { quizResults,loading } = useAttemptQuizStore();
+console.log(quizResults);
+
+
+ 
+
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedAttempt, setSelectedAttempt] = useState(null);
+
+  const openReport = (attempt) => {
+    setSelectedAttempt(attempt);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedAttempt(null);
+  };
+
+  if(loading) {
+    return <Loader />;
 }
 
-export default StudentResult
+  return (
+    <div className="p-4 md:p-6 min-h-screen text-slate-100 relative">
+      {/* Header section */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold tracking-tight text-white md:text-3xl">
+          Your Quiz Attempts
+        </h1>
+        <p className="text-sm text-slate-400 mt-1">
+          Review your past performance and detailed test analysis.
+        </p>
+      </div>
+
+      {/* Attempts Table */}
+      <div className="bg-[#1e293b] border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-slate-800 bg-[#151f32] text-xs font-semibold uppercase tracking-wider text-slate-400">
+                <th className="p-4">Quiz Name</th>
+                <th className="p-4">Date</th>
+                <th className="p-4">Score</th>
+                <th className="p-4">Accuracy</th>
+                <th className="p-4">Time Taken</th>
+                <th className="p-4 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/60 text-sm">
+              {quizResults?.map((attempt) => {
+                const isPassed = attempt.score >= 50;
+                return (
+                  <tr key={attempt.id} className="hover:bg-slate-800/40 transition-colors duration-150">
+                    <td className="p-4 font-medium text-white">
+                      <div>
+                        {attempt.quizId.title}
+                        {/* <span className="ml-2 inline-flex items-center rounded-md bg-blue-500/10 px-2 py-0.5 text-xs font-medium text-blue-400 ring-1 ring-inset ring-blue-500/20">
+                          {attempt.category}
+                        </span> */}
+                      </div>
+                    </td>
+                    <td className="p-4 text-slate-400">
+                      <span className="flex items-center gap-1.5">
+                        <Calendar className="w-4 h-4 text-slate-500" />
+                        {formatDate(attempt.completedAt)}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <span className={`font-semibold ${isPassed ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        {attempt.score}%
+                      </span>
+                    </td>
+                    <td className="p-4 text-slate-300">
+                      {attempt.correctAnswersCount}/{attempt.totalQuestions} Qns
+                    </td>
+                    <td className="p-4 text-slate-400">
+                      <span className="flex items-center gap-1.5">
+                        <Clock className="w-4 h-4 text-slate-500" />
+                        {attempt.timeTaken} mins
+                      </span>
+                    </td>
+                    <td className="p-4 text-right">
+                      {/* FIX: Trigger modal on click */}
+                      <button 
+                        onClick={() => openReport(attempt)}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors bg-blue-500/10 px-3 py-1.5 rounded-lg border border-blue-500/20"
+                      >
+                        View Report
+                        <ArrowUpRight className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* --- REPORT MODAL --- */}
+      {isModalOpen && selectedAttempt && (
+        <ResultModal selectedAttempt={selectedAttempt} closeModal={closeModal} />
+      )}
+    </div>
+  );
+}
