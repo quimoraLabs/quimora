@@ -12,8 +12,7 @@ import logo from "../assets/quimora.png";
 
 // import { useEffect } from "react";
 
-export default function Sidebar({ isOpen, setIsOpen }) {
-  const user = useAuthStore((state) => state.user);
+export default function Sidebar({ isOpen, setIsOpen, role }) {
   const logout = () => useAuthStore.getState().logout();
   const routes = {
     user: [
@@ -33,7 +32,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
         icon: <UserStar />,
       },
     ],
-    Instructor: [
+    instructor: [
       {
         path: "/instructor",
         name: "Dashboard",
@@ -91,7 +90,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
         </div>
 
         <nav className="p-4 space-y-2">
-          {routes[user?.role]?.map((route) => (
+          {routes[role]?.map((route) => (
             <Link
               key={route.path}
               to={route.path}

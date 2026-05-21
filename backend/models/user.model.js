@@ -30,7 +30,6 @@ const userSchema = new mongoose.Schema(
       code: { type: String, select: false },
       expiresAt: {
         type: Date,
-        expires: 0,
       },
       purpose: {
         type: String,

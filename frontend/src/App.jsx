@@ -1,14 +1,12 @@
 import { useEffect, useState } from "react";
 import "./App.css";
-import { Route, Routes, Outlet } from "react-router-dom";
+import { Route, Routes, Outlet, Navigate } from "react-router-dom";
 import ProtectedRoutes from "./routes/ProtectedRoutes";
 import LoginPage from "./pages/auth/Login";
 import useAuthStore from "./store/authStore";
 import { Toaster } from "react-hot-toast";
 import PublicRoutes from "./routes/PublicRoutes";
 import Profile from "./pages/profile/Profile";
-import Home from "./pages/home/Home";
-import Unauthorized from "./pages/Unauthorized";
 import Navbar from "./components/Navbar";
 import RegisterPage from "./pages/auth/Register";
 import Footer from "./components/Footer";
@@ -26,6 +24,10 @@ import RequestOTP from "./pages/auth/forgetPassword/RequestOTP";
 import VerifyOTP from "./pages/auth/forgetPassword/VerifyOTP";
 import { QuizLanding } from "./pages/student/dashboard/quiz/InstructionQuiz";
 import { ResultCard } from "./pages/student/dashboard/quiz/TestResult";
+import Loader from "./components/Loader";
+import AdminDashboard from "./pages/dashboards/admin/AdminDashboard";
+import InstructorDashboard from "./pages/dashboards/instructor/InstructorDashboard";
+import AccessDenied403 from "./pages/restriction/AccessDenied";
 
 const PublicLayout = ({ darkMode, toggleDarkMode, navLinks }) => {
   // const user = useAuthStore((state) => state.user);
@@ -45,16 +47,16 @@ const PublicLayout = ({ darkMode, toggleDarkMode, navLinks }) => {
   );
 };
 
-const DashboardLayout = ({ darkMode, toggleDarkMode }) => {
+const DashboardLayout = ({ darkMode, toggleDarkMode,role }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   return (
     <div className="min-h-screen dark:bg-[#0f172a] bg-slate-100  text-neutral-200 selection:bg-blue-500/30">
-      <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
+      <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} role={role} />
       <div className="flex flex-col min-h-screen px-2">
         <Header
           darkMode={darkMode}
           toggleDarkMode={toggleDarkMode}
-          title={"Student"}
+          title={role}
           setSidebarOpen={setIsSidebarOpen}
         />
         <main className="lg:ml-64 flex-1 pt-10">
@@ -66,7 +68,7 @@ const DashboardLayout = ({ darkMode, toggleDarkMode }) => {
 };
 
 function App() {
-  const checkAuth = () => useAuthStore.getState().checkAuth();
+  const { checkAuth, isAuthenticated, user, authInitialized } = useAuthStore();
   // console.log(checkAuth);
   const [darkMode, setDarkMode] = useState(() => {
     // Check if window is defined (SSR safety, though we are in a client environment)
@@ -99,7 +101,7 @@ function App() {
 
   useEffect(() => {
     checkAuth();
-  }, []);
+  }, [checkAuth]);
 
   const navLinks = [
     { name: "Home", href: "/public" },
@@ -107,87 +109,117 @@ function App() {
     { name: "Contact", href: "/contact" },
   ];
 
+  if (!authInitialized) {
+    return <Loader />;
+  }
+
   return (
-    <>
-      <Toaster position="top-center" reverseOrder={false} />
+<>
+  <Toaster position="top-center" reverseOrder={false} />
 
-      <Routes>
-        {/* --- 1. LAYOUT BINA NAVBAR/FOOTER KE (Auth Pages) --- */}
-        <Route element={<PublicRoutes />}>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-        </Route>
-
-        <Route path="/auth" element={<PublicRoutes />}>
-          <Route path="forget-password" element={<RequestOTP />} />
-          <Route path="reset-password" element={<VerifyOTP />} />
-        </Route>
-
-        {/* --- 2. LAYOUT NAVBAR/FOOTER KE SAATH (Everything else) --- */}
-        <Route
-          element={
-            <PublicLayout
-              darkMode={darkMode}
-              toggleDarkMode={toggleDarkMode}
-              navLinks={navLinks}
-            />
-          }
-        >
-          {/* Public Pages with Navbar */}
-          <Route element={<PublicRoutes />}>
-            <Route path="/contact" element={<ContactUs />} />
-            {/* <Route path="/" element={checkAuth ? <Home/> : <LandingPage />} /> */}
-            <Route path="/public" element={<LandingPage />} />
-            <Route path="/about" element={<About />} />
-          </Route>
-        </Route>
-
-        <Route
-          element={
-            <DashboardLayout
-              navLinks={navLinks}
-              darkMode={darkMode}
-              toggleDarkMode={toggleDarkMode}
-            />
-          }
-        >
-          {/* Protected Pages with Navbar */}
-          <Route
-            element={
-              <ProtectedRoutes allowedRoles={["user", "instructor", "admin"]} />
+  <Routes>
+    {/* ================= 1. MASTER ROOT DIRECTION ================= */}
+    <Route
+      path="/"
+      element={
+        isAuthenticated ? (
+          <Navigate
+            to={
+              user?.role === "admin"
+                ? "/admin"
+                : user?.role === "user"
+                  ? "/student"
+                  : "/instructor"
             }
-          >
-            <Route path="/" element={<Home />} />
+            replace
+          />
+        ) : (
+          <Navigate to="/public" replace />
+        )
+      }
+    />
 
-            <Route path="/profile" element={<Profile />} />
+    {/* ================= 2. GUEST ONLY ROUTES (Bina Navbar) ================= */}
+    <Route element={<PublicRoutes />}>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/auth">
+        <Route path="forget-password" element={<RequestOTP />} />
+        <Route path="reset-password" element={<VerifyOTP />} />
+      </Route>
+    </Route>
 
-            {/* Student Routes */}
-            <Route path="/student">
-              {/* Matches "/student" exactly */}
-              <Route index element={<StudentDashboard />} />
-              {/* Matches "/student/quizzes" */}
-              <Route path="quizzes" element={<StudentQuiz />} />
-              <Route path="result" element={<StudentResult />} />
-              {/* Matches "/student/quiz/test/:quizId" */}
-            </Route>
-          </Route>
+    {/* ================= 3. GUEST ONLY ROUTES (Navbar + Footer) ================= */}
+    <Route
+      element={
+        <PublicLayout
+          darkMode={darkMode}
+          toggleDarkMode={toggleDarkMode}
+          navLinks={navLinks}
+        />
+      }
+    >
+      <Route element={<PublicRoutes />}>
+        <Route path="/public" element={<LandingPage />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<ContactUs />} />
+      </Route>
+    </Route>
+
+    {/* ================= 4. PROTECTED ROUTES (Dashboard Layout) ================= */}
+    <Route
+      element={
+        <DashboardLayout
+          navLinks={navLinks}
+          darkMode={darkMode}
+          role={user?.role}
+          toggleDarkMode={toggleDarkMode}
+        />
+      }
+    >
+      {/* 🟢 Common Secure Zone (Sabhi Logged-in Users ke liye) */}
+      <Route element={<ProtectedRoutes allowedRoles={["user", "instructor", "admin"]} />}>
+        <Route path="/profile" element={<Profile />} />
+      </Route>
+
+      {/* 👑 Admin Only Zone */}
+      <Route element={<ProtectedRoutes allowedRoles={["admin"]} />}>
+        <Route path="/admin">
+          <Route index element={<AdminDashboard />} />
         </Route>
-        <Route
-          path="/student"
-          element={
-            <ProtectedRoutes allowedRoles={["user", "instructor", "admin"]} />
-          }
-        >
-          <Route path="quiz-rules" element={<QuizLanding />} />
-          <Route path="start-quiz" element={<StudentQuizQuestions />} />
-          <Route path="quiz-results" element={<ResultCard />} />
+      </Route>
 
+      {/* 👨‍🏫 Instructor Only Zone */}
+      <Route element={<ProtectedRoutes allowedRoles={["instructor"]} />}>
+        <Route path="/instructor">
+          <Route index element={<InstructorDashboard />} />
         </Route>
+      </Route>
 
-        {/* Error Pages (Usually no navbar) */}
-        <Route path="/unauthorized" element={<Unauthorized />} />
-      </Routes>
-    </>
+      {/* 🧑‍🎓 Student Only Zone */}
+      <Route element={<ProtectedRoutes allowedRoles={["user"]} />}>
+        <Route path="/student">
+          <Route index element={<StudentDashboard />} />
+          <Route path="quizzes" element={<StudentQuiz />} />
+          <Route path="result" element={<StudentResult />} />
+        </Route>
+      </Route>
+    </Route>
+
+    {/* ================= 5. PROTECTED ROUTES (Full Screen Quiz - No Sidebar) ================= */}
+    <Route element={<ProtectedRoutes allowedRoles={["user"]} />}>
+      <Route path="/student">
+        <Route path="quiz-rules" element={<QuizLanding />} />
+        <Route path="start-quiz" element={<StudentQuizQuestions />} />
+        <Route path="quiz-results" element={<ResultCard />} />
+      </Route>
+    </Route>
+
+    {/* Error Pages */}
+    <Route path="/access-denied" element={<AccessDenied403 />} />
+    <Route path="*" element={<Navigate to="/" replace />} />
+  </Routes>
+</>
   );
 }
 

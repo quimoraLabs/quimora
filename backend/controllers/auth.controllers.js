@@ -135,6 +135,10 @@ export const forgetPasswordRequest = async (req, res, next) => {
 export const verifyOTP = async (req, res, next) => {
   try {
     const { otpCode, email, newPassword } = req.body;
+    
+    if (!newPassword) {
+      return res.status(400).json({ success: false, message: "New password is required" });
+    }
 
     const user = await User.findOne({ email }).select("+otp.code");
 
@@ -142,11 +146,12 @@ export const verifyOTP = async (req, res, next) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    if (!newPassword) {
-      return res
-        .status(400)
-        .json({ success: false, message: "New password is required" });
+    console.log("Database se aaya User OTP object:", user.otp);
+
+    if (!user.otp || !user.otp.code) {
+      return res.status(400).json({ success: false, message: "No OTP request found" });
     }
+
     const isMatch = user.otp.code === otpCode;
     const isNotExpired = user.otp.expiresAt > Date.now();
     console.log(user.otp.expiresAt);

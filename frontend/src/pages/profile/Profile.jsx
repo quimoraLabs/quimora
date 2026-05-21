@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import useAuthStore from "../../store/authStore";
 import useUserStore from "../../store/userStore";
 import {
@@ -87,7 +87,9 @@ export default function ProfileCard() {
 
   const { getProfile } = useAuthStore();
 
-  
+  useEffect(() => {
+    getProfile();
+  }, [getProfile]);
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const updateUser = useUserStore((state) => state.updateUser);
@@ -105,7 +107,7 @@ export default function ProfileCard() {
   const handleSave = async (field) => {
     console.log(`Updating ${field} to:`, formData[field]);
     // Yahan aap apna API call ya store update logic likh sakte hain
-    await updateUser(user._id, { [field]: formData[field] });
+    await updateUser(user.id, { [field]: formData[field] });
     await getProfile(); // Profile ko refresh karne ke liye
     setEditingField(null);
   };
@@ -119,7 +121,9 @@ export default function ProfileCard() {
       {/* 1. COVER SECTION */}
       <div className="relative h-72 w-full overflow-hidden">
         <img
-          src={"https://images.unsplash.com/photo-1614850523296-d8c1af93d400?auto=format&fit=crop&q=80&w=1000"}
+          src={
+            "https://images.unsplash.com/photo-1614850523296-d8c1af93d400?auto=format&fit=crop&q=80&w=1000"
+          }
           className="w-full h-full object-cover opacity-60 dark:opacity-40 scale-105 dark:hidden"
           alt="Cover"
         />
