@@ -4,7 +4,8 @@
  * @param {Boolean} isArrayMode - True if processing a list/loop, false for a single object
  */
 const handleQuizQuestions = (doc, isArrayMode) => {
-  if (!doc.questions || !Array.isArray(doc.questions)) return;
+  // Safe check agar doc hi galti se missing ho
+  if (!doc || !doc.questions || !Array.isArray(doc.questions)) return;
 
   // Case A: For array lists, reduce payload size by sending only the count
   if (isArrayMode) {
@@ -15,18 +16,18 @@ const handleQuizQuestions = (doc, isArrayMode) => {
 
   // Case B: For single object details, retain the array but strip internal IDs
   doc.questions = doc.questions.map((q) => {
+    if (!q) return q;
     const plainQ = typeof q.toObject === "function" ? q.toObject() : { ...q };
     
     delete plainQ._id;
-    // delete plainQ.id;
     delete plainQ.__v;
 
     // Sanitize nested option IDs inside each question
     if (plainQ.options && Array.isArray(plainQ.options)) {
       plainQ.options = plainQ.options.map((opt) => {
+        if (!opt) return opt;
         const plainOpt = typeof opt.toObject === "function" ? opt.toObject() : { ...opt };
         delete plainOpt._id;
-        // delete plainOpt.id;
         return plainOpt;
       });
     }
@@ -42,10 +43,16 @@ const handleQuizQuestions = (doc, isArrayMode) => {
  * @returns {Object|Array} Properly formatted clean response
  */
 export const formatUniversalResponse = (inputData, commonKey = null, fieldsToKeep = []) => {
-  if (!inputData) return null;
+  // 🚨 Agar poora input hi khali hai, toh seedha safe return karo bina error ke
+  if (inputData === null || inputData === undefined) return null;
 
   // Core formatting block executed for every individual document
   const cleanSingle = (item, isArrayMode = false) => {
+    // 🚨 Agar array ke andar ka koi item null milta hai, toh error throw karo taaki debug ho sake
+    if (!item) {
+      throw new Error("Formatting Error: Array contains a null or undefined document!");
+    }
+    
     const doc = typeof item.toObject === "function" ? item.toObject() : { ...item };
 
     // Global clean-up for default Mongoose fields
@@ -56,7 +63,6 @@ export const formatUniversalResponse = (inputData, commonKey = null, fieldsToKee
     // QuizAttempt specific clean-up to strip extra relational metadata safely
     if (doc.quizId && typeof doc.quizId === "object") {
       delete doc.quizId._id;
-      // delete doc.quizId.id;
       delete doc.quizId.isAvailable;
       delete doc.quizId.totalMarks;
     }
@@ -71,20 +77,25 @@ export const formatUniversalResponse = (inputData, commonKey = null, fieldsToKee
   if (Array.isArray(inputData)) {
     if (inputData.length === 0) return { metadata: null, data: [] };
 
+    // 🚨 Safety Check: Agar pehla hi item null hai, toh process nahi ho sakta
+    if (!inputData[0]) {
+      throw new Error("Formatting Error: First element of the array is null or undefined!");
+    }
+
     let commonData = null;
 
-    // Extract common metadata from the first item to lift it to the top-level response
-    if (commonKey && inputData[0]?.[commonKey] && typeof inputData[0][commonKey] === "object") {
+    // Extract common metadata safely using optional chaining everywhere
+    if (commonKey && inputData[0][commonKey] && typeof inputData[0][commonKey] === "object") {
       commonData = {};
       fieldsToKeep.forEach((field) => {
         commonData[field] = inputData[0][commonKey][field];
       });
     }
 
-    // Process all list records and strip the common populated key to prevent repetition
+    // Process all list records safely
     const cleanedList = inputData.map((item) => {
-      const doc = cleanSingle(item, true); // true sets array mode configuration
-      if (commonKey) delete doc[commonKey];
+      const doc = cleanSingle(item, true); // Agar item null hoga, toh cleanSingle wahan se error throw kar dega
+      if (commonKey && doc) delete doc[commonKey];
       return doc;
     });
 
@@ -95,10 +106,10 @@ export const formatUniversalResponse = (inputData, commonKey = null, fieldsToKee
   }
 
   // ⚡ CASE 2: INPUT IS A SINGLE OBJECT -> Return direct flat structural response
-  const singleDoc = cleanSingle(inputData, false); // false sets single object detail mode
+  const singleDoc = cleanSingle(inputData, false);
 
-  // Format and cleanly rename the populated object key (e.g., 'userId' becomes 'user')
-  if (commonKey && singleDoc[commonKey] && typeof singleDoc[commonKey] === "object") {
+  // Format and cleanly rename the populated object key safely
+  if (singleDoc && commonKey && singleDoc[commonKey] && typeof singleDoc[commonKey] === "object") {
     const formattedCommon = {};
     fieldsToKeep.forEach((field) => {
       formattedCommon[field] = singleDoc[commonKey][field];

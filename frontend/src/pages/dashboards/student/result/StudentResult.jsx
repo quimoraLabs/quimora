@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { ArrowUpRight, Calendar, Clock } from "lucide-react";
 import ResultModal from "../components/ResultModal";
-import useAttemptQuizStore from "../../../store/useAttemptQuizStore";
-import Loader from "../../../components/Loader";
-import { formatDate } from "../../../utils/formatDate";
+import useAttemptQuizStore from "../../../../store/useAttemptQuizStore";
+import Loader from "../../../../components/Loader";
+import { formatDate } from "../../../../utils/formatDate";
 
 // const dummyAttempts = [
 //   {

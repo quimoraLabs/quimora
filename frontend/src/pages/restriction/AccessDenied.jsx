@@ -1,7 +1,7 @@
 // import React from 'react';
 import { motion } from 'framer-motion';
 
-export default function AccessDenied403() {
+export default function AccessDenied() {
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 text-white relative overflow-hidden">
       {/* Danger Zone Glow */}

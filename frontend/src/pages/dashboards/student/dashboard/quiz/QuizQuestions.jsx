@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
 import { useNavigate } from "react-router-dom";
-import useAttemptQuizStore from "../../../../store/useAttemptQuizStore";
+import useAttemptQuizStore from "../../../../../store/useAttemptQuizStore";
+import { exitFullScreen } from "../../components/enterFullScreen";
 
 function StudentQuizQuestions() {
   const navigate = useNavigate();
@@ -197,11 +198,18 @@ useEffect(() => {
 
   const handleFinalSubmit = async () => {
     try {
+      exitFullScreen();
       await submitAttempt(navigate);
     } catch (err) {
       console.error(err);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      exitFullScreen();
+    };
+  }, []);
 
   return (
     <div className="relative min-h-screen bg-neutral-900 text-white select-none">

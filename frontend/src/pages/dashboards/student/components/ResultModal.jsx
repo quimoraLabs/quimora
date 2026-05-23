@@ -1,6 +1,6 @@
 // import React from 'react'
 import { XCircle, Clock, Calendar, X, BarChart3, Award } from "lucide-react";
-import { formatDate } from "../../../utils/formatDate";
+import { formatDate } from "../../../../utils/formatDate";
 // import { useNavigate } from "react-router-dom";
 function ResultModal({ selectedAttempt, closeModal }) {
   return (

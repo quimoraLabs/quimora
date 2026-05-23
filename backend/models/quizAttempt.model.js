@@ -80,8 +80,19 @@ const quizAttemptSchema = new mongoose.Schema({
   }
 },{timestamps:true});
 
+
+
 // Compound index to quickly find how many times a specific user attempted a specific quiz
 quizAttemptSchema.index({ userId: 1, quizId: 1 });
+quizAttemptSchema.set("toJSON", {
+  virtuals: true,
+  transform: (doc, ret) => {
+    ret.id = ret._id ? ret._id.toString() : ret.id;
+    return ret;
+  }
+});
+
+quizAttemptSchema.set("toObject", { virtuals: true });
 
 const QuizAttempt = mongoose.model("QuizAttempt",quizAttemptSchema);
 

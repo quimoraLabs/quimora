@@ -246,11 +246,8 @@ export const changeQuizStatus = async (req, res, next) => {
       });
     }
 
-    // 4. Data Rule Check: Block empty placeholder publications
-    if (
-      status === "published" &&
-      (!quiz.questions || quiz.questions.length === 0)
-    ) {
+    // 4. Simple Data Rule Check: Bas khali quiz publish na ho jaye
+    if (status === "published" && (!quiz.questions || quiz.questions.length === 0)) {
       return res.status(400).json({
         error: "Cannot publish a quiz containing zero active questions",
       });
@@ -258,7 +255,7 @@ export const changeQuizStatus = async (req, res, next) => {
 
     // 5. Update and apply save mutations securely
     quiz.status = status;
-    await quiz.save();
+   await quiz.save({ validateBeforeSave: false });
 
     res.status(200).json({
       success: true,
@@ -266,7 +263,7 @@ export const changeQuizStatus = async (req, res, next) => {
       data: { status: quiz.status },
     });
   } catch (error) {
-    if (error instanceof mongoose.Error.CastError) {
+    if (error.name === "CastError") {
       return res.status(400).json({ error: "Invalid quiz ID" });
     }
     next(error);

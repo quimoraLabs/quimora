@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { motion } from "motion/react";
 import {
   Trophy,
@@ -8,14 +9,23 @@ import {
   Award,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import useAttemptQuizStore from "../../../../store/useAttemptQuizStore";
-import Loader from "../../../../components/Loader";
+import useAttemptQuizStore from "../../../../../store/useAttemptQuizStore";
+import Loader from "../../../../../components/Loader";
+import { exitFullScreen } from "../../components/enterFullScreen";
 
 export const ResultCard = () => {
   const navigate = useNavigate();
-  const { quizResults, warningCount, loading } = useAttemptQuizStore();
+  const { loadPersistedQuizResult, clearQuizSession, quizResults, warningCount, loading } = useAttemptQuizStore();
 
   console.log("Quiz Results Data:", quizResults);
+
+  useEffect(() => {
+    exitFullScreen();
+
+    if (!quizResults) {
+      loadPersistedQuizResult();
+    }
+  }, []);
 
   // 1. If the store is still processing the network transaction, show a clean loader
   if (loading) {
@@ -79,16 +89,7 @@ export const ResultCard = () => {
 
   // 4. RESET ONLY ON DEPARTURE: Clean up state right when clicking the action buttons
   const handleCleanExit = (targetRoute) => {
-    useAttemptQuizStore.setState({
-      attemptQuiz: null,
-      attemptId: null,
-      currentIndex: 0,
-      timer: 0,
-      answers: {},
-      warningCount: 0,
-      isFinished: false,
-      quizResults: null, // Wipe the results safely now that the user is leaving
-    });
+    clearQuizSession();
     navigate(targetRoute);
   };
 

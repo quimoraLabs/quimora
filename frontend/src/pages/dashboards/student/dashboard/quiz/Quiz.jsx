@@ -1,9 +1,9 @@
 import { useEffect } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import useQuizStore from "../../../../../store/quizStore";
 import { enterFullScreen } from "../../components/enterFullScreen";
 import QuizCard from "../../components/QuizCard";
-import useQuizStore from "../../../../store/quizStore";
 
 
 function StudentQuiz() {

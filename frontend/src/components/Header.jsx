@@ -30,12 +30,12 @@ export function Header({ title, setSidebarOpen, toggleDarkMode, darkMode }) {
       </button>
       <div className="flex items-center gap-4">
         <div className="text-right hidden sm:block">
-          <p className="text-sm font-medium dark:text-white text-slate-700">
+          <p className="text-sm font-medium dark:text-white text-slate-700 capitalize">
             
             {user?.name}
             
           </p>
-          <p className="text-[10px] text-neutral-500 uppercase tracking-widest">
+          <p className="text-[10px] text-neutral-500 uppercase tracking-widest italic">
             @{user?.username}
           </p>
         </div>

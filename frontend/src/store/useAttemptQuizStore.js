@@ -14,8 +14,66 @@ const useAttemptQuizStore = create((set, get) => ({
   warningCount: 0,
   isFinished: false,
   quizResults: null,
+  dashboardStats: null,
+  dashboardLoading: false,
+  lastAttemptId: null,
   token: localStorage.getItem("token"),
   url: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
+
+  loadPersistedQuizResult: async () => {
+    const persistedAttemptId = localStorage.getItem("lastAttemptId");
+    const persistedQuizResults = localStorage.getItem("lastQuizResults");
+
+    if (persistedQuizResults) {
+      try {
+        set({ quizResults: JSON.parse(persistedQuizResults) });
+      } catch (error) {
+        console.error("Could not parse cached quiz results:", error);
+      }
+    }
+
+    if (!persistedAttemptId) {
+      return;
+    }
+
+    const { token, url } = get();
+    if (!token) {
+      return;
+    }
+
+    try {
+      const response = await axios.get(`${url}/attempts/results/${persistedAttemptId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          ...cacheBusterHeaders,
+        },
+      });
+
+      if (response.data.success) {
+        set({ quizResults: response.data.quizResults, attemptId: persistedAttemptId, lastAttemptId: persistedAttemptId });
+        localStorage.setItem("lastAttemptId", persistedAttemptId);
+        localStorage.setItem("lastQuizResults", JSON.stringify(response.data.quizResults));
+      }
+    } catch (error) {
+      console.error("Failed to refresh persisted quiz result:", error);
+    }
+  },
+
+  clearQuizSession: () => {
+    localStorage.removeItem("lastAttemptId");
+    localStorage.removeItem("lastQuizResults");
+    set({
+      attemptQuiz: null,
+      attemptId: null,
+      currentIndex: 0,
+      timer: 0,
+      answers: {},
+      warningCount: 0,
+      isFinished: false,
+      quizResults: null,
+      lastAttemptId: null,
+    });
+  },
 
   //   1 Start quiz attempt
   startAttempt: async (quizId, navigate) => {
@@ -41,6 +99,7 @@ const useAttemptQuizStore = create((set, get) => ({
 
         set({
           attemptId: attemptId, // Store your persistent database attempt tracker session ID
+          lastAttemptId: attemptId,
           attemptQuiz: quiz, // This contains title, description, and your clean dynamic questions array
           currentIndex: 0,
           timer: quiz.timeLimit ? quiz.timeLimit * 60 : 600, // Convert minutes from backend database directly to local countdown seconds
@@ -49,6 +108,7 @@ const useAttemptQuizStore = create((set, get) => ({
           isFinished: false,
           quizResults: null,
         });
+        localStorage.setItem("lastAttemptId", attemptId);
 
         // after state is set, navigate to the quiz interface
         navigate("/student/start-quiz");
@@ -157,6 +217,8 @@ const useAttemptQuizStore = create((set, get) => ({
           isFinished: true,
           loading: false,
         });
+        localStorage.setItem("lastAttemptId", attemptId);
+        localStorage.setItem("lastQuizResults", JSON.stringify(response.data.summary));
         // Navigate to results page after submission
         navigate("/student/quiz-results", { replace: true }); // Use replace to prevent going back to quiz interface
       }
@@ -192,6 +254,29 @@ const useAttemptQuizStore = create((set, get) => ({
     }
   },
 
+  fetchDashboardStats: async () => {
+    set({ dashboardLoading: true });
+    const { token, url } = get();
+
+    try {
+      const response = await axios.get(`${url}/attempts/dashboard/stats`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          ...cacheBusterHeaders,
+        },
+      });
+
+      if (response.data.success) {
+        set({ dashboardStats: response.data.dashboard });
+      }
+    } catch (error) {
+      console.error("Error fetching dashboard stats:", error);
+      toast.error("Failed to load dashboard stats.");
+    } finally {
+      set({ dashboardLoading: false });
+    }
+  },
+
   studentResults: async (navigate) => {
     set({ loading: true });
     const { attemptId, token } = get();
@@ -211,6 +296,8 @@ const useAttemptQuizStore = create((set, get) => ({
       );
       if (response.data.success) {
         set({ quizResults: response.data.summary });
+        localStorage.setItem("lastAttemptId", attemptId);
+        localStorage.setItem("lastQuizResults", JSON.stringify(response.data.summary));
         navigate("/student/quiz-results");
       }
     } catch (error) {

@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Quiz from "../models/quiz.model.js";
 import QuizAttempt from "../models/quizAttempt.model.js";
 import {
@@ -109,7 +110,9 @@ export const submitQuizAttempt = async (req, res, next) => {
     }
 
     // 2. Structural Layer Validation: Hydrate master schema record parameters
-    const quiz = await Quiz.findById(attempt.quizId).select("+questions.options.isCorrect");
+    const quiz = await Quiz.findById(attempt.quizId).select(
+      "+questions.options.isCorrect",
+    );
     if (!quiz) {
       return res
         .status(404)
@@ -262,22 +265,21 @@ export const submitQuizAttempt = async (req, res, next) => {
   }
 };
 
-
 export const getQuizAttemptDetails = async (req, res, next) => {
   try {
     const { attemptId } = req.params;
     const userId = req.auth.userId;
 
     // Ab populate bilkul makhan ki tarah chalega
-    const attempt = await QuizAttempt.findOne({ _id: attemptId, userId }).populate({
-      path: "quizId",
-      select: "title"
-    }).populate({
-      path:"userId",
-      select: "name email"
-    });
-
-    const result = formatUniversalResponse([attempt], "userId", ["name", "email"]);
+    const attempt = await QuizAttempt.findOne({ _id: attemptId, userId })
+      .populate({
+        path: "quizId",
+        select: "title",
+      })
+      .populate({
+        path: "userId",
+        select: "name email",
+      });
 
     if (!attempt) {
       return res
@@ -285,9 +287,14 @@ export const getQuizAttemptDetails = async (req, res, next) => {
         .json({ error: "Quiz attempt session not found for this user" });
     }
 
+    const result = formatUniversalResponse([attempt], "userId", [
+      "name",
+      "email",
+    ]);
+
     res.status(200).json({
       success: true,
-      attemptDetails: result
+      attemptDetails: result,
     });
   } catch (error) {
     next(error);
@@ -297,19 +304,31 @@ export const getQuizAttemptDetails = async (req, res, next) => {
 export const getAllQuizAttemptsForUser = async (req, res, next) => {
   try {
     const userId = req.auth.userId;
-    const attempts = await QuizAttempt.find({ userId }).sort({ startedAt: -1 }).populate({
-      path: "quizId",
-      select: "title"
-    }).populate({
-      path: "userId",
-      select: "name email"
-    });
+    const attempts = await QuizAttempt.find({ userId })
+      .sort({ startedAt: -1 })
+      .populate({
+        path: "quizId",
+        select: "title",
+      })
+      .populate({
+        path: "userId",
+        select: "name email",
+      });
 
-    const result = formatUniversalResponse(attempts, "userId", ["name", "email"]);
+    if (!attempts) {
+      return res
+        .status(404)
+        .json({ error: "Quiz attempt session not found for this user" });
+    }
+
+    const result = formatUniversalResponse(attempts, "userId", [
+      "name",
+      "email",
+    ]);
 
     res.status(200).json({
       success: true,
-      attempts: result
+      attempts: result,
     });
   } catch (error) {
     next(error);
@@ -331,11 +350,199 @@ export const getQuizAttemptResults = async (req, res, next) => {
     res.status(200).json({
       success: true,
       quizResults: {
+        id: attempt._id,
         totalQuestions: attempt.totalQuestions,
         correctAnswersCount: attempt.correctAnswersCount,
         score: attempt.score,
         timeTakenInSeconds: attempt.timeTaken,
         status: attempt.status,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getUserDashboardStats = async (req, res, next) => {
+  try {
+    const userId = req.auth.userId;
+
+    const completedAttempts = await QuizAttempt.find({
+      userId,
+      status: "completed",
+    })
+      .sort({ completedAt: -1 })
+      .populate({ path: "quizId", select: "title tags" })
+      .lean();
+
+    if (!completedAttempts || completedAttempts.length === 0) {
+      return res.status(200).json({
+        success: true,
+        dashboard: {
+          totalTestsTaken: 0,
+          averageScore: 0,
+          maxScore: 0,
+          minScore: 0,
+          currentRank: null,
+          latestResult: null,
+          performanceTrend: [],
+          predictedNextScore: null,
+          weakAreas: [],
+          recentHistory: [],
+          leaderboard: [],
+        },
+      });
+    }
+
+    const totalTestsTaken = completedAttempts.length;
+    const scores = completedAttempts.map((attempt) => attempt.score);
+    const averageScore = parseFloat(
+      (scores.reduce((sum, score) => sum + score, 0) / totalTestsTaken).toFixed(2),
+    );
+    const maxScore = Math.max(...scores);
+    const minScore = Math.min(...scores);
+
+    const latestAttempt = completedAttempts[0];
+    const recentHistory = completedAttempts.slice(0, 5).map((attempt) => ({
+      id: attempt._id,
+      quizTitle: attempt.quizId?.title || "Untitled Quiz",
+      score: attempt.score,
+      status: attempt.status,
+      completedAt: attempt.completedAt,
+      totalQuestions: attempt.totalQuestions,
+      correctAnswersCount: attempt.correctAnswersCount,
+      timeTakenInSeconds: attempt.timeTaken,
+      tags: Array.isArray(attempt.quizId?.tags) ? attempt.quizId.tags : [],
+    }));
+
+    const performanceTrend = completedAttempts
+      .slice(0, 8)
+      .reverse()
+      .map((attempt) => ({
+        label: new Date(attempt.completedAt).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        }),
+        score: attempt.score,
+      }));
+
+    const predictedNextScore = (() => {
+      if (performanceTrend.length <= 1) {
+        return performanceTrend[0]?.score ?? averageScore;
+      }
+      const firstScore = performanceTrend[0].score;
+      const lastScore = performanceTrend[performanceTrend.length - 1].score;
+      const slope = (lastScore - firstScore) / (performanceTrend.length - 1);
+      return Number(Math.min(100, Math.max(0, lastScore + slope)).toFixed(1));
+    })();
+
+    const tagBuckets = completedAttempts.reduce((acc, attempt) => {
+      const tags = Array.isArray(attempt.quizId?.tags) ? attempt.quizId.tags : [];
+      tags.forEach((tag) => {
+        if (!acc[tag]) {
+          acc[tag] = { totalScore: 0, count: 0 };
+        }
+        acc[tag].totalScore += attempt.score;
+        acc[tag].count += 1;
+      });
+      return acc;
+    }, {});
+
+    const weakAreas = Object.entries(tagBuckets)
+      .map(([tag, bucket]) => ({
+        tag,
+        averageScore: parseFloat((bucket.totalScore / bucket.count).toFixed(1)),
+        attempts: bucket.count,
+      }))
+      .sort((a, b) => a.averageScore - b.averageScore)
+      .slice(0, 4);
+
+    const globalLeaderboard = await QuizAttempt.aggregate([
+      { $match: { status: "completed" } },
+      {
+        $group: {
+          _id: "$userId",
+          averageScore: { $avg: "$score" },
+          totalTests: { $sum: 1 },
+          maxScore: { $max: "$score" },
+        },
+      },
+      { $sort: { averageScore: -1, totalTests: -1 } },
+      { $limit: 20 },
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "_id",
+          as: "user",
+        },
+      },
+      { $unwind: "$user" },
+      {
+        $project: {
+          _id: 0,
+          userId: "$_id",
+          name: "$user.name",
+          averageScore: { $round: ["$averageScore", 2] },
+          totalTests: 1,
+          maxScore: 1,
+        },
+      },
+    ]);
+
+    const rankPipeline = await QuizAttempt.aggregate([
+      { $match: { status: "completed" } },
+      {
+        $group: {
+          _id: "$userId",
+          averageScore: { $avg: "$score" },
+          totalTests: { $sum: 1 },
+        },
+      },
+      { $sort: { averageScore: -1, totalTests: -1 } },
+      {
+        $project: {
+          userId: "$_id",
+          averageScore: 1,
+          totalTests: 1,
+        },
+      },
+    ]);
+
+    const currentRank =
+      rankPipeline.findIndex((entry) => entry.userId.toString() === userId) + 1 ||
+      null;
+
+    const leaderboard = globalLeaderboard.map((entry, index) => ({
+      rank: index + 1,
+      name: entry.name,
+      averageScore: entry.averageScore,
+      totalTests: entry.totalTests,
+      isMe: entry.userId.toString() === userId,
+    }));
+
+    res.status(200).json({
+      success: true,
+      dashboard: {
+        totalTestsTaken,
+        averageScore,
+        maxScore,
+        minScore,
+        currentRank,
+        latestResult: {
+          quizTitle: latestAttempt.quizId?.title || "Untitled Quiz",
+          score: latestAttempt.score,
+          completedAt: latestAttempt.completedAt,
+          status: latestAttempt.status,
+          totalQuestions: latestAttempt.totalQuestions,
+          correctAnswersCount: latestAttempt.correctAnswersCount,
+          timeTakenInSeconds: latestAttempt.timeTaken,
+        },
+        performanceTrend,
+        predictedNextScore,
+        weakAreas,
+        recentHistory,
+        leaderboard,
       },
     });
   } catch (error) {

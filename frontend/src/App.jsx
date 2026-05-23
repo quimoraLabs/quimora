@@ -10,24 +10,24 @@ import Profile from "./pages/profile/Profile";
 import Navbar from "./components/Navbar";
 import RegisterPage from "./pages/auth/Register";
 import Footer from "./components/Footer";
-import StudentQuiz from "./pages/student/dashboard/quiz/Quiz";
-import StudentQuizQuestions from "./pages/student/dashboard/quiz/QuizQuestions";
 import LandingPage from "./pages/public/LandingPage";
 import About from "./pages/public/AboutUs";
 import ContactUs from "./pages/public/ContactUs";
 import Sidebar from "./components/Sidebar";
 import { Header } from "./components/Header";
-import StudentDashboard from "./pages/student/dashboard/StudentDashboard";
-import StudentResult from "./pages/student/result/StudentResult";
 import RequestOTP from "./pages/auth/forgetPassword/RequestOTP";
 // import ChangePassword from "./pages/auth/forgetPassword/ChangePassword";
 import VerifyOTP from "./pages/auth/forgetPassword/VerifyOTP";
-import { QuizLanding } from "./pages/student/dashboard/quiz/InstructionQuiz";
-import { ResultCard } from "./pages/student/dashboard/quiz/TestResult";
+import StudentQuiz from "./pages/dashboards/student/dashboard/quiz/Quiz";
+import StudentQuizQuestions from "./pages/dashboards/student/dashboard/quiz/QuizQuestions";
+import StudentDashboard from "./pages/dashboards/student/dashboard/StudentDashboard";
+import StudentResult from "./pages/dashboards/student/result/StudentResult";
+import { QuizLanding } from "./pages/dashboards/student/dashboard/quiz/InstructionQuiz";
+import { ResultCard } from "./pages/dashboards/student/dashboard/quiz/TestResult";
 import Loader from "./components/Loader";
 import AdminDashboard from "./pages/dashboards/admin/AdminDashboard";
 import InstructorDashboard from "./pages/dashboards/instructor/InstructorDashboard";
-import AccessDenied403 from "./pages/restriction/AccessDenied";
+import AccessDenied from "./pages/restriction/AccessDenied";
 
 const PublicLayout = ({ darkMode, toggleDarkMode, navLinks }) => {
   // const user = useAuthStore((state) => state.user);
@@ -216,7 +216,7 @@ function App() {
     </Route>
 
     {/* Error Pages */}
-    <Route path="/access-denied" element={<AccessDenied403 />} />
+    <Route path="/access-denied" element={<AccessDenied />} />
     <Route path="*" element={<Navigate to="/" replace />} />
   </Routes>
 </>

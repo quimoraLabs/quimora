@@ -15,9 +15,10 @@ import {
   FileText,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { enterFullScreen } from "../../components/enterFullScreen";
+
 import toast from "react-hot-toast";
-import useAttemptQuizStore from "../../../../store/useAttemptQuizStore";
+import useAttemptQuizStore from "../../../../../store/useAttemptQuizStore";
+import { enterFullScreen, exitFullScreen } from "../../components/enterFullScreen";
 
 export const QuizLanding = () => {
   //   const quizContainerRef = useRef(null);
@@ -41,6 +42,7 @@ export const QuizLanding = () => {
   console.log("Extracted Quiz ID from Route State:", quizId);
 
 const handleGoBack = () => {
+    exitFullScreen();
     navigate("/student/quizzes");
   };
 
@@ -59,9 +61,9 @@ const handleGoBack = () => {
       // Note: useAttemptQuizStore automatically routes to "/student/start-quiz" 
       // inside its internal logic when 'response.data.success' evaluates to true.
       await startAttempt(quizId, navigate);
-
     } catch (error) {
       console.error("Initialization Failed: ", error);
+      exitFullScreen();
       toast.error(
         "Security validation failed. Please check browser permissions.",
       );
