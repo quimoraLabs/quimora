@@ -439,11 +439,12 @@ export const getUserDashboardStats = async (req, res, next) => {
     const tagBuckets = completedAttempts.reduce((acc, attempt) => {
       const tags = Array.isArray(attempt.quizId?.tags) ? attempt.quizId.tags : [];
       tags.forEach((tag) => {
-        if (!acc[tag]) {
-          acc[tag] = { totalScore: 0, count: 0 };
+        const tagKey = typeof tag === 'object' ? tag.toString() : tag;
+        if (!acc[tagKey]) {
+          acc[tagKey] = { totalScore: 0, count: 0 };
         }
-        acc[tag].totalScore += attempt.score;
-        acc[tag].count += 1;
+        acc[tagKey].totalScore += attempt.score;
+        acc[tagKey].count += 1;
       });
       return acc;
     }, {});

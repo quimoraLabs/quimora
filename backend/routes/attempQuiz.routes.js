@@ -24,7 +24,7 @@ router.post(
   submitQuizAttempt,
 );
 router.get("/my-results", authMiddleWare, authorizeRoles("user"), getAllQuizAttemptsForUser);
-router.get("/results/:attemptId", authMiddleWare, authorizeRoles("user"), getQuizAttemptDetails);
+router.get("/results/:attemptId", authMiddleWare, authorizeRoles("user"), getQuizAttemptResults);
 
 // Analytics & Dashboard Processing Layer
 router.get(

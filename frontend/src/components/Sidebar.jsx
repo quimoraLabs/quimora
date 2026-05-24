@@ -27,8 +27,8 @@ export default function Sidebar({ isOpen, setIsOpen, role }) {
         icon: <QuoteIcon />,
       },
       {
-        path: "/student/result",
-        name: "Result",
+        path: "/student/my-attempts",
+        name: "My Attempts",
         icon: <UserStar />,
       },
     ],
@@ -80,7 +80,7 @@ export default function Sidebar({ isOpen, setIsOpen, role }) {
 
       {/* 2. Sidebar Container */}
       <aside
-        className={`fixed top-0 left-0 z-50 w-64 h-screen bg-neutral-100 dark:bg-[#050505] border-r border-neutral-800/50 transition-transform duration-300 ease-in-out rounded-2xl
+        className={`fixed top-0 left-0 z-50 w-64 h-screen bg-surface border-r border-main transition-transform duration-300 ease-in-out rounded-2xl
         ${isOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}
       >
         <div className="flex items-center justify-between px-6 h-20 border-b border-slate-300 dark:border-neutral-600/50">

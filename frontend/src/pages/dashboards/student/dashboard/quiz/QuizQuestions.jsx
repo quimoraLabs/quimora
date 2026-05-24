@@ -57,7 +57,8 @@ useEffect(() => {
     const isNowFullscreen = !!(
       document.fullscreenElement || 
       document.webkitFullscreenElement || 
-      document.mozFullScreenElement
+      document.mozFullScreenElement ||
+      document.msFullscreenElement
     );
     
     // Wrap state update in a 0ms timeout so it runs AFTER the current render cycle completely finishes
@@ -117,7 +118,8 @@ useEffect(() => {
       const isCurrentlyFullscreen = !!(
         document.fullscreenElement || 
         document.webkitFullscreenElement || 
-        document.mozFullScreenElement
+        document.mozFullScreenElement ||
+        document.msFullscreenElement
       );
 
       if (!isCurrentlyFullscreen) return; 
@@ -169,6 +171,12 @@ useEffect(() => {
     };
   }, [isFinished, attemptQuiz, incrementWarning, navigate]);
 
+  useEffect(() => {
+    return () => {
+      exitFullScreen();
+    };
+  }, []);
+
   if (!attemptQuiz || !attemptId) {
     return (
       <div className="p-6 text-white bg-neutral-900 min-h-screen flex flex-col items-center justify-center">
@@ -204,12 +212,6 @@ useEffect(() => {
       console.error(err);
     }
   };
-
-  useEffect(() => {
-    return () => {
-      exitFullScreen();
-    };
-  }, []);
 
   return (
     <div className="relative min-h-screen bg-neutral-900 text-white select-none">

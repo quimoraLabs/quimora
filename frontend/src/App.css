@@ -1,46 +1,95 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap");
 @import "tailwindcss";
 
+/* --- 1. TELL TAILWIND V4 TO LISTEN TO THE HOOK'S .dark CLASS --- */
+@variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+/* --- 2. GLOBAL THEME VARIABLES --- */
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Space Grotesk", sans-serif;
 
+  /* Brand Accents */
   --color-brand-primary: #4f46e5;
   --color-brand-secondary: #818cf8;
-  --color-brand-start: #22d3ee; /* Cyan from Luminary */
-  --color-brand-mid: #3b82f6; /* Blue from Luminary */
-  --color-brand-end: #8b5cf6; /* Violet */
+  --color-brand-start: #22d3ee; 
+  --color-brand-mid: #3b82f6; 
+  --color-brand-end: #8b5cf6; 
 
+  /* ☀️ LIGHT MODE TOKENS */
+  --color-bg-main: #eeecf0;           
+  --color-bg-surface: #ffffff;        
+  --color-text-main: #090d16;         
+  --color-text-muted: #475569;        
+  --color-border-main: #e2e8f0;       /* Perfect Invisible Soft Light Border */
+
+  /* Radius */
   --radius-xl: 1rem;
   --radius-2xl: 1.5rem;
 }
 
-@variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+/* --- 3. DARK MODE OVERRIDES (applies when .dark class is present) --- */
+:where(.dark) {
+  /* 🌙 DARK MODE TOKENS */
+  --color-bg-main: #243455;           
+  --color-bg-surface: #1f2c46;        
+  --color-text-main: #f8fafc;         
+  --color-text-muted: #64748b;        
+  --color-border-main: #1e293b;       /* Perfect Sharp Dark Border */
+}
 
+/* --- 4. GLOBAL BODY RENDER --- */
 body {
-  @apply transition-colors duration-500;
+  background-color: var(--color-bg-main);
+  color: var(--color-text-main);
+  font-family: var(--font-sans);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* --- 5. UTILITY LAYER: Auto-generate classes from CSS variables --- */
+@layer utilities {
+  /* Background Utilities */
+  .bg-main { background-color: var(--color-bg-main); }
+  .bg-surface { background-color: var(--color-bg-surface); }
+  
+  /* Text Utilities */
+  .text-main { color: var(--color-text-main); }
+  .text-muted { color: var(--color-text-muted); }
+  
+  /* Border Utilities */
+  .border-main { border-color: var(--color-border-main); }
+  
+  /* Brand Utilities */
+  .text-brand-primary { color: var(--color-brand-primary); }
+  .bg-brand-primary { background-color: var(--color-brand-primary); }
+  .border-brand-primary { border-color: var(--color-brand-primary); }
+  
+  .text-brand-secondary { color: var(--color-brand-secondary); }
+  .bg-brand-secondary { background-color: var(--color-brand-secondary); }
+  
+  .text-brand-start { color: var(--color-brand-start); }
+  .bg-brand-start { background-color: var(--color-brand-start); }
+  
+  .text-brand-mid { color: var(--color-brand-mid); }
+  .bg-brand-mid { background-color: var(--color-brand-mid); }
+  
+  .text-brand-end { color: var(--color-brand-end); }
+  .bg-brand-end { background-color: var(--color-brand-end); }
 }
 
 
 @layer base {
-  *,
-  ::after,
-  ::before {
-    transition-property: background-color, border-color, color, fill, stroke;
+  *, ::after, ::before {
+    transition-property: background-color, border-color, color;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    transition-duration: 150ms;
+    transition-duration: 200ms;
   }
 }
 
-.dark {
-  background: #0f172a;
-  color: white;
-}
-
+/* --- 5. GLOBAL BUTTON UTILITIES --- */
 button {
   cursor: pointer;
 }
-
 button:disabled {
   cursor: not-allowed;
   opacity: 0.6;

@@ -5,11 +5,11 @@ export function Header({ title, setSidebarOpen, toggleDarkMode, darkMode }) {
   const user = useAuthStore((state) => state.user);
   // console.log(user?.name?.split(" ")[0][0]);
   return (
-    <header className="h-20 bg-white/90 dark:bg-slate-950/80 backdrop-blur-md border-b shadow shadow-slate-400  dark:shadow-slate-600 border-gray-100 dark:border-slate-800 flex items-center justify-between px-4 sm:px-8 sticky top-5 z-40 lg:ml-64 rounded-2xl">
+    <header className="h-20 bg-bg-surface backdrop-blur-md border-b shadow drop-shadow-bg-main border-border-main  flex items-center justify-between px-4 sm:px-8 sticky top-5 z-40 lg:ml-64 rounded-2xl">
       <div className="flex items-center gap-4">
         <button
           type="button"
-          className="lg:hidden p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+          className="lg:hidden p-2 rounded-full hover:bg-bg-main transition-colors"
           onClick={() => setSidebarOpen(true)}
           aria-label="Open sidebar"
         >
@@ -19,28 +19,28 @@ export function Header({ title, setSidebarOpen, toggleDarkMode, darkMode }) {
       </div>
       <button
         onClick={toggleDarkMode}
-        className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+        className="p-2 rounded-full hover:bg-bg-main transition-colors"
         aria-label="Toggle dark mode"
       >
         {darkMode ? (
-          <Sun className="w-5 h-5 text-gray-400" />
+          <Sun className="w-5 h-5 text-amber-400" />
         ) : (
-          <Moon className="w-5 h-5 text-gray-600" />
+          <Moon className="w-5 h-5 text-slate-400" />
         )}
       </button>
       <div className="flex items-center gap-4">
         <div className="text-right hidden sm:block">
-          <p className="text-sm font-medium dark:text-white text-slate-700 capitalize">
+          <p className="text-sm font-medium text-text-main capitalize">
             
             {user?.name}
             
           </p>
-          <p className="text-[10px] text-neutral-500 uppercase tracking-widest italic">
+          <p className="text-[10px] text-text-muted uppercase tracking-widest italic">
             @{user?.username}
           </p>
         </div>
        
-          <img src={user?.avatar?.url} alt={user?.name} className="w-8 h-8 rounded-full object-cover border-2 border-[#d7dbe2] dark:border-[#172233]" />
+          <img src={user?.avatar?.url} alt={user?.name} className="w-8 h-8 rounded-full object-cover border-2 border-border-main" />
         {/* </div> */}
       </div>
     </header>

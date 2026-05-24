@@ -50,9 +50,17 @@ const useAttemptQuizStore = create((set, get) => ({
       });
 
       if (response.data.success) {
-        set({ quizResults: response.data.quizResults, attemptId: persistedAttemptId, lastAttemptId: persistedAttemptId });
-        localStorage.setItem("lastAttemptId", persistedAttemptId);
-        localStorage.setItem("lastQuizResults", JSON.stringify(response.data.quizResults));
+        const persistedResults =
+          response.data.quizResults ??
+          response.data.summary ??
+          response.data.attemptDetails ??
+          null;
+
+        if (persistedResults) {
+          set({ quizResults: persistedResults, attemptId: persistedAttemptId, lastAttemptId: persistedAttemptId });
+          localStorage.setItem("lastAttemptId", persistedAttemptId);
+          localStorage.setItem("lastQuizResults", JSON.stringify(persistedResults));
+        }
       }
     } catch (error) {
       console.error("Failed to refresh persisted quiz result:", error);
@@ -243,7 +251,7 @@ const useAttemptQuizStore = create((set, get) => ({
       // console.log(response.data.attempts.data);
 
       if (response.data.success) {
-        set({ quizResults: response.data.attempts.data });
+        set({ quizResults: response.data.attempts?.data ?? response.data.attempts ?? [] });
         // navigate("/student/my-results");
       }
     } catch (error) {

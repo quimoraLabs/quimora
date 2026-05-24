@@ -25,7 +25,7 @@ export const ResultCard = () => {
     if (!quizResults) {
       loadPersistedQuizResult();
     }
-  }, []);
+  }, [loadPersistedQuizResult, quizResults]);
 
   // 1. If the store is still processing the network transaction, show a clean loader
   if (loading) {

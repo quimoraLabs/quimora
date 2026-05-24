@@ -28,11 +28,12 @@ import Loader from "./components/Loader";
 import AdminDashboard from "./pages/dashboards/admin/AdminDashboard";
 import InstructorDashboard from "./pages/dashboards/instructor/InstructorDashboard";
 import AccessDenied from "./pages/restriction/AccessDenied";
+import { useTheme } from "./utils/useTheme";
 
 const PublicLayout = ({ darkMode, toggleDarkMode, navLinks }) => {
   // const user = useAuthStore((state) => state.user);
   return (
-    <div className="min-h-screen flex flex-col dark:bg-neutral-900">
+    <div className="min-h-screen flex flex-col bg-main">
       {/* <Sidebar /> */}
       <Navbar
         darkMode={darkMode}
@@ -50,7 +51,7 @@ const PublicLayout = ({ darkMode, toggleDarkMode, navLinks }) => {
 const DashboardLayout = ({ darkMode, toggleDarkMode,role }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   return (
-    <div className="min-h-screen dark:bg-[#0f172a] bg-slate-100  text-neutral-200 selection:bg-blue-500/30">
+    <div className="min-h-screen bg-main text-main selection:bg-brand-start/30 selection:text-text-main">
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} role={role} />
       <div className="flex flex-col min-h-screen px-2">
         <Header
@@ -70,34 +71,7 @@ const DashboardLayout = ({ darkMode, toggleDarkMode,role }) => {
 function App() {
   const { checkAuth, isAuthenticated, user, authInitialized } = useAuthStore();
   // console.log(checkAuth);
-  const [darkMode, setDarkMode] = useState(() => {
-    // Check if window is defined (SSR safety, though we are in a client environment)
-    if (typeof window !== "undefined") {
-      return (
-        localStorage.getItem("theme") === "dark" ||
-        (!localStorage.getItem("theme") &&
-          window.matchMedia("(prefers-color-scheme: dark)").matches)
-      );
-    }
-    return false;
-  });
-
-  useEffect(() => {
-    const root = document.documentElement;
-    if (darkMode) {
-      root.classList.add("dark");
-      root.setAttribute("data-theme", "dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      root.classList.remove("dark");
-      root.setAttribute("data-theme", "light");
-      localStorage.setItem("theme", "light");
-    }
-  }, [darkMode]);
-
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-  };
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     checkAuth();
@@ -153,8 +127,8 @@ function App() {
     <Route
       element={
         <PublicLayout
-          darkMode={darkMode}
-          toggleDarkMode={toggleDarkMode}
+          darkMode={theme === "dark"}
+          toggleDarkMode={toggleTheme}
           navLinks={navLinks}
         />
       }
@@ -171,9 +145,9 @@ function App() {
       element={
         <DashboardLayout
           navLinks={navLinks}
-          darkMode={darkMode}
+          darkMode={theme === "dark"}
+          toggleDarkMode={toggleTheme}
           role={user?.role}
-          toggleDarkMode={toggleDarkMode}
         />
       }
     >
@@ -201,7 +175,7 @@ function App() {
         <Route path="/student">
           <Route index element={<StudentDashboard />} />
           <Route path="quizzes" element={<StudentQuiz />} />
-          <Route path="result" element={<StudentResult />} />
+          <Route path="my-attempts" element={<StudentResult />} />
         </Route>
       </Route>
     </Route>

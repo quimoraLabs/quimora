@@ -29,7 +29,7 @@ const topics = [
 function LandingPage() {
 
   return (
-    <main className="bg-white dark:bg-slate-950 text-gray-900 dark:text-white transition-colors duration-300">
+    <main className="bg-main text-text-main transition-colors duration-300">
       {/* Header */}
 
       {/* HERO */}

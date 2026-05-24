@@ -39,7 +39,7 @@ function StudentQuiz() {
   };
 
   return (
-    <div className="p-6 text-white bg-transparent min-h-screen">
+    <div className="p-6 dark:text-white text-slate-600 bg-transparent min-h-screen">
       <h1 className="text-2xl font-bold mb-4">Available Quizzes</h1>
 
       {quizzes.length > 0 ? (

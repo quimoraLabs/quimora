@@ -117,9 +117,9 @@ export default function ProfileCard() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#080808] text-slate-900 dark:text-white selection:bg-blue-500/30 font-sans transition-colors duration-300 pb-2">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0f172a] text-slate-900 dark:text-white selection:bg-blue-500/30 font-sans transition-colors duration-300 pb-2 rounded-2xl">
       {/* 1. COVER SECTION */}
-      <div className="relative h-72 w-full overflow-hidden">
+      <div className="relative h-72 w-full overflow-hidden rounded-t-2xl">
         <img
           src={
             "https://images.unsplash.com/photo-1614850523296-d8c1af93d400?auto=format&fit=crop&q=80&w=1000"
@@ -136,10 +136,10 @@ export default function ProfileCard() {
           {/* Avatar with Tech-Ring */}
           <div className="relative">
             <div className="absolute -inset-4 bg-blue-600/20 rounded-[3rem] blur-2xl animate-pulse" />
-            <div className="relative p-2 bg-white dark:bg-[#080808] rounded-[3rem] border border-slate-200 dark:border-white/10 shadow-2xl">
+            <div className="relative dark:bg-[#080808] rounded-[3rem] border  border-slate-300 dark:border-white/10 shadow-2xl">
               <img
                 src={user.avatar.url}
-                className="w-44 h-44 rounded-[2.5rem] object-cover bg-slate-100 dark:bg-neutral-900"
+                className="w-44 h-44 rounded-[2.5rem] object-cover  dark:bg-neutral-900"
                 alt="Avatar"
               />
               <button className="absolute -bottom-2 -right-2 p-4 bg-blue-600 rounded-3xl shadow-xl shadow-blue-600/40 hover:scale-110 active:scale-95 transition-all">
