@@ -2,7 +2,7 @@
 import { Mail, ArrowRight, KeyRound } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import useAuthStore from "../../../store/authStore";
 // import toast from "react-hot-toast";
 function RequestOTP() {
@@ -71,9 +71,9 @@ function RequestOTP() {
 
         <p className="mt-8 text-center text-sm text-slate-400">
           Wait, I remember!{" "}
-          <button className="text-blue-500 font-medium hover:underline">
+          <Link to={"/login"} className="text-blue-500 font-medium hover:underline">
             Sign In
-          </button>
+          </Link>
         </p>
       </motion.div>
     </div>

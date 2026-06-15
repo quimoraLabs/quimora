@@ -7,19 +7,25 @@ const useQuizStore = create((set, get) => ({
   quizzes: [],
   loading: false,
   url: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
-  toaken: localStorage.getItem("token") || null,
   currentQuiz: null,
+
+  // Helper function to dynamically get the freshest token from localStorage
+  getAuthHeaders: () => {
+    const token = localStorage.getItem("token");
+    return {
+      Authorization: token ? `Bearer ${token}` : "",
+      ...cacheBusterHeaders,
+    };
+  },
 
   fetchQuizzes: async () => {
     set({ loading: true });
     try {
       const response = await axios.get(`${get().url}/quizzes/all`, {
-        headers: {
-          Authorization: `Bearer ${get().toaken}`,
-          ...cacheBusterHeaders,
-        },
+        headers: get().getAuthHeaders(),
       });
-      set({ quizzes: response.data.data.data || [] });
+      // Double check if your backend returns data nested inside .data.data
+      set({ quizzes: response.data?.data?.data || response.data || [] });
     } catch (error) {
       console.error("Error fetching quizzes:", error);
       toast.error("Failed to fetch quizzes.");
@@ -32,10 +38,7 @@ const useQuizStore = create((set, get) => ({
     set({ loading: true });
     try {
       const response = await axios.get(`${get().url}/quizzes/${id}`, {
-        headers: {
-          Authorization: `Bearer ${get().toaken}`,
-          ...cacheBusterHeaders,
-        },
+        headers: get().getAuthHeaders(),
       });
       set({ currentQuiz: response.data });
     } catch (error) {
@@ -50,12 +53,9 @@ const useQuizStore = create((set, get) => ({
     set({ loading: true });
     try {
       const response = await axios.get(`${get().url}/quizzes`, {
-        headers: {
-          Authorization: `Bearer ${get().toaken}`,
-          ...cacheBusterHeaders,
-        },
+        headers: get().getAuthHeaders(),
       });
-      set({ quizzes: response.data });
+      set({ quizzes: response.data.data });
     } catch (error) {
       console.error("Error fetching quizzes by instructor:", error);
       toast.error("Failed to fetch quizzes.");
@@ -68,16 +68,18 @@ const useQuizStore = create((set, get) => ({
     set({ loading: true });
     try {
       const response = await axios.post(`${get().url}/quizzes`, quizData, {
-        headers: {
-          Authorization: `Bearer ${get().toaken}`,
-          ...cacheBusterHeaders,
-        },
+        headers: get().getAuthHeaders(),
       });
-      set((state) => ({ quizzes: [...state.quizzes, response.data] }));
+      
+      // Ensure we push the newly created object safely into state array
+      const newQuiz = response.data?.data || response.data;
+      set((state) => ({ quizzes: [...state.quizzes, newQuiz] }));
       toast.success("Quiz created successfully!");
+      return true; // Returns true on success to help component redirect or reset
     } catch (error) {
       console.error("Error creating quiz:", error);
-      toast.error("Failed to create quiz.");
+      toast.error(error.response?.data?.message || "Failed to create quiz.");
+      return false;
     } finally {
       set({ loading: false });
     }
@@ -87,10 +89,7 @@ const useQuizStore = create((set, get) => ({
     set({ loading: true });
     try {
       await axios.delete(`${get().url}/quizzes/${id}`, {
-        headers: {
-          Authorization: `Bearer ${get().toaken}`,
-          ...cacheBusterHeaders,
-        },
+        headers: get().getAuthHeaders(),
       });
       set((state) => ({
         quizzes: state.quizzes.filter((quiz) => quiz._id !== id),
@@ -107,20 +106,12 @@ const useQuizStore = create((set, get) => ({
   updateQuiz: async (id, quizData) => {
     set({ loading: true });
     try {
-      const response = await axios.patch(
-        `${get().url}/quizzes/${id}`,
-        quizData,
-        {
-          headers: {
-            Authorization: `Bearer ${get().toaken}`,
-            ...cacheBusterHeaders,
-          },
-        },
-      );
+      const response = await axios.patch(`${get().url}/quizzes/${id}`, quizData, {
+        headers: get().getAuthHeaders(),
+      });
+      const updatedQuiz = response.data?.data || response.data;
       set((state) => ({
-        quizzes: state.quizzes.map((quiz) =>
-          quiz._id === id ? response.data : quiz,
-        ),
+        quizzes: state.quizzes.map((quiz) => (quiz._id === id ? updatedQuiz : quiz)),
       }));
       toast.success("Quiz updated successfully!");
     } catch (error) {
@@ -134,20 +125,12 @@ const useQuizStore = create((set, get) => ({
   changeQuizStatus: async (id, status) => {
     set({ loading: true });
     try {
-      const response = await axios.patch(
-        `${get().url}/quizzes/${id}/status`,
-        { status },
-        {
-          headers: {
-            Authorization: `Bearer ${get().toaken}`,
-            ...cacheBusterHeaders,
-          },
-        },
-      );
+      const response = await axios.patch(`${get().url}/quizzes/${id}/status`, { status }, {
+        headers: get().getAuthHeaders(),
+      });
+      const updatedQuiz = response.data?.data || response.data;
       set((state) => ({
-        quizzes: state.quizzes.map((quiz) =>
-          quiz._id === id ? response.data : quiz,
-        ),
+        quizzes: state.quizzes.map((quiz) => (quiz._id === id ? updatedQuiz : quiz)),
       }));
       toast.success("Quiz status updated successfully!");
     } catch (error) {

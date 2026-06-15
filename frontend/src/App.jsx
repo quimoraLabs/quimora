@@ -29,6 +29,8 @@ import AdminDashboard from "./pages/dashboards/admin/AdminDashboard";
 import InstructorDashboard from "./pages/dashboards/instructor/InstructorDashboard";
 import AccessDenied from "./pages/restriction/AccessDenied";
 import { useTheme } from "./utils/useTheme";
+import InstructorQuizzesDashboard from "./pages/dashboards/instructor/quiz/Quiz";
+import ViewQuiz from "./pages/dashboards/instructor/quiz/ViewQuiz";
 
 const PublicLayout = ({ darkMode, toggleDarkMode, navLinks }) => {
   // const user = useAuthStore((state) => state.user);
@@ -167,6 +169,8 @@ function App() {
       <Route element={<ProtectedRoutes allowedRoles={["instructor"]} />}>
         <Route path="/instructor">
           <Route index element={<InstructorDashboard />} />
+          <Route path="quizzes" element={<InstructorQuizzesDashboard />} />
+          <Route path="quizzes/view" element={<ViewQuiz />} />
         </Route>
       </Route>
 

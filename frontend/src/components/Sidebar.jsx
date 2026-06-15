@@ -39,7 +39,7 @@ export default function Sidebar({ isOpen, setIsOpen, role }) {
         icon: <LayoutDashboard />,
       },
       {
-        path: "/instructor/quizes",
+        path: "/instructor/quizzes",
         name: "Quizzes",
         icon: <QuoteIcon />,
       },
@@ -61,7 +61,7 @@ export default function Sidebar({ isOpen, setIsOpen, role }) {
         icon: <QuoteIcon />,
       },
       {
-        path: "/instructor/users",
+        path: "/admin/instructor/users",
         name: "User Control",
         icon: <UserCheck />,
       },
@@ -98,6 +98,7 @@ export default function Sidebar({ isOpen, setIsOpen, role }) {
         <nav className="p-4 space-y-2">
           {routes[role]?.map((route) => (
             <Link
+              onClick={() => setIsOpen(false)}
               key={route.path}
               to={route.path}
               className="flex items-center p-3 text-neutral-400 dark:hover:text-white hover:bg-slate-200 hover:text-slate-500 dark:hover:bg-neutral-800/50 rounded-xl transition-all group"
@@ -110,6 +111,7 @@ export default function Sidebar({ isOpen, setIsOpen, role }) {
           ))}
           <div className="p-4 border-t dark:border-neutral-800 space-y-2">
             <Link
+              onClick={() => setIsOpen(false)}
               to={"profile"}
               className="flex items-center p-3 text-neutral-400 dark:hover:text-white hover:bg-slate-200 hover:text-slate-500 dark:hover:bg-neutral-800/50 rounded-xl transition-all group"
             >
