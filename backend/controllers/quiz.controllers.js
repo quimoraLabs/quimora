@@ -9,13 +9,15 @@ import { formatUniversalResponse } from "../utils/universalFormatter.js";
 
 export const createQuiz = async (req, res, next) => {
   try {
-    const { title, description, questions } = req.body;
+    const { title, description, questions, timeLimit, maxAttempts } = req.body;
     await assertUserExists(req.auth.userId, false);
 
     const quiz = new Quiz({
       title,
       description,
       questions,
+      timeLimit,
+      maxAttempts,
       createdBy: req.auth.userId,
     });
     await quiz.save();
@@ -59,10 +61,9 @@ export const getQuizDetails = async (req, res, next) => {
 export const getQuizzesByInstructor = async (req, res, next) => {
   try {
     await assertUserExists(req.auth.userId, false);
-    const quizzes = await Quiz.find({ createdBy: req.auth.userId.toString() }).populate(
-      "createdBy",
-      "name email",
-    );
+    const quizzes = await Quiz.find({
+      createdBy: req.auth.userId.toString(),
+    }).populate("createdBy", "name email");
     if (!quizzes) {
       return res.status(404).json({
         message: "Quizzes not found",
@@ -70,15 +71,13 @@ export const getQuizzesByInstructor = async (req, res, next) => {
     }
     res.status(200).json({
       success: true,
-      data:
-        formatUniversalResponse(quizzes, "createdBy", ["name", "email"])
+      data: formatUniversalResponse(quizzes, "createdBy", ["name", "email"]),
     });
   } catch (error) {
     // console.error("Get Quizzes Error:", error);
     next(error);
   }
 };
-
 
 export const getAllQuizzes = async (req, res, next) => {
   try {
@@ -88,12 +87,16 @@ export const getAllQuizzes = async (req, res, next) => {
       res.status(404).json({ success: false, message: "Quizzes are empty" });
     }
 
-    const publishedQuizzes = quizzes.filter((quiz) => quiz.status === "published");
+    const publishedQuizzes = quizzes.filter(
+      (quiz) => quiz.status === "published",
+    );
 
     res.status(200).json({
       success: true,
-      data:
-        formatUniversalResponse(publishedQuizzes, "createdBy", ["name", "email"])
+      data: formatUniversalResponse(publishedQuizzes, "createdBy", [
+        "name",
+        "email",
+      ]),
     });
   } catch (error) {
     // console.error("Get All Quizzes Error:", error);
@@ -110,7 +113,10 @@ export const getQuizById = async (req, res, next) => {
     if (!quiz) {
       return res.status(404).json({ error: "Quiz not found" });
     }
-    const result = formatUniversalResponse(quiz, "createdBy", ["name", "email"]);
+    const result = formatUniversalResponse(quiz, "createdBy", [
+      "name",
+      "email",
+    ]);
     res.status(200).json({ success: true, data: result });
   } catch (error) {
     // Mongoose CastErrors are already intercepted at the application layer by your route middleware layout
@@ -247,7 +253,10 @@ export const changeQuizStatus = async (req, res, next) => {
     }
 
     // 4. Simple Data Rule Check: Bas khali quiz publish na ho jaye
-    if (status === "published" && (!quiz.questions || quiz.questions.length === 0)) {
+    if (
+      status === "published" &&
+      (!quiz.questions || quiz.questions.length === 0)
+    ) {
       return res.status(400).json({
         error: "Cannot publish a quiz containing zero active questions",
       });
@@ -255,7 +264,7 @@ export const changeQuizStatus = async (req, res, next) => {
 
     // 5. Update and apply save mutations securely
     quiz.status = status;
-   await quiz.save({ validateBeforeSave: false });
+    await quiz.save({ validateBeforeSave: false });
 
     res.status(200).json({
       success: true,

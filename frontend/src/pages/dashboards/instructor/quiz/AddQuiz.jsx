@@ -19,7 +19,7 @@ const CreateQuiz = () => {
   const initialData = {
     title: "",
     description: "",
-    timeLimit: 0,
+    timeLimit: 5,
     maxAttempts: 1,
     tags: [],
     questions: [{ ...questionTemplate }],
@@ -74,7 +74,7 @@ const CreateQuiz = () => {
     const success = await createQuiz(quiz);
     if (success) {
       setQuiz(initialData); // Reset form state
-      navigate("/instructor/dashboard"); // Route back to management panel
+      navigate("/instructor/quizzes"); // Route back to management panel
     }
   };
 

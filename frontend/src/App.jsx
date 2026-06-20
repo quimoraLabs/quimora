@@ -31,6 +31,7 @@ import AccessDenied from "./pages/restriction/AccessDenied";
 import { useTheme } from "./utils/useTheme";
 import InstructorQuizzesDashboard from "./pages/dashboards/instructor/quiz/Quiz";
 import ViewQuiz from "./pages/dashboards/instructor/quiz/ViewQuiz";
+import CreateQuiz from "./pages/dashboards/instructor/quiz/AddQuiz";
 
 const PublicLayout = ({ darkMode, toggleDarkMode, navLinks }) => {
   // const user = useAuthStore((state) => state.user);
@@ -170,7 +171,9 @@ function App() {
         <Route path="/instructor">
           <Route index element={<InstructorDashboard />} />
           <Route path="quizzes" element={<InstructorQuizzesDashboard />} />
-          <Route path="quizzes/view" element={<ViewQuiz />} />
+          <Route path="quizzes/:quizId" exact element={<ViewQuiz />} />
+
+          <Route path="quizzes/create" element={<CreateQuiz />} />
         </Route>
       </Route>
 

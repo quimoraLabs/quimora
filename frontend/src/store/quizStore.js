@@ -25,7 +25,7 @@ const useQuizStore = create((set, get) => ({
         headers: get().getAuthHeaders(),
       });
       // Double check if your backend returns data nested inside .data.data
-      set({ quizzes: response.data?.data?.data || response.data || [] });
+      set({ quizzes: response.data?.data?.data || [] });
     } catch (error) {
       console.error("Error fetching quizzes:", error);
       toast.error("Failed to fetch quizzes.");
@@ -70,12 +70,8 @@ const useQuizStore = create((set, get) => ({
       const response = await axios.post(`${get().url}/quizzes`, quizData, {
         headers: get().getAuthHeaders(),
       });
-      
-      // Ensure we push the newly created object safely into state array
-      const newQuiz = response.data?.data || response.data;
-      set((state) => ({ quizzes: [...state.quizzes, newQuiz] }));
-      toast.success("Quiz created successfully!");
-      return true; // Returns true on success to help component redirect or reset
+      if (response.data.success) toast.success("Quiz created successful ");
+      return true;
     } catch (error) {
       console.error("Error creating quiz:", error);
       toast.error(error.response?.data?.message || "Failed to create quiz.");
@@ -88,16 +84,19 @@ const useQuizStore = create((set, get) => ({
   deleteQuiz: async (id) => {
     set({ loading: true });
     try {
+      // 1. Delete the item from the database
       await axios.delete(`${get().url}/quizzes/${id}`, {
         headers: get().getAuthHeaders(),
       });
-      set((state) => ({
-        quizzes: state.quizzes.filter((quiz) => quiz._id !== id),
-      }));
+
+      // 2. Freshly re-fetch the updated list from the backend
+      await get().fetchQuizzesByInstructor();
+
+      // 3. Show success alert only after both backend steps finish
       toast.success("Quiz deleted successfully!");
     } catch (error) {
       console.error("Error deleting quiz:", error);
-      toast.error("Failed to delete quiz.");
+      toast.error(error.response?.data?.message || "Failed to delete quiz.");
     } finally {
       set({ loading: false });
     }
@@ -106,13 +105,12 @@ const useQuizStore = create((set, get) => ({
   updateQuiz: async (id, quizData) => {
     set({ loading: true });
     try {
-      const response = await axios.patch(`${get().url}/quizzes/${id}`, quizData, {
+      await axios.patch(`${get().url}/quizzes/${id}`, quizData, {
         headers: get().getAuthHeaders(),
       });
-      const updatedQuiz = response.data?.data || response.data;
-      set((state) => ({
-        quizzes: state.quizzes.map((quiz) => (quiz._id === id ? updatedQuiz : quiz)),
-      }));
+
+      await get().fetchQuizzesByInstructor();
+
       toast.success("Quiz updated successfully!");
     } catch (error) {
       console.error("Error updating quiz:", error);
@@ -125,12 +123,18 @@ const useQuizStore = create((set, get) => ({
   changeQuizStatus: async (id, status) => {
     set({ loading: true });
     try {
-      const response = await axios.patch(`${get().url}/quizzes/${id}/status`, { status }, {
-        headers: get().getAuthHeaders(),
-      });
+      const response = await axios.patch(
+        `${get().url}/quizzes/${id}/status`,
+        { status },
+        {
+          headers: get().getAuthHeaders(),
+        },
+      );
       const updatedQuiz = response.data?.data || response.data;
       set((state) => ({
-        quizzes: state.quizzes.map((quiz) => (quiz._id === id ? updatedQuiz : quiz)),
+        quizzes: state.quizzes.map((quiz) =>
+          quiz._id === id ? updatedQuiz : quiz,
+        ),
       }));
       toast.success("Quiz status updated successfully!");
     } catch (error) {
