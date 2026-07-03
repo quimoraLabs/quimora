@@ -1,13 +1,20 @@
 // import React from "react";
 
-const QuestionForm = ({ questionData, index, setQuestionForm, isUpdate = false }) => {
+const QuestionForm = ({
+  questionData,
+  index,
+  setQuestionForm,
+  setQuizData,
+  isUpdate = false,
+}) => {
   console.log(questionData);
-  
+  const updateQuestionForm = setQuestionForm || setQuizData;
+
   // 1. Smart Input Handler (Works for both single object and array format states)
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    
-    setQuestionForm((prev) => {
+
+    updateQuestionForm((prev) => {
       if (prev && Array.isArray(prev.questions)) {
         // Array nested state update (For Multiple Creation Mode)
         const updatedQuestions = [...prev.questions];
@@ -25,20 +32,20 @@ const QuestionForm = ({ questionData, index, setQuestionForm, isUpdate = false }
 
   // 2. Add Option
   const handleAddOption = () => {
-    setQuestionForm((prev) => {
+    updateQuestionForm((prev) => {
       if (prev && Array.isArray(prev.questions)) {
         const updatedQuestions = [...prev.questions];
         const currentOptions = updatedQuestions[index]?.options || [];
         updatedQuestions[index] = {
           ...updatedQuestions[index],
-          options: [...currentOptions, { optionText: "", isCorrect: false }]
+          options: [...currentOptions, { optionText: "", isCorrect: false }],
         };
         return { ...prev, questions: updatedQuestions };
       } else {
         const currentOptions = prev?.options || [];
         return {
           ...prev,
-          options: [...currentOptions, { optionText: "", isCorrect: false }]
+          options: [...currentOptions, { optionText: "", isCorrect: false }],
         };
       }
     });
@@ -46,37 +53,40 @@ const QuestionForm = ({ questionData, index, setQuestionForm, isUpdate = false }
 
   // 3. Option Change Handler
   const handleOptionChange = (optionIndex, field, value) => {
-    setQuestionForm((prev) => {
+    updateQuestionForm((prev) => {
       if (prev && Array.isArray(prev.questions)) {
         const updatedQuestions = [...prev.questions];
         let updatedOptions = [...(updatedQuestions[index]?.options || [])];
-        
+
         if (field === "isCorrect" && value === true) {
           updatedOptions = updatedOptions.map((opt, optIdx) => ({
             ...opt,
-            isCorrect: optIdx === optionIndex, 
+            isCorrect: optIdx === optionIndex,
           }));
         } else {
           updatedOptions[optionIndex] = {
             ...updatedOptions[optionIndex],
-            [field]: value
+            [field]: value,
           };
         }
-        
-        updatedQuestions[index] = { ...updatedQuestions[index], options: updatedOptions };
+
+        updatedQuestions[index] = {
+          ...updatedQuestions[index],
+          options: updatedOptions,
+        };
         return { ...prev, questions: updatedQuestions };
       } else {
         let updatedOptions = [...(prev?.options || [])];
-        
+
         if (field === "isCorrect" && value === true) {
           updatedOptions = updatedOptions.map((opt, optIdx) => ({
             ...opt,
-            isCorrect: optIdx === optionIndex, 
+            isCorrect: optIdx === optionIndex,
           }));
         } else {
           updatedOptions[optionIndex] = {
             ...updatedOptions[optionIndex],
-            [field]: value
+            [field]: value,
           };
         }
         return { ...prev, options: updatedOptions };
@@ -86,17 +96,20 @@ const QuestionForm = ({ questionData, index, setQuestionForm, isUpdate = false }
 
   // 4. Delete Option
   const handleDeleteOption = (optionIndex) => {
-    setQuestionForm((prev) => {
+    updateQuestionForm((prev) => {
       if (prev && Array.isArray(prev.questions)) {
         const updatedQuestions = [...prev.questions];
         const updatedOptions = (updatedQuestions[index]?.options || []).filter(
-          (_, optIdx) => optIdx !== optionIndex
+          (_, optIdx) => optIdx !== optionIndex,
         );
-        updatedQuestions[index] = { ...updatedQuestions[index], options: updatedOptions };
+        updatedQuestions[index] = {
+          ...updatedQuestions[index],
+          options: updatedOptions,
+        };
         return { ...prev, questions: updatedQuestions };
       } else {
         const updatedOptions = (prev?.options || []).filter(
-          (_, optIdx) => optIdx !== optionIndex
+          (_, optIdx) => optIdx !== optionIndex,
         );
         return { ...prev, options: updatedOptions };
       }
@@ -105,7 +118,6 @@ const QuestionForm = ({ questionData, index, setQuestionForm, isUpdate = false }
 
   return (
     <div className="border border-main p-5 my-4 rounded-xl bg-surface relative shadow-sm text-left">
-      
       {/* Question Header */}
       <div className="flex justify-between items-center mb-2">
         <h4 className="font-bold text-lg text-main font-display">
@@ -118,14 +130,16 @@ const QuestionForm = ({ questionData, index, setQuestionForm, isUpdate = false }
           )}
         </h4>
       </div>
-      
+
       {/* Main Form Fields Grid */}
       <div className="space-y-4">
         <div>
-          <label className="text-xs font-semibold text-muted block mb-1">Question Text</label>
-          <input 
+          <label className="text-xs font-semibold text-muted block mb-1">
+            Question Text
+          </label>
+          <input
             name="questionText"
-            value={questionData?.questionText || ""} 
+            value={questionData?.questionText || ""}
             onChange={handleInputChange}
             placeholder="Enter question text"
             className="border border-main p-2 w-full rounded-md bg-main text-main focus:outline-none focus:border-brand-primary"
@@ -134,18 +148,23 @@ const QuestionForm = ({ questionData, index, setQuestionForm, isUpdate = false }
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-xs font-semibold text-muted block mb-1">Marks</label>
-            <input 
+            <label className="text-xs font-semibold text-muted block mb-1">
+              Marks
+            </label>
+            <input
               type="number"
               name="marks"
-              value={questionData?.marks || ""} 
+              value={questionData?.marks || 1}
               onChange={handleInputChange}
+              min="1"
               placeholder="e.g. 5"
               className="border border-main p-2 w-full rounded-md bg-main text-main focus:outline-none focus:border-brand-primary"
             />
           </div>
           <div>
-            <label className="text-xs font-semibold text-muted block mb-1">Difficulty</label>
+            <label className="text-xs font-semibold text-muted block mb-1">
+              Difficulty
+            </label>
             <select
               name="difficulty"
               value={questionData?.difficulty || "easy"}
@@ -164,22 +183,24 @@ const QuestionForm = ({ questionData, index, setQuestionForm, isUpdate = false }
       {!isUpdate && (
         <div className="mt-4 pl-4 border-l-2 border-brand-primary">
           <h5 className="font-semibold text-sm text-muted mb-2">Options:</h5>
-          
+
           {questionData?.options?.map((option, optIndex) => (
             <div key={optIndex} className="flex items-center gap-2 my-2">
-              <input 
+              <input
                 type="radio"
-                name={`correct-option-${index}`} 
+                name={`correct-option-${index}`}
                 checked={option.isCorrect}
                 onChange={() => handleOptionChange(optIndex, "isCorrect", true)}
                 className="w-4 h-4 cursor-pointer accent-brand-primary"
               />
-              
-              <input 
+
+              <input
                 type="text"
                 value={option.optionText}
                 placeholder={`Option ${optIndex + 1}`}
-                onChange={(e) => handleOptionChange(optIndex, "optionText", e.target.value)}
+                onChange={(e) =>
+                  handleOptionChange(optIndex, "optionText", e.target.value)
+                }
                 className="border border-main p-1.5 flex-1 rounded-md bg-main text-main text-sm focus:outline-none focus:border-brand-primary"
               />
 
@@ -196,7 +217,7 @@ const QuestionForm = ({ questionData, index, setQuestionForm, isUpdate = false }
             </div>
           ))}
 
-          <button 
+          <button
             type="button"
             onClick={handleAddOption}
             className="mt-2 text-xs bg-brand-primary hover:opacity-90 text-white px-3 py-1.5 rounded-md shadow-sm transition-opacity"

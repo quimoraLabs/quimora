@@ -20,7 +20,7 @@ const corsOptions = {
   origin:
     process.env.NODE_ENV === "production"
       ? "https://quimorabackend.vercel.app"
-      : "http://localhost:5173",
+      : ["http://localhost:5173","https://hoppscotch.io"],
   optionsSuccessStatus: 200,
 };
 
@@ -37,18 +37,14 @@ app.use(
   questionRoutes,
 );
 
-app.get("/",(req,res)=>{
+app.get("/", (req, res) => {
   res.send("server works fine");
-})
+});
 
 // Global error handler
 app.use(errorHandler);
 
-if (config.nodeENV !== "production") {
-  app.listen(config.port, () => {
-    console.log(`Server is running on port ${config.port}`);
-    connectDB();
-  });
-}
-
-export default app;
+app.listen(config.port, () => {
+  console.log(`Server is running on port ${config.port}`);
+  connectDB();
+});

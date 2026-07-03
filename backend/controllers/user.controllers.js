@@ -44,7 +44,7 @@ export const updateUser = async (req, res, next) => {
     const updatedUser = await User.findOneAndUpdate(
       { _id: userId },
       { $set: allowedUpdates },
-      { new: true, runValidators: true },
+      { returnDocument: 'after', runValidators: true },
     );
 
     res.status(200).json({
@@ -85,7 +85,7 @@ export const deactivateUser = async (req, res, next) => {
     const user = await User.findOneAndUpdate(
       { _id: userId },
       { $set: { active: false } },
-      { new: true },
+      {returnDocument: 'after' },
     );
 
     if (!user)
@@ -107,7 +107,7 @@ export const activateUser = async (req, res, next) => {
     const user = await User.findOneAndUpdate(
       { _id: userId },
       { $set: { active: true } },
-      { new: true },
+      { returnDocument: 'after' },
     );
 
     if (!user)

@@ -293,7 +293,7 @@ export const changeQuizActivity = async (req, res, next) => {
     const quiz = await Quiz.findOneAndUpdate(
       { _id: quizId, createdBy: userId },
       [{ $set: { isActive: { $not: "$isActive" } } }],
-      { new: true, runValidators: true },
+      { returnDocument: 'after', runValidators: true },
     );
 
     // 3. Authorization or record ownership match fallback fallback validation check

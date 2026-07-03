@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 
 import { useNavigate } from "react-router-dom";
 import useAttemptQuizStore from "../../../../../store/useAttemptQuizStore";
 import { exitFullScreen } from "../../components/enterFullScreen";
+import { Watermark } from "../../components/Watermark";
 
 function StudentQuizQuestions() {
   const navigate = useNavigate();
@@ -25,6 +26,8 @@ function StudentQuizQuestions() {
 
   // Local states to handle overlay locks
   const [isFullscreenLocked, setIsFullscreenLocked] = useState(true);
+  const isSubmittingRef = useRef(false);
+  const lastWarningAtRef = useRef(0);
   const [hasExitedOnce, setHasExitedOnce] = useState(false); // 🔥 TRACKS REAL CHEATING
 
   // Helper function to handle full screen lock activation
@@ -87,6 +90,16 @@ useEffect(() => {
   useEffect(() => {
     if (isFinished || !attemptQuiz) return;
 
+    const addSecurityWarning = (message) => {
+      if (isSubmittingRef.current) return;
+
+      const now = Date.now();
+      if (now - lastWarningAtRef.current < 1500) return;
+
+      lastWarningAtRef.current = now;
+      incrementWarning(message, navigate);
+    };
+
     const handleFullscreenChange = () => {
       const isNowFullscreen = !!(
         document.fullscreenElement || 
@@ -95,13 +108,12 @@ useEffect(() => {
         document.msFullscreenElement
       );
 
-      if (!isNowFullscreen && !isFinished) {
+      if (!isNowFullscreen && !isFinished && !isSubmittingRef.current) {
         // 🔥 Set cheating state to TRUE since user actively left fullscreen during exam
         setHasExitedOnce(true); 
         
-        incrementWarning(
+        addSecurityWarning(
           "Security Alert: Exiting full-screen mode is strictly prohibited! Warning added.",
-          navigate
         );
         
         setIsFullscreenLocked(false); 
@@ -110,7 +122,9 @@ useEffect(() => {
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        incrementWarning("Security Alert: Tab switching detected. Warning added.", navigate);
+        setHasExitedOnce(true);
+        setIsFullscreenLocked(false);
+        addSecurityWarning("Security Alert: Tab switching detected. Warning added.");
       }
     };
 
@@ -124,7 +138,7 @@ useEffect(() => {
 
       if (!isCurrentlyFullscreen) return; 
 
-      incrementWarning("Security Alert: Focus lost from examination window. Warning added.", navigate);
+      addSecurityWarning("Security Alert: Focus lost from examination window. Warning added.");
     };
 
     const handleContextMenu = (e) => {
@@ -137,13 +151,13 @@ useEffect(() => {
 
       if ((e.ctrlKey || e.metaKey) && (key === 'c' || key === 'v' || key === 'u' || key === 's')) {
         e.preventDefault();
-        incrementWarning(`Security Alert: Blocked shortcut combination (Ctrl/Cmd + ${key.toUpperCase()}).`, navigate);
+        addSecurityWarning(`Security Alert: Blocked shortcut combination (Ctrl/Cmd + ${key.toUpperCase()}).`);
         return;
       }
 
       if (e.key === "F12" || e.keyCode === 123) {
         e.preventDefault();
-        incrementWarning("Security Alert: Developer Tools inspection (F12) blocked.", navigate);
+        addSecurityWarning("Security Alert: Developer Tools inspection (F12) blocked.");
         return;
       }
     };
@@ -170,12 +184,6 @@ useEffect(() => {
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [isFinished, attemptQuiz, incrementWarning, navigate]);
-
-  useEffect(() => {
-    return () => {
-      exitFullScreen();
-    };
-  }, []);
 
   if (!attemptQuiz || !attemptId) {
     return (
@@ -206,15 +214,22 @@ useEffect(() => {
 
   const handleFinalSubmit = async () => {
     try {
-      exitFullScreen();
-      await submitAttempt(navigate);
+      isSubmittingRef.current = true;
+      const submitted = await submitAttempt(navigate);
+      if (submitted) {
+        exitFullScreen();
+        return;
+      }
+      isSubmittingRef.current = false;
     } catch (err) {
+      isSubmittingRef.current = false;
       console.error(err);
     }
   };
 
   return (
     <div className="relative min-h-screen bg-neutral-900 text-white select-none">
+      <Watermark />
       
       {/* 🔥 THE INTUATIVE SMART DUAL-MODE OVERLAY LOCK */}
       {!isFullscreenLocked && (

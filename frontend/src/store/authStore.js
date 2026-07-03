@@ -96,6 +96,8 @@ const useAuthStore = create((set, get) => ({
         );
       }
       console.log("Password changed successfully:", response.data.message);
+      toast.success("Password changed successfully. Please log in again.");
+      get().logout();
       return true;
     } catch (error) {
       toast.error("An error occurred during registration.");
@@ -109,9 +111,13 @@ const useAuthStore = create((set, get) => ({
   getProfile: async () => {
     set({ loading: true });
     try {
+      const token = get().token;
+      if (!token) {
+        throw new Error("No token found. User is not authenticated.");
+      }
       const res = await axios.get(`${get().url}/auth/me`, {
         headers: {
-          Authorization: `Bearer ${get().token}`,
+          Authorization: `Bearer ${token}`,
           ...cacheBusterHeaders,
         },
       });

@@ -10,7 +10,7 @@ const DataTable = ({
   renderRow,
   isView = false,
   isEdit = false,
-  isDelete = false,
+  isDelete = false, // Function prop to handle status change for items (like quizzes)
   type = "quiz",
   onDelete,
   onUpdate,

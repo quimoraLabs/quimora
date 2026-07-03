@@ -32,6 +32,7 @@ import { useTheme } from "./utils/useTheme";
 import InstructorQuizzesDashboard from "./pages/dashboards/instructor/quiz/Quiz";
 import ViewQuiz from "./pages/dashboards/instructor/quiz/ViewQuiz";
 import CreateQuiz from "./pages/dashboards/instructor/quiz/AddQuiz";
+import InstructorStudentDash from "./pages/dashboards/instructor/student/StudentDash";
 
 const PublicLayout = ({ darkMode, toggleDarkMode, navLinks }) => {
   // const user = useAuthStore((state) => state.user);
@@ -171,6 +172,7 @@ function App() {
         <Route path="/instructor">
           <Route index element={<InstructorDashboard />} />
           <Route path="quizzes" element={<InstructorQuizzesDashboard />} />
+          <Route path="students" element={<InstructorStudentDash />} />
           <Route path="quizzes/:quizId" exact element={<ViewQuiz />} />
 
           <Route path="quizzes/create" element={<CreateQuiz />} />

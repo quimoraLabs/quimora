@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 import QuizForm from "../components/QuizForm"; // Imported form clean wrapper
 
 const InstructorQuizzesDashboard = () => {
-  const { quizzes, fetchQuizzesByInstructor, deleteQuiz, updateQuiz, loading } = useQuizStore();
+  const { quizzes, fetchQuizzesByInstructor, deleteQuiz, updateQuiz, loading,changeQuizStatus } = useQuizStore();
   
   // Minimal parent input payload binding block
   const [quizForm, setQuizForm] = useState({
@@ -23,6 +23,10 @@ const InstructorQuizzesDashboard = () => {
     }
   }, [fetchQuizzesByInstructor]);
 
+  const handleChangeStatus = async (quizId, newStatus) => {
+    await changeQuizStatus(quizId, newStatus);
+  }
+
   const quizHeaders = ["Quiz Title", "Time Limit", "Total Questions", "Status"];
 
   const renderQuizRow = (quiz) => (
@@ -33,9 +37,12 @@ const InstructorQuizzesDashboard = () => {
         {(quiz.questions?.length || quiz.questionsCount || 0)} Qs
       </td>
       <td className="px-6 py-4">
-        <span className={`px-2 py-1 rounded-md text-xs font-semibold ${
+        <span className={`px-2 py-1 rounded-md text-xs font-semibold cursor-pointer ${
           quiz.status === "published" ? "bg-green-500/10 text-green-500" : "bg-yellow-500/10 text-yellow-500"
-        }`}>
+        }`} onClick={() => {
+          const newStatus = quiz.status === "published" ? "draft" : "published";
+          handleChangeStatus(quiz.id, newStatus);
+        }} >
           {quiz.status || "draft"}
         </span>
       </td>
@@ -82,6 +89,9 @@ const InstructorQuizzesDashboard = () => {
           isEdit={true}
           isDelete={true}
           loading={loading}
+          isStatus={true}
+          onChangeStatus={handleChangeStatus}
+
           renderUpdateForm={() => <QuizForm quizData={quizForm} setQuizData={setQuizForm} />}
         />
       )}

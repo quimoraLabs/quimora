@@ -6,6 +6,8 @@ import {
   submitQuizAttempt,
   getQuizAttemptDetails,
   getUserDashboardStats,
+  getGlobalQuizAnalytics,
+  getInstructorStudents
   //   getAttemptHistory
 } from "../controllers/attemptQuiz.controllers.js";
 import { validateObjectId } from "../middleware/validObjectId.middleware.js";
@@ -25,6 +27,9 @@ router.post(
 );
 router.get("/my-results", authMiddleWare, authorizeRoles("user"), getAllQuizAttemptsForUser);
 router.get("/results/:attemptId", authMiddleWare, authorizeRoles("user"), getQuizAttemptResults);
+router.get("/instructor/students", authMiddleWare, authorizeRoles("instructor"), getInstructorStudents);
+router.get("/analysis", authMiddleWare, authorizeRoles("instructor"), getGlobalQuizAnalytics);
+
 
 // Analytics & Dashboard Processing Layer
 router.get(
@@ -33,5 +38,6 @@ router.get(
   authorizeRoles("user"),
   getUserDashboardStats,
 );
+
 
 export default router;

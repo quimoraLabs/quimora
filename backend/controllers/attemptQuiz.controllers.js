@@ -550,3 +550,116 @@ export const getUserDashboardStats = async (req, res, next) => {
     next(error);
   }
 };
+
+// Controller to get a high-level summary of all quiz participants
+export const getGlobalQuizAnalytics = async (req, res, next) => {
+  try {
+    const quizStats = await QuizAttempt.aggregate([
+      // Only consider completed quizzes for accurate analytics
+      { $match: { status: "completed" } },
+      
+      // Grouping by student to see their individual performance
+      {
+        $group: {
+          _id: "$userId",
+          averageScore: { $avg: "$score" },
+          totalAttempts: { $sum: 1 },
+          lastAttemptDate: { $max: "$completedAt" },
+        },
+      },
+      
+      // Connecting to the Users collection to get participant names
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "_id",
+          as: "participant",
+        },
+      },
+      { $unwind: "$participant" },
+      
+      // Selecting only relevant quiz-taker info
+      {
+        $project: {
+          _id: 0,
+          userId: "$_id",
+          name: "$participant.name",
+          averageScore: { $round: ["$averageScore", 2] },
+          totalAttempts: 1,
+          lastAttemptDate: 1,
+        },
+      },
+      
+      // Sorting by performance
+      { $sort: { averageScore: -1 } },
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: quizStats,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get students who have attempted quizzes created by the logged-in instructor
+export const getInstructorStudents = async (req, res, next) => {
+  try {
+    const instructorId = req.auth.userId;
+
+    const students = await QuizAttempt.aggregate([
+      // 1. Join with Quizzes to filter by instructor
+      {
+        $lookup: {
+          from: "quizzes",
+          localField: "quizId",
+          foreignField: "_id",
+          as: "quizDetails"
+        }
+      },
+      { $unwind: "$quizDetails" },
+      
+      // 2. Filter: Only students who took this instructor's quizzes
+      { $match: { "quizDetails.instructorId": instructorId, status: "completed" } },
+      
+      // 3. Group by student to get individual stats
+      {
+        $group: {
+          _id: "$userId",
+          averageScore: { $avg: "$score" },
+          totalAttempts: { $sum: 1 },
+          lastAttemptDate: { $max: "$completedAt" }
+        }
+      },
+      
+      // 4. Get student details
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "_id",
+          as: "studentInfo"
+        }
+      },
+      { $unwind: "$studentInfo" },
+      
+      // 5. Final projection
+      {
+        $project: {
+          _id: 0,
+          userId: "$_id",
+          name: "$studentInfo.name",
+          averageScore: { $round: ["$averageScore", 2] },
+          totalAttempts: 1,
+          lastAttemptDate: 1
+        }
+      }
+    ]);
+
+    res.status(200).json({ success: true, data: students });
+  } catch (error) {
+    next(error);
+  }
+};

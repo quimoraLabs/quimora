@@ -47,7 +47,7 @@ const Navbar = ({ darkMode, toggleDarkMode, navLinks, isLoggedIn }) => {
             ) : (
               <>
                 <Link
-                  className="px-5 py-2.5 text-sm font-semibold text-gray-900 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                  className="px-5 py-2.5 text-sm font-semibold text-gray-900 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors "
                   to="login"
                 >
                   Login
@@ -110,15 +110,15 @@ const Navbar = ({ darkMode, toggleDarkMode, navLinks, isLoggedIn }) => {
             {isLoggedIn ? (
               <ProfileDropdown/>
             ) : (
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-3 items-center">
                 <Link
-                  className="w-full py-3 font-semibold text-gray-900 dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl"
+                  className="bg-bg-surface w-full text-center py-2 rounded-md hover:bg-bg-main"
                   to="login"
                 >
                   Login
                 </Link>
                 <Link
-                  className="w-full py-3 font-semibold text-white bg-indigo-600 rounded-xl"
+                  className="bg-bg-surface w-full text-center py-2 rounded-md hover:bg-bg-main"
                   to="register"
                 >
                   Sign Up

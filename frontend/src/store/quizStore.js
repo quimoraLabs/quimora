@@ -123,19 +123,15 @@ const useQuizStore = create((set, get) => ({
   changeQuizStatus: async (id, status) => {
     set({ loading: true });
     try {
-      const response = await axios.patch(
+      await axios.patch(
         `${get().url}/quizzes/${id}/status`,
         { status },
         {
           headers: get().getAuthHeaders(),
         },
-      );
-      const updatedQuiz = response.data?.data || response.data;
-      set((state) => ({
-        quizzes: state.quizzes.map((quiz) =>
-          quiz._id === id ? updatedQuiz : quiz,
-        ),
-      }));
+      );  
+      await get().fetchQuizzesByInstructor();
+
       toast.success("Quiz status updated successfully!");
     } catch (error) {
       console.error("Error updating quiz status:", error);

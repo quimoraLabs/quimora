@@ -18,9 +18,9 @@ export const createQuestion = async (req, res) => {
     // 1. Force convert explicit string mapping to match data layer
     const userIdStr = rawUserId ? rawUserId.toString() : null;
     
-    console.log("--- SAFELY CHECKING QUERY PARAMETERS ---");
-    console.log("Quiz ID:", quizId);
-    console.log("User ID String:", userIdStr);
+    // console.log("--- SAFELY CHECKING QUERY PARAMETERS ---");
+    // console.log("Quiz ID:", quizId);
+    // console.log("User ID String:", userIdStr);
     
     // 2. Dynamic query using $or condition to handle both potential field names ('userId' or 'createdBy')
     const quiz = await Quiz.findOne({
@@ -158,7 +158,7 @@ export const updateQuestion = async (req, res) => {
     const updatedQuiz = await Quiz.findOneAndUpdate(
       { _id: quizId, "questions._id": questionId },
       { $set: updatePayload }, // 👈 Ab yahan conflict hamesha ke liye dafan!
-      { new: true, runValidators: false }
+      { returnDocument: 'after', runValidators: false }
     );
 
     const updatedQuestion = updatedQuiz.questions.find(
@@ -190,7 +190,8 @@ export const deleteQuestion = async (req, res) => {
     // 2. 🌟 ATOMIC DELETE: Direct Database Level Pull (No .save() / No Hooks)
     await Quiz.findOneAndUpdate(
       { _id: quizId },
-      { $pull: { questions: { _id: questionId } } }
+      { $pull: { questions: { _id: questionId } } },
+      {returnDocument: 'after'}
     );
 
     res.status(200).json({
@@ -228,7 +229,8 @@ export const deleteMultipleQuestions = async (req, res) => {
     // 3. 🌟 ATOMIC BULK DELETE: Pull all matching IDs in one shot ($pullAll)
     await Quiz.findOneAndUpdate(
       { _id: quizId },
-      { $pull: { questions: { _id: { $in: idsToDelete } } } }
+      { $pull: { questions: { _id: { $in: idsToDelete } } } },
+      {returnDocument: 'after'}
     );
 
     res.status(200).json({

@@ -191,11 +191,11 @@ const useAttemptQuizStore = create((set, get) => ({
     const { attemptId, attemptQuiz, answers, isFinished, loading } = get();
     if (!attemptId || !attemptQuiz) {
       toast.error("Attempt ID is required to submit an attempt.");
-      return;
+      return false;
     }
     if (isFinished || loading) {
       toast.error("This quiz attempt has already been submitted.");
-      return;
+      return false;
     }
 
     set({ loading: true });
@@ -229,10 +229,13 @@ const useAttemptQuizStore = create((set, get) => ({
         localStorage.setItem("lastQuizResults", JSON.stringify(response.data.summary));
         // Navigate to results page after submission
         navigate("/student/quiz-results", { replace: true }); // Use replace to prevent going back to quiz interface
+        return true;
       }
+      return false;
     } catch (error) {
       console.error("Error submitting quiz attempt:", error);
       toast.error("Failed to submit quiz attempt.");
+      return false;
     } finally {
       set({ loading: false });
     }
@@ -279,7 +282,7 @@ const useAttemptQuizStore = create((set, get) => ({
       }
     } catch (error) {
       console.error("Error fetching dashboard stats:", error);
-      toast.error("Failed to load dashboard stats.");
+      // toast.error("Failed to load dashboard stats.");
     } finally {
       set({ dashboardLoading: false });
     }

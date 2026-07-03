@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
+import { removeSensitiveFields } from "../utils/removeSensitiveFields.js";
 
 const userSchema = new mongoose.Schema(
   {
@@ -44,30 +45,38 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.pre("save", async function () {
-  if (!this.isModified("password")) return;
-  if (this.isNew) {
-    if (!this.avatar) this.avatar = {};
-    if (!this.avatar.url) {
-      this.avatar.url = `https://api.dicebear.com/9.x/identicon/svg?seed=${this.username}`;
-    }
+  // Hash password only if it has been modified
+  if (this.isModified("password")) {
+    const salt = await bcrypt.genSalt(10);
+      this.password = await bcrypt.hash(this.password, salt);
   }
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
+
+  // Set default avatar if user is new and avatar URL is missing
+  if (this.isNew && !this.avatar?.url) {
+    this.avatar = {
+      url: `https://api.dicebear.com/9.x/identicon/svg?seed=${this.username}`,
+    };
+  }
 });
 
 userSchema.methods.comparePassword = function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
+// Add this in your User model file temporarily
+userSchema.pre('deleteOne', { document: true, query: false }, function() {
+    console.log("ALERT: DELETE OPERATION TRIGGERED ON USER:", this._id);
+});
+
+userSchema.pre('findOneAndUpdate', function() {
+    console.log("Updating document with query:", this.getQuery());
+    console.log("Update operation:", this.getUpdate());
+    // next();
+});
+
 
 userSchema.set("toJSON", {
   virtuals: true,
-  transform: function (doc, ret) {
-    delete ret.password;
-    delete ret._id;
-    delete ret.otp;
-    delete ret.__v;
-    return ret;
-  },
+  transform: removeSensitiveFields(["password", "_id", "otp", "__v"]),
 });
 
 const User = mongoose.model("User", userSchema);

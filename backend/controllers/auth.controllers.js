@@ -3,7 +3,6 @@ import jwt from "jsonwebtoken";
 import config from "../config/config.js";
 import crypto from "crypto";
 import { sendOTPEmail } from "../utils/nodemailer.utils.js";
-import bcrypt from "bcrypt";
 
 export const registerUser = async (req, res, next) => {
   try {
@@ -118,7 +117,7 @@ export const forgetPasswordRequest = async (req, res, next) => {
     user.otp = {
       code: otpCode,
       expiresAt: Date.now() + 10 * 60 * 1000,
-      type: "reset",
+      purpose: "reset",
     };
 
     await sendOTPEmail(email, otpCode);
@@ -136,48 +135,40 @@ export const verifyOTP = async (req, res, next) => {
   try {
     const { otpCode, email, newPassword } = req.body;
     
+    // Validate that new password is provided
     if (!newPassword) {
       return res.status(400).json({ success: false, message: "New password is required" });
     }
 
+    // Find user by email and select the hidden OTP code field
     const user = await User.findOne({ email }).select("+otp.code");
-
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    console.log("Database se aaya User OTP object:", user.otp);
+    // Validate if OTP exists and matches
+    const isMatch = user.otp?.code === otpCode;
+    const isNotExpired = user.otp?.expiresAt > Date.now();
+    const isPasswordResetOtp = user.otp?.purpose === "reset";
 
-    if (!user.otp || !user.otp.code) {
-      return res.status(400).json({ success: false, message: "No OTP request found" });
-    }
-
-    const isMatch = user.otp.code === otpCode;
-    const isNotExpired = user.otp.expiresAt > Date.now();
-    console.log(user.otp.expiresAt);
-
-    if (!isMatch || !isNotExpired) {
+    if (!isMatch || !isNotExpired || !isPasswordResetOtp) {
       return res.status(400).json({ message: "Invalid or expired OTP" });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(newPassword, salt);
+    // Assign the plain password here. The User model pre-save hook hashes it once.
+    user.password = newPassword;
+    user.otp = undefined;
 
-    // 4. ATOMIC UPDATE: Yeh sirf targeted fields ko badlega, baaki data safe rahega
-    await User.findOneAndUpdate(
-      { email },
-      {
-        $set: {
-          password: hashedPassword,
-          "otp.code": "",
-          "otp.expiresAt": 0,
-          "otp.type": "",
-        },
-      },
-    );
+    // Save changes using the Mongoose save method (safer for triggers/hooks)
+    await user.save();
 
-    res.status(200).json({ success: true, message: "Password updated" });
+    res.status(200).json({ 
+        success: true, 
+        message: "Password updated successfully", 
+        mustReauthenticate: true 
+    });
   } catch (error) {
+    // Pass error to the global error handler
     next(error);
   }
 };
