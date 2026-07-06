@@ -52,11 +52,16 @@ const PublicLayout = ({ darkMode, toggleDarkMode, navLinks }) => {
   );
 };
 
-const DashboardLayout = ({ darkMode, toggleDarkMode,role }) => {
+
+const DashboardLayout = ({ darkMode, toggleDarkMode, role }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   return (
     <div className="min-h-screen bg-main text-main selection:bg-brand-start/30 selection:text-text-main">
-      <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} role={role} />
+      <Sidebar
+        isOpen={isSidebarOpen}
+        setIsOpen={setIsSidebarOpen}
+        role={role}
+      />
       <div className="flex flex-col min-h-screen px-2">
         <Header
           darkMode={darkMode}
@@ -92,117 +97,122 @@ function App() {
   }
 
   return (
-<>
-  <Toaster position="top-center" reverseOrder={false} />
+    <>
+      <Toaster position="top-center" reverseOrder={false} />
 
-  <Routes>
-    {/* ================= 1. MASTER ROOT DIRECTION ================= */}
-    <Route
-      path="/"
-      element={
-        isAuthenticated ? (
-          <Navigate
-            to={
-              user?.role === "admin"
-                ? "/admin"
-                : user?.role === "user"
-                  ? "/student"
-                  : "/instructor"
+      <Routes>
+        {/* ================= 1. MASTER ROOT DIRECTION ================= */}
+        <Route
+          path="/"
+          element={
+            isAuthenticated ? (
+              <Navigate
+                to={
+                  user?.role === "admin"
+                    ? "/admin"
+                    : user?.role === "user"
+                      ? "/student"
+                      : "/instructor"
+                }
+                replace
+              />
+            ) : (
+              <Navigate to="/public" replace />
+            )
+          }
+        />
+
+        {/* ================= 2. GUEST ONLY ROUTES ================= */}
+
+        <Route element={<PublicRoutes />}>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/auth">
+            <Route path="forget-password" element={<RequestOTP />} />
+            <Route path="reset-password" element={<VerifyOTP />} />
+          </Route>
+        </Route>
+
+        {/* ================= 3. GUEST ONLY ROUTES (Navbar + Footer) ================= */}
+        <Route
+          element={
+            <PublicLayout
+              darkMode={theme === "dark"}
+              toggleDarkMode={toggleTheme}
+              navLinks={navLinks}
+            />
+          }
+        >
+          <Route element={<PublicRoutes />}>
+            <Route path="/public" element={<LandingPage />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<ContactUs />} />
+          </Route>
+        </Route>
+
+        {/* ================= 4. PROTECTED ROUTES (Dashboard Layout) ================= */}
+        <Route
+          element={
+            <DashboardLayout
+              navLinks={navLinks}
+              darkMode={theme === "dark"}
+              toggleDarkMode={toggleTheme}
+              role={user?.role}
+            />
+          }
+        >
+          {/* 🟢 Common Secure Zone  */}
+          <Route
+            element={
+              <ProtectedRoutes allowedRoles={["user", "instructor", "admin"]} />
             }
-            replace
-          />
-        ) : (
-          <Navigate to="/public" replace />
-        )
-      }
-    />
+          >
+            <Route path="/profile" element={<Profile />} />
+          </Route>
 
-    {/* ================= 2. GUEST ONLY ROUTES (Bina Navbar) ================= */}
-    <Route element={<PublicRoutes />}>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
-      <Route path="/auth">
-        <Route path="forget-password" element={<RequestOTP />} />
-        <Route path="reset-password" element={<VerifyOTP />} />
-      </Route>
-    </Route>
+          {/* 👑 Admin Only Zone */}
+          <Route element={<ProtectedRoutes allowedRoles={["admin"]} />}>
+            <Route path="/admin">
+              <Route index element={<AdminDashboard />} />
+            </Route>
+          </Route>
 
-    {/* ================= 3. GUEST ONLY ROUTES (Navbar + Footer) ================= */}
-    <Route
-      element={
-        <PublicLayout
-          darkMode={theme === "dark"}
-          toggleDarkMode={toggleTheme}
-          navLinks={navLinks}
-        />
-      }
-    >
-      <Route element={<PublicRoutes />}>
-        <Route path="/public" element={<LandingPage />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/contact" element={<ContactUs />} />
-      </Route>
-    </Route>
+          {/* 👨‍🏫 Instructor Only Zone */}
+          <Route element={<ProtectedRoutes allowedRoles={["instructor"]} />}>
+            <Route path="/instructor">
+              <Route index element={<InstructorDashboard />} />
+              <Route path="quizzes" element={<InstructorQuizzesDashboard />} />
+              <Route path="students" element={<InstructorStudentDash />} />
+              <Route path="quizzes/:quizId" exact element={<ViewQuiz />} />
 
-    {/* ================= 4. PROTECTED ROUTES (Dashboard Layout) ================= */}
-    <Route
-      element={
-        <DashboardLayout
-          navLinks={navLinks}
-          darkMode={theme === "dark"}
-          toggleDarkMode={toggleTheme}
-          role={user?.role}
-        />
-      }
-    >
-      {/* 🟢 Common Secure Zone (Sabhi Logged-in Users ke liye) */}
-      <Route element={<ProtectedRoutes allowedRoles={["user", "instructor", "admin"]} />}>
-        <Route path="/profile" element={<Profile />} />
-      </Route>
+              <Route path="quizzes/create" element={<CreateQuiz />} />
+            </Route>
+          </Route>
 
-      {/* 👑 Admin Only Zone */}
-      <Route element={<ProtectedRoutes allowedRoles={["admin"]} />}>
-        <Route path="/admin">
-          <Route index element={<AdminDashboard />} />
+          {/* 🧑‍🎓 Student Only Zone */}
+          <Route element={<ProtectedRoutes allowedRoles={["user"]} />}>
+            <Route path="/student">
+              <Route index element={<StudentDashboard />} />
+              <Route path="quizzes" element={<StudentQuiz />} />
+              <Route path="my-attempts" element={<StudentResult />} />
+            </Route>
+          </Route>
         </Route>
-      </Route>
 
-      {/* 👨‍🏫 Instructor Only Zone */}
-      <Route element={<ProtectedRoutes allowedRoles={["instructor"]} />}>
-        <Route path="/instructor">
-          <Route index element={<InstructorDashboard />} />
-          <Route path="quizzes" element={<InstructorQuizzesDashboard />} />
-          <Route path="students" element={<InstructorStudentDash />} />
-          <Route path="quizzes/:quizId" exact element={<ViewQuiz />} />
-
-          <Route path="quizzes/create" element={<CreateQuiz />} />
+        {/* ================= 5. PROTECTED ROUTES (Full Screen Quiz - No Sidebar) ================= */}
+        <Route element={<ProtectedRoutes allowedRoles={["user"]} />}>
+          <Route path="/student">
+            <Route path="quiz-rules" element={<QuizLanding />} />
+            <Route path="start-quiz" element={<StudentQuizQuestions />} />
+            <Route path="quiz-results" element={<ResultCard />} />
+          </Route>
         </Route>
-      </Route>
 
-      {/* 🧑‍🎓 Student Only Zone */}
-      <Route element={<ProtectedRoutes allowedRoles={["user"]} />}>
-        <Route path="/student">
-          <Route index element={<StudentDashboard />} />
-          <Route path="quizzes" element={<StudentQuiz />} />
-          <Route path="my-attempts" element={<StudentResult />} />
-        </Route>
-      </Route>
-    </Route>
-
-    {/* ================= 5. PROTECTED ROUTES (Full Screen Quiz - No Sidebar) ================= */}
-    <Route element={<ProtectedRoutes allowedRoles={["user"]} />}>
-      <Route path="/student">
-        <Route path="quiz-rules" element={<QuizLanding />} />
-        <Route path="start-quiz" element={<StudentQuizQuestions />} />
-        <Route path="quiz-results" element={<ResultCard />} />
-      </Route>
-    </Route>
-
-    {/* Error Pages */}
-    <Route path="/access-denied" element={<AccessDenied />} />
-    <Route path="*" element={<Navigate to="/" replace />} />
-  </Routes>
-</>
+        {/* Error Pages */}
+        <Route path="/access-denied" element={<AccessDenied />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
   );
 }
 

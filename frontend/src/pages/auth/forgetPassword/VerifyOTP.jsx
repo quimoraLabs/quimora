@@ -1,7 +1,7 @@
 // import React from 'react'
 import { ArrowLeft, ShieldCheck, Lock } from "lucide-react";
 import { motion } from "motion/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { useLocation, useNavigate } from "react-router-dom";
 import useAuthStore from "../../../store/authStore";
@@ -10,6 +10,7 @@ function VerifyOTP() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const otpInputRefs = useRef([]);
   const location = useLocation();
   const email = location.state?.email;
   const { verifyOTPAndChangePassword } = useAuthStore();
@@ -17,18 +18,24 @@ function VerifyOTP() {
   const navigate = useNavigate();
 
   const neumorphicInput =
-    "w-full bg-[#f0f2f5] rounded-2xl py-4 px-12 text-slate-700 outline-hidden transition-all duration-300 shadow-[inset_4px_4px_8px_#d1d9e6,inset_-4px_-4px_8px_#ffffff] focus:shadow-[inset_6px_6px_12px_#d1d9e6,inset_-6px_-6px_12px_#ffffff]";
+    "w-full bg-elevated rounded-xl border border-main py-4 px-12 outline-none text-main placeholder:text-muted focus:border-brand-mid focus:ring-1 focus:ring-brand-mid transition-all duration-200";
   const neumorphicButton =
-    "w-full bg-[#f0f2f5] rounded-2xl py-4 font-semibold text-slate-700 shadow-[6px_6px_12px_#d1d9e6,-6px_-6px_12px_#ffffff] active:shadow-[inset_4px_4px_8px_#d1d9e6,inset_-4px_-4px_8px_#ffffff] transition-all duration-200 flex items-center justify-center gap-2 group hover:text-blue-600";
+    "w-full rounded-xl py-4 font-semibold text-white bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-600 hover:opacity-95 transition flex items-center justify-center gap-2 disabled:opacity-60";
   const neumorphicCard =
-    "bg-[#f0f2f5] p-8 md:p-12 rounded-[40px] shadow-[20px_20px_60px_#d1d9e6,-20px_-20px_60px_#ffffff] w-full max-w-md relative overflow-hidden";
+    "w-full max-w-md rounded-3xl bg-surface border border-main shadow-card p-8 backdrop-blur-xl transition-colors";
 
   const handleChangePassword = async () => {
-    setLoading(true);
     if (password !== confirmPassword) {
       toast.error("Password mismatch");
       return;
     }
+
+    if (!/^\d{6}$/.test(otp.join(""))) {
+      toast.error("Enter the 6-digit OTP code");
+      return;
+    }
+
+    setLoading(true);
     const success = await verifyOTPAndChangePassword({
       otpCode: otp.join(""),
       email: email,
@@ -40,6 +47,43 @@ function VerifyOTP() {
     setLoading(false);
     // console.log("success");
   };
+
+  const handleOtpChange = (value, index) => {
+    const digit = value.replace(/\D/g, "").slice(-1);
+    const newOtp = [...otp];
+    newOtp[index] = digit;
+    setOtp(newOtp);
+
+    if (digit && index < otp.length - 1) {
+      otpInputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpPaste = (event) => {
+    event.preventDefault();
+    const pastedOtp = event.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, otp.length);
+
+    if (!pastedOtp) return;
+
+    const newOtp = [...otp];
+    pastedOtp.split("").forEach((digit, index) => {
+      newOtp[index] = digit;
+    });
+    setOtp(newOtp);
+
+    const focusIndex = Math.min(pastedOtp.length, otp.length) - 1;
+    otpInputRefs.current[focusIndex]?.focus();
+  };
+
+  const handleOtpKeyDown = (event, index) => {
+    if (event.key === "Backspace" && !otp[index] && index > 0) {
+      otpInputRefs.current[index - 1]?.focus();
+    }
+  };
+
   return (
     <div className="flex justify-center my-50">
       <motion.div
@@ -51,13 +95,13 @@ function VerifyOTP() {
       >
         <button
           //   onClick={prevStep}
-          className="absolute left-6 top-6 p-2 rounded-xl text-slate-400 hover:text-slate-600 active:shadow-[inset_2px_2px_5px_#d1d9e6,inset_-2px_-2px_5px_#ffffff] transition-all"
+          className="absolute left-6 top-6 p-2 rounded-xl text-muted hover:text-main active:shadow-[inset_2px_2px_5px_#d1d9e6,inset_-2px_-2px_5px_#ffffff] transition-all"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
 
         <div className="mb-8 text-center">
-          <div className="w-16 h-16 bg-[#f0f2f5] rounded-2xl shadow-[6px_6px_12px_#d1d9e6,-6px_-6px_12px_#ffffff] flex items-center justify-center mx-auto mb-6">
+          <div className="w-16 h-16 bg-surface rounded-2xl shadow-[6px_6px_12px_#d1d9e6,-6px_-6px_12px_#ffffff] flex items-center justify-center mx-auto mb-6">
             <ShieldCheck className="text-blue-500 w-8 h-8" />
           </div>
           <h1 className="text-2xl font-bold text-slate-800 mb-2">
@@ -77,18 +121,19 @@ function VerifyOTP() {
               {otp.map((digit, i) => (
                 <input
                   key={i}
-                  type="text"
-                  maxLength={1}
-                  className="w-full aspect-square text-center text-xl font-bold bg-[#f0f2f5] rounded-xl text-slate-700 outline-hidden shadow-[inset_4px_4px_8px_#d1d9e6,inset_-4px_-4px_8px_#ffffff] focus:shadow-[inset_6px_6px_12px_#d1d9e6,inset_-6px_-6px_12px_#ffffff] transition-all"
-                  value={digit}
-                  onChange={(e) => {
-                    const newOtp = [...otp];
-                    newOtp[i] = e.target.value;
-                    setOtp(newOtp);
-                    if (e.target.value && i < 6) {
-                      e.currentTarget.nextSibling?.focus();
-                    }
+                  ref={(element) => {
+                    otpInputRefs.current[i] = element;
                   }}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  autoComplete={i === 0 ? "one-time-code" : "off"}
+                  maxLength={1}
+                  className="w-full aspect-square text-center text-xl font-bold bg-surface rounded-xl text-slate-700 outline-hidden shadow-[inset_4px_4px_8px_#d1d9e6,inset_-4px_-4px_8px_#ffffff] focus:shadow-[inset_6px_6px_12px_#d1d9e6,inset_-6px_-6px_12px_#ffffff] transition-all"
+                  value={digit}
+                  onChange={(e) => handleOtpChange(e.target.value, i)}
+                  onKeyDown={(e) => handleOtpKeyDown(e, i)}
+                  onPaste={handleOtpPaste}
                 />
               ))}
             </div>

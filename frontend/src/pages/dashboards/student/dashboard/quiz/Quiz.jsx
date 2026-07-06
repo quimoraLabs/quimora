@@ -48,6 +48,7 @@ function StudentQuiz() {
             <QuizCard
               key={quiz.id}
               title={quiz.title}
+              
               description={quiz.description}
               timeLimit={quiz.timeLimit}
               totalQuestions={quiz.questionsCount}

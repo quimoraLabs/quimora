@@ -100,7 +100,7 @@ const useAuthStore = create((set, get) => ({
       get().logout();
       return true;
     } catch (error) {
-      toast.error("An error occurred during registration.");
+      toast.error(error?.response?.data?.message || "An error occurred during password reset.");
       console.error("Password changed failed:", error);
       return false;
     } finally {

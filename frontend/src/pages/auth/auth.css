@@ -1,0 +1,174 @@
+/* ===========================================================
+   AUTH LAYOUT
+=========================================================== */
+
+  .auth-page {
+    @apply min-h-screen flex items-center justify-center px-4 py-10 bg-main;
+  }
+
+  .auth-card {
+    @apply relative w-full max-w-md rounded-3xl p-8 border border-main bg-surface shadow-card overflow-hidden;
+  }
+
+  /* ===========================================================
+   TYPOGRAPHY
+=========================================================== */
+
+  .auth-title {
+    @apply text-3xl font-bold text-main;
+  }
+
+  .auth-subtitle {
+    @apply mt-2 text-sm text-muted;
+  }
+
+  .auth-label {
+    @apply text-xs font-semibold uppercase tracking-wider text-muted;
+  }
+
+  /* ===========================================================
+   ICON
+=========================================================== */
+
+  .auth-icon-box {
+    @apply mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl;
+    background: linear-gradient(
+      135deg,
+      var(--color-brand-start),
+      var(--color-brand-mid),
+      var(--color-brand-end)
+    );
+  }
+
+  .auth-icon {
+    @apply h-8 w-8 text-white;
+  }
+
+  /* ===========================================================
+   INPUT
+=========================================================== */
+
+  .auth-input-wrapper {
+    @apply relative;
+  }
+
+  .auth-input-icon {
+    @apply absolute left-4 top-1/2 -translate-y-1/2 text-muted;
+  }
+
+  .auth-input {
+    @apply w-full rounded-xl border border-main bg-elevated py-4 pl-12 pr-4
+  text-main placeholder:text-muted outline-none transition-all;
+  }
+
+  .auth-input:focus {
+    border-color: var(--color-brand-mid);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+  }
+
+  /* ===========================================================
+   OTP
+=========================================================== */
+
+  .auth-otp {
+    @apply h-14 w-full rounded-xl border border-main bg-elevated
+  text-center text-xl font-bold text-main outline-none transition-all;
+  }
+
+  .auth-otp:focus {
+    border-color: var(--color-brand-mid);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+  }
+
+  /* ===========================================================
+   BUTTONS
+=========================================================== */
+
+  .auth-btn-primary {
+    @apply w-full rounded-xl py-4 font-semibold text-white
+  flex items-center justify-center gap-2 transition-all;
+    background: linear-gradient(
+      90deg,
+      var(--color-brand-start),
+      var(--color-brand-mid),
+      var(--color-brand-end)
+    );
+  }
+
+  .auth-btn-primary:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.05);
+  }
+
+  .auth-btn-primary:active {
+    transform: scale(0.98);
+  }
+
+  .auth-btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .auth-btn-secondary {
+    @apply rounded-xl border border-main bg-elevated text-main transition;
+  }
+
+  .auth-btn-secondary:hover {
+    background: var(--color-bg-surface);
+  }
+
+  /* ===========================================================
+   LINKS
+=========================================================== */
+
+  .auth-link {
+    @apply font-medium transition;
+    color: var(--color-brand-mid);
+  }
+
+  .auth-link:hover {
+    text-decoration: underline;
+  }
+
+  /* ===========================================================
+   DIVIDER
+=========================================================== */
+
+  .auth-divider {
+    @apply flex items-center gap-4 text-sm text-muted;
+  }
+
+  .auth-divider::before,
+  .auth-divider::after {
+    content: "";
+    @apply flex-1 border-t border-main;
+  }
+
+  /* ===========================================================
+   FOOTER
+=========================================================== */
+
+  .auth-footer {
+    @apply mt-8 text-center text-sm text-muted;
+  }
+
+  /* ===========================================================
+   ANIMATION
+=========================================================== */
+
+  .auth-card {
+    animation: authFade 0.35s ease;
+  }
+
+  @keyframes authFade {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0px);
+    }
+  }
+

@@ -134,6 +134,10 @@ export const forgetPasswordRequest = async (req, res, next) => {
 export const verifyOTP = async (req, res, next) => {
   try {
     const { otpCode, email, newPassword } = req.body;
+
+    if (!/^\d{6}$/.test(otpCode || "")) {
+      return res.status(400).json({ success: false, message: "OTP must be a 6-digit code" });
+    }
     
     // Validate that new password is provided
     if (!newPassword) {

@@ -12,11 +12,11 @@ function RequestOTP() {
   const { requestSendOTP } = useAuthStore();
 
   const neumorphicInput =
-    "w-full bg-[#f0f2f5] rounded-2xl py-4 px-12 text-slate-700 outline-hidden transition-all duration-300 shadow-[inset_4px_4px_8px_#d1d9e6,inset_-4px_-4px_8px_#ffffff] focus:shadow-[inset_6px_6px_12px_#d1d9e6,inset_-6px_-6px_12px_#ffffff]";
+    "w-full bg-elevated rounded-xl border border-main py-4 px-12 outline-none text-main placeholder:text-muted focus:border-brand-mid focus:ring-1 focus:ring-brand-mid transition-all duration-200";
   const neumorphicButton =
-    "w-full bg-[#f0f2f5] rounded-2xl py-4 font-semibold text-slate-700 shadow-[6px_6px_12px_#d1d9e6,-6px_-6px_12px_#ffffff] active:shadow-[inset_4px_4px_8px_#d1d9e6,inset_-4px_-4px_8px_#ffffff] transition-all duration-200 flex items-center justify-center gap-2 group hover:text-blue-600";
+    "w-full rounded-xl py-4 font-semibold text-white bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-600 hover:opacity-95 transition flex items-center justify-center gap-2 disabled:opacity-60";
   const neumorphicCard =
-    "bg-[#f0f2f5] p-8 md:p-12 rounded-[40px] shadow-[20px_20px_60px_#d1d9e6,-20px_-20px_60px_#ffffff] w-full max-w-md relative overflow-hidden";
+    "w-full max-w-md rounded-3xl bg-surface border border-main shadow-card p-8 backdrop-blur-xl transition-colors";
 
   const handleNextStep = async () => {
     setLoading(true);
@@ -29,7 +29,7 @@ function RequestOTP() {
   };
 
   return (
-    <div className="flex justify-center my-50">
+    <div className="min-h-screen flex items-center justify-center bg-main px-4">
       <motion.div
         key="forgot"
         initial={{ opacity: 0, x: 20 }}
@@ -38,20 +38,19 @@ function RequestOTP() {
         className={neumorphicCard}
       >
         <div className="mb-10 text-center">
-          <div className="w-16 h-16 bg-[#f0f2f5] rounded-2xl shadow-[6px_6px_12px_#d1d9e6,-6px_-6px_12px_#ffffff] flex items-center justify-center mx-auto mb-6">
-            <KeyRound className="text-blue-500 w-8 h-8" />
+          <div className="w-16 h-16 bg-main rounded-2xl  flex items-center justify-center mx-auto mb-6 shadow-lg shadow-brand-primary/20">
+            <KeyRound className="text-main w-8 h-8" />
           </div>
-          <h1 className="text-3xl font-bold text-slate-800 mb-2">
-            Forgot Password?
-          </h1>
-          <p className="text-slate-500">
-            No worries, we'll send you reset instructions.
+          <h1 className="text-3xl font-bold text-main">Forgot Password?</h1>
+
+          <p className="text-muted mt-2">
+            We'll send a verification code to your email.
           </p>
         </div>
 
         <div className="space-y-6">
           <div className="relative">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-muted w-5 h-5" />
             <input
               type="email"
               placeholder="Enter your email"
@@ -61,17 +60,22 @@ function RequestOTP() {
             />
           </div>
 
-          <button onClick={handleNextStep} className={neumorphicButton}
-          disabled={loading}
+          <button
+            onClick={handleNextStep}
+            className={neumorphicButton}
+            disabled={loading}
           >
-            {loading ? "requesting..." : "Send Instructions"}
+            {loading ? "Sending..." : "Send Instructions"}
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </button>
         </div>
 
-        <p className="mt-8 text-center text-sm text-slate-400">
-          Wait, I remember!{" "}
-          <Link to={"/login"} className="text-blue-500 font-medium hover:underline">
+        <p className="text-center mt-8 text-muted">
+          Remember your password?
+          <Link
+            to="/login"
+            className="text-accent font-semibold hover:underline ml-1"
+          >
             Sign In
           </Link>
         </p>

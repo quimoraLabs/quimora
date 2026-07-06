@@ -44,134 +44,145 @@ const RegisterPage = () => {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 1.05 }}
-      transition={{ duration: 0.5 }}
-      className="w-full max-w-120 relative z-10 glass rounded-[2.5rem] p-8 md:p-12 shadow-2xl overflow-hidden mx-auto my-20"
-    >
-      <div className="flex flex-col items-center mb-8 relative">
-        <motion.img
-          src={quimoraLogo}
-          alt="Quimora Logo"
-          className="h-14 md:h-16 object-contain mb-6 filter drop-shadow-[0_0_15px_rgba(34,211,238,0.3)]"
-          initial={{ y: -10, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2 }}
-        />
+    // Pura page screen fitting aur variable backgrounds ke sath
+    <div className="w-full min-h-screen flex items-center justify-center bg-main px-4 py-12 transition-colors duration-300">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md bg-surface border border-main shadow-card rounded-[2rem] p-8 md:p-10 relative overflow-hidden transition-all duration-300"
+      >
+        {/* Futuristic background glow particles inside the card */}
+        <div className="absolute top-0 right-1/4 w-32 h-32 bg-brand-start/10 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute bottom-0 left-1/4 w-32 h-32 bg-brand-end/10 rounded-full blur-2xl pointer-events-none" />
 
-        <div className="text-center">
-          <h1 className="text-2xl md:text-3xl font-display font-bold tracking-tight uppercase mb-2">
-            BEGIN YOUR <br />
-            <span className="text-gradient">JOURNEY HERE.</span>
-          </h1>
+        <div className="flex flex-col items-center mb-6 relative z-10">
+          <motion.img
+            src={quimoraLogo}
+            alt="Quimora Logo"
+            className="h-14 object-contain mb-4 filter drop-shadow-[0_0_12px_rgba(34,211,238,0.25)]"
+            initial={{ y: -10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+          />
+
+          <div className="text-center">
+            <h1 className="text-xl md:text-2xl font-display font-black tracking-tight uppercase text-main">
+              BEGIN YOUR <br />
+              <span className="bg-linear-to-r from-brand-start via-brand-mid to-brand-end bg-clip-text text-transparent font-extrabold">
+                JOURNEY HERE.
+              </span>
+            </h1>
+          </div>
         </div>
-      </div>
-      <form className="space-y-4" onSubmit={handleRegister}>
-        <InputGroup
-          label="CHOOSE YOUR MONIKER..."
-          placeholder="QUEST_FINDER"
-          icon={<User className="w-4 h-4" />}
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-        />
-        <InputGroup
-          label="IDENTIFY YOURSELF..."
-          placeholder="MASTER@QUIMORA.COM"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          icon={<Mail className="w-4 h-4" />}
-        />
-        <InputGroup
-          label="ESTABLISH CODENAME"
-          type="text"
-          placeholder="QUEST_MASTER_01"
-          value={username}
-          icon={<ShieldUser className="w-4 h-4" />}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-        />
-        <InputGroup
-          label="UNLOCK THE KNOWLEDGE VAULT..."
-          type={showPassword ? "text" : "password"}
-          placeholder="••••••••"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          icon={<KeyRound className="w-4 h-4" />}
-          suffix={
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="hover:text-cyan-400 transition-colors p-1"
-            >
-              {showPassword ? (
-                <EyeOff className="w-4 h-4" />
-              ) : (
-                <Eye className="w-4 h-4" />
-              )}
-            </button>
-          }
-        />
-        <InputGroup
-          label="VERIFY YOUR ACCESS KEY..."
-          type={showPassword ? "text" : "password"}
-          placeholder="••••••••"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          required
-          icon={<KeyRound className="w-4 h-4" />}
-          suffix={
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="hover:text-cyan-400 transition-colors p-1"
-            >
-              {showPassword ? (
-                <EyeOff className="w-4 h-4" />
-              ) : (
-                <Eye className="w-4 h-4" />
-              )}
-            </button>
-          }
-        />
 
-        <p className="text-[10px] text-slate-500 py-2 text-center uppercase tracking-wider">
-          By enlisting, you agree to our{" "}
-          <span className="text-cyan-400 cursor-pointer">Laws of Conduct</span>{" "}
-          and{" "}
-          <span className="text-cyan-400 cursor-pointer">Privacy Mantras</span>.
-        </p>
+        <form className="space-y-4 relative z-10" onSubmit={handleRegister}>
+          <InputGroup
+            label="CHOOSE YOUR MONIKER..."
+            placeholder="QUEST_FINDER"
+            icon={<User className="w-4 h-4 text-muted" />}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
+          <InputGroup
+            label="IDENTIFY YOURSELF..."
+            placeholder="MASTER@QUIMORA.COM"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            icon={<Mail className="w-4 h-4 text-muted" />}
+          />
+          <InputGroup
+            label="ESTABLISH CODENAME"
+            type="text"
+            placeholder="QUEST_MASTER_01"
+            value={username}
+            icon={<ShieldUser className="w-4 h-4 text-muted" />}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+          />
+          <InputGroup
+            label="UNLOCK THE KNOWLEDGE VAULT..."
+            type={showPassword ? "text" : "password"}
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            icon={<KeyRound className="w-4 h-4 text-muted" />}
+            suffix={
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="text-muted hover:text-brand-start transition-colors p-1"
+              >
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </button>
+            }
+          />
+          <InputGroup
+            label="VERIFY YOUR ACCESS KEY..."
+            type={showPassword ? "text" : "password"}
+            placeholder="••••••••"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+            icon={<KeyRound className="w-4 h-4 text-muted" />}
+            suffix={
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="text-muted hover:text-brand-start transition-colors p-1"
+              >
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </button>
+            }
+          />
 
-        <motion.button
-          whileHover={{ scale: 1.02, translateY: -2 }}
-          whileTap={{ scale: 0.98 }}
-          className="w-full h-14 bg-brand-gradient rounded-xl flex items-center justify-center gap-3 dark:text-white font-bold uppercase tracking-widest text-sm shadow-xl shadow-cyan-500/20 dark:shadow-cyan-500/40 dark:hover:shadow-cyan-500/60 hover:shadow-cyan-500/40 transition-all duration-300"
-          disabled={isLoading}
-        >
-          {isLoading ? "Validating..." : "Create My Vault"}
-          <ArrowRight className="w-5 h-5" />
-        </motion.button>
-      </form>
-      <div className="pt-6 flex flex-col items-center gap-4">
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-[0.2em]">
-            ALREADY A MEMBER?
-          </span>
-          <Link
-            to="/login"
-            className="flex items-center gap-1.5 text-xs font-bold text-gradient hover:opacity-80 transition-all uppercase tracking-tight"
+          <p className="text-[10px] text-muted py-1 text-center uppercase tracking-wider leading-relaxed">
+            By enlisting, you agree to our{" "}
+            <span className="text-brand-mid font-bold cursor-pointer hover:text-brand-end transition-colors">Laws of Conduct</span>{" "}
+            and{" "}
+            <span className="text-brand-mid font-bold cursor-pointer hover:text-brand-end transition-colors">Privacy Mantras</span>.
+          </p>
+
+          {/* Button setup: solid color styles tailored for light and dark with custom Tailwind v4 dynamic gradients */}
+          <motion.button
+            whileHover={{ scale: 1.01, y: -1 }}
+            whileTap={{ scale: 0.99 }}
+            className="w-full h-12 bg-linear-to-r from-brand-start to-brand-mid hover:from-brand-mid hover:to-brand-end text-white font-bold uppercase tracking-widest text-xs shadow-lg shadow-brand-mid/20 hover:shadow-brand-end/30 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 rounded-xl"
+            disabled={isLoading}
           >
-            <ChevronLeft className="w-3.5 h-3.5 text-cyan-400" /> RETREAT TO
-            ACCESS
-          </Link>
+            {isLoading ? "Validating..." : "Create My Vault"}
+            <ArrowRight className="w-4 h-4" />
+          </motion.button>
+        </form>
+
+        <div className="pt-5 mt-2 border-t border-soft flex flex-col items-center relative z-10">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-muted font-bold uppercase tracking-[0.15em]">
+              ALREADY A MEMBER?
+            </span>
+            <Link
+              to="/login"
+              className="flex items-center gap-1 text-xs font-extrabold text-brand-mid hover:text-brand-end transition-colors uppercase tracking-wider"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" /> RETREAT TO ACCESS
+            </Link>
+          </div>
         </div>
-      </div>
-    </motion.div>
+      </motion.div>
+    </div>
   );
 };
 

@@ -21,6 +21,19 @@ function StudentDashboard() {
     fetchDashboardStats();
   }, [fetchDashboardStats]);
 
+  // Re-fetch stats when the window/tab regains focus or becomes visible again
+  useEffect(() => {
+    const refresh = () => fetchDashboardStats();
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) refresh();
+    });
+    return () => {
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [fetchDashboardStats]);
+
   const stats = [
     {
       label: "Total Tests Taken",

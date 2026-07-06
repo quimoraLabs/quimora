@@ -3,6 +3,8 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { cacheBusterHeaders } from "../utils/httpHeaders";
 
+const getAuthToken = () => localStorage.getItem("token");
+
 const useAttemptQuizStore = create((set, get) => ({
   attemptQuiz: null,
   attemptId: null,
@@ -17,7 +19,6 @@ const useAttemptQuizStore = create((set, get) => ({
   dashboardStats: null,
   dashboardLoading: false,
   lastAttemptId: null,
-  token: localStorage.getItem("token"),
   url: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
 
   loadPersistedQuizResult: async () => {
@@ -36,7 +37,8 @@ const useAttemptQuizStore = create((set, get) => ({
       return;
     }
 
-    const { token, url } = get();
+    const { url } = get();
+    const token = getAuthToken();
     if (!token) {
       return;
     }
@@ -96,7 +98,7 @@ const useAttemptQuizStore = create((set, get) => ({
         { quizId },
         {
           headers: {
-            Authorization: `Bearer ${get().token}`,
+            Authorization: `Bearer ${getAuthToken()}`,
             ...cacheBusterHeaders,
           },
         },
@@ -212,7 +214,7 @@ const useAttemptQuizStore = create((set, get) => ({
         { attemptId, answers: formattedAnswers },
         {
           headers: {
-            Authorization: `Bearer ${get().token}`,
+            Authorization: `Bearer ${getAuthToken()}`,
             ...cacheBusterHeaders,
           },
         },
@@ -243,7 +245,7 @@ const useAttemptQuizStore = create((set, get) => ({
 
   studentAllResults: async () => {
     set({ loading: true });
-    const { token } = get();
+    const token = getAuthToken();
     try {
       const response = await axios.get(`${get().url}/attempts/my-results`, {
         headers: {
@@ -267,7 +269,13 @@ const useAttemptQuizStore = create((set, get) => ({
 
   fetchDashboardStats: async () => {
     set({ dashboardLoading: true });
-    const { token, url } = get();
+    const { url } = get();
+    const token = getAuthToken();
+
+    if (!token) {
+      set({ dashboardStats: null, dashboardLoading: false });
+      return;
+    }
 
     try {
       const response = await axios.get(`${url}/attempts/dashboard/stats`, {
@@ -290,9 +298,11 @@ const useAttemptQuizStore = create((set, get) => ({
 
   studentResults: async (navigate) => {
     set({ loading: true });
-    const { attemptId, token } = get();
+    const { attemptId } = get();
+    const token = getAuthToken();
     if (!attemptId) {
       toast.error("Attempt ID is required to fetch results.");
+      set({ loading: false });
       return;
     }
     try {
