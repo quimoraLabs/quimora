@@ -1,5 +1,5 @@
 export default function InputGroup({
-  label,
+  label="",
   placeholder,
   type = "text",
   value,
@@ -10,9 +10,13 @@ export default function InputGroup({
 }) {
   return (
     <div className="space-y-2 group">
-      <label className="auth-label">
-        {label}
-      </label>
+      {
+        label && (
+          <label className="auth-label">
+            {label}
+          </label>
+        )
+      }
       <div className="relative">
         <div className="absolute top-1/2 -translate-y-1/2 left-4 text-muted flex items-center gap-2">
           {icon}

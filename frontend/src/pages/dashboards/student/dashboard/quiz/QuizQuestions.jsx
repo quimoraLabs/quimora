@@ -265,15 +265,15 @@ function StudentQuizQuestions() {
       {!isFullscreenLocked && (
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/95 p-6 text-center backdrop-blur-md">
           {hasExitedOnce ? (
-            /* CASE 1: REAL VIOLATION SCREEN (Agar test ke beech me Esc kiya) */
+            /* CASE 1: REAL VIOLATION SCREEN (When the user presses Esc during the test) */
             <div className="max-w-md bg-elevated p-8 border border-accent/20 rounded-2xl shadow-2xl space-y-6 animate-in fade-in zoom-in duration-300">
               <h2 className="text-2xl font-black text-accent uppercase tracking-wide">
                 Security Protocol Violation
               </h2>
               <p className="text-muted text-sm leading-relaxed">
-                Aapne full-screen mode exit kiya hai. Exam rules ke mutabik
-                choti screen par test dena allowed nahi hai. Warning count badha
-                di gayi hai.
+                You exited full-screen mode. According to exam rules, taking the
+                test on a smaller screen is not allowed. Your warning count has
+                been increased.
               </p>
               <button
                 onClick={triggerFullscreenLock}
@@ -283,14 +283,14 @@ function StudentQuizQuestions() {
               </button>
             </div>
           ) : (
-            /* CASE 2: CLEAN START / ENTRY HALL SCREEN (Pehli baar test shuru hone par) */
+            /* CASE 2: CLEAN START / ENTRY HALL SCREEN (Before the test begins for the first time) */
             <div className="max-w-md bg-elevated p-8 border border-soft rounded-2xl shadow-2xl space-y-6 animate-in fade-in zoom-in duration-300">
               <h2 className="text-2xl font-black text-accent uppercase tracking-wide">
                 Examination Hall Entry
               </h2>
               <p className="text-muted text-sm leading-relaxed">
-                Aapka quiz environment taiyar hai. Secure proctoring environment
-                setup karne aur test shuru karne ke liye niche click karein.
+                Your quiz environment is ready. Click below to set up the secure
+                proctoring environment and begin the test.
               </p>
               <button
                 onClick={triggerFullscreenLock}

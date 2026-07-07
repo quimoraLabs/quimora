@@ -1,10 +1,10 @@
 // enterFullScreen.js
 
-// Screen full karne ke liye controller helper function
+// Helper function to enter fullscreen mode.
 export const enterFullScreen = () => {
   const element = document.documentElement;
 
-  // Pehle check karein ki kahin pehle se full screen to nahi hai
+  // First check whether fullscreen is already active.
   if (
     !document.fullscreenElement &&
     !document.webkitFullscreenElement &&
@@ -25,9 +25,9 @@ export const enterFullScreen = () => {
   }
 };
 
-// Full screen exit karne ke liye function
+// Function to exit fullscreen mode.
 export const exitFullScreen = () => {
-  // CRITICAL CHECK: Sirf tabhi exit karein jab sach me koi element full screen par ho!
+  // CRITICAL CHECK: Only exit fullscreen when an element is actually in fullscreen mode.
   const isFullScreen =
     document.fullscreenElement ||
     document.webkitFullscreenElement ||

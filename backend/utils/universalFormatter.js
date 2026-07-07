@@ -4,7 +4,7 @@
  * @param {Boolean} isArrayMode - True if processing a list/loop, false for a single object
  */
 const handleQuizQuestions = (doc, isArrayMode) => {
-  // Safe check agar doc hi galti se missing ho
+  // Safe check in case the document is accidentally missing.
   if (!doc || !doc.questions || !Array.isArray(doc.questions)) return;
 
   // Case A: For array lists, reduce payload size by sending only the count
@@ -43,12 +43,12 @@ const handleQuizQuestions = (doc, isArrayMode) => {
  * @returns {Object|Array} Properly formatted clean response
  */
 export const formatUniversalResponse = (inputData, commonKey = null, fieldsToKeep = []) => {
-  // 🚨 Agar poora input hi khali hai, toh seedha safe return karo bina error ke
+  // 🚨 If the entire input is empty, return safely without throwing an error.
   if (inputData === null || inputData === undefined) return null;
 
   // Core formatting block executed for every individual document
   const cleanSingle = (item, isArrayMode = false) => {
-    // 🚨 Agar array ke andar ka koi item null milta hai, toh error throw karo taaki debug ho sake
+    // 🚨 Throw an error if an array item is null or undefined to make debugging easier.
     if (!item) {
       throw new Error("Formatting Error: Array contains a null or undefined document!");
     }
@@ -77,7 +77,7 @@ export const formatUniversalResponse = (inputData, commonKey = null, fieldsToKee
   if (Array.isArray(inputData)) {
     if (inputData.length === 0) return { metadata: null, data: [] };
 
-    // 🚨 Safety Check: Agar pehla hi item null hai, toh process nahi ho sakta
+    // 🚨 Safety check: If the first item is null, the process cannot continue.
     if (!inputData[0]) {
       throw new Error("Formatting Error: First element of the array is null or undefined!");
     }
@@ -94,7 +94,7 @@ export const formatUniversalResponse = (inputData, commonKey = null, fieldsToKee
 
     // Process all list records safely
     const cleanedList = inputData.map((item) => {
-      const doc = cleanSingle(item, true); // Agar item null hoga, toh cleanSingle wahan se error throw kar dega
+      const doc = cleanSingle(item, true); // If the item is null, cleanSingle will throw an error.
       if (commonKey && doc) delete doc[commonKey];
       return doc;
     });

@@ -147,8 +147,8 @@ export const updateQuestion = async (req, res) => {
       return res.status(409).json({ message: "Duplicate question" });
     }
 
-    // 4. 🌟 THE REAL ANTIDOTE: Map explicitly to avoid paths collision
-    // Ek-ek field ko path de do, taaki Mongoose ka automatic 'updatedAt' chain se chal sake
+    // 4. 🌟 THE REAL ANTIDOTE: Map explicitly to avoid path collisions
+    // Map each field explicitly so Mongoose can apply the update path correctly.
     const updatePayload = {};
     Object.keys(cleanData).forEach((key) => {
       updatePayload[`questions.$.${key}`] = cleanData[key];
@@ -157,7 +157,7 @@ export const updateQuestion = async (req, res) => {
     // Atomic database update using exact field mapping
     const updatedQuiz = await Quiz.findOneAndUpdate(
       { _id: quizId, "questions._id": questionId },
-      { $set: updatePayload }, // 👈 Ab yahan conflict hamesha ke liye dafan!
+      { $set: updatePayload }, // 👈 This prevents conflicts in this update path.
       { returnDocument: 'after', runValidators: false }
     );
 

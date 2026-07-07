@@ -45,13 +45,13 @@ const RegisterPage = () => {
 
   return (
     // Pura page screen fitting aur variable backgrounds ke sath
-    <div className="w-full min-h-screen flex items-center justify-center bg-main px-4 py-12 transition-colors duration-300">
+    <div className="auth-page">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-md bg-surface border border-main shadow-card rounded-[2rem] p-8 md:p-10 relative overflow-hidden transition-all duration-300"
+        className="auth-card"
       >
         {/* Futuristic background glow particles inside the card */}
         <div className="absolute top-0 right-1/4 w-32 h-32 bg-brand-start/10 rounded-full blur-2xl pointer-events-none" />
@@ -68,7 +68,7 @@ const RegisterPage = () => {
           />
 
           <div className="text-center">
-            <h1 className="text-xl md:text-2xl font-display font-black tracking-tight uppercase text-main">
+            <h1 className="auth-title">
               BEGIN YOUR <br />
               <span className="bg-linear-to-r from-brand-start via-brand-mid to-brand-end bg-clip-text text-transparent font-extrabold">
                 JOURNEY HERE.
@@ -81,7 +81,7 @@ const RegisterPage = () => {
           <InputGroup
             label="CHOOSE YOUR MONIKER..."
             placeholder="QUEST_FINDER"
-            icon={<User className="w-4 h-4 text-muted" />}
+            icon={<User className="auth-icon" />}
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
@@ -93,14 +93,14 @@ const RegisterPage = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            icon={<Mail className="w-4 h-4 text-muted" />}
+            icon={<Mail className="auth-icon" />}
           />
           <InputGroup
             label="ESTABLISH CODENAME"
             type="text"
             placeholder="QUEST_MASTER_01"
             value={username}
-            icon={<ShieldUser className="w-4 h-4 text-muted" />}
+            icon={<ShieldUser className="auth-icon" />}
             onChange={(e) => setUsername(e.target.value)}
             required
           />
@@ -111,7 +111,7 @@ const RegisterPage = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            icon={<KeyRound className="w-4 h-4 text-muted" />}
+            icon={<KeyRound className="auth-icon" />}
             suffix={
               <button
                 type="button"
@@ -133,7 +133,7 @@ const RegisterPage = () => {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
-            icon={<KeyRound className="w-4 h-4 text-muted" />}
+            icon={<KeyRound className="auth-icon" />}
             suffix={
               <button
                 type="button"
@@ -160,7 +160,7 @@ const RegisterPage = () => {
           <motion.button
             whileHover={{ scale: 1.01, y: -1 }}
             whileTap={{ scale: 0.99 }}
-            className="w-full h-12 bg-linear-to-r from-brand-start to-brand-mid hover:from-brand-mid hover:to-brand-end text-white font-bold uppercase tracking-widest text-xs shadow-lg shadow-brand-mid/20 hover:shadow-brand-end/30 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 rounded-xl"
+            className="auth-btn-primary"
             disabled={isLoading}
           >
             {isLoading ? "Validating..." : "Create My Vault"}
@@ -175,7 +175,7 @@ const RegisterPage = () => {
             </span>
             <Link
               to="/login"
-              className="flex items-center gap-1 text-xs font-extrabold text-brand-mid hover:text-brand-end transition-colors uppercase tracking-wider"
+              className="auth-link flex items-center gap-1 uppercase tracking-wider"
             >
               <ChevronLeft className="w-3.5 h-3.5" /> RETREAT TO ACCESS
             </Link>

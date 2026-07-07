@@ -79,13 +79,13 @@ quizSchema.set("toJSON", {
     delete ret.__v;
     delete ret.isAvailable;
     delete ret.totalMarks;
-    // ⚡ Safe check: Agar questions array exist karta hai, tabhi loop chalayein
+    // ⚡ Safe check: Only loop if the questions array exists.
     if (ret.questions && Array.isArray(ret.questions)) {
       ret.questions.forEach((q) => {
         delete q._id;
         delete q.__v;
 
-        // ⚡ Safe check 2: Agar options array exist karta hai
+        // ⚡ Safe check 2: Only loop if the options array exists.
         if (q.options && Array.isArray(q.options)) {
           q.options.forEach((opt) => {
             delete opt._id;

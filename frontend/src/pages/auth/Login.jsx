@@ -26,7 +26,7 @@ const LoginPage = () => {
   };
 
   return (
-    // Body ke center me container ko proper layout dene ke liye fixed width & alignment
+    // Center the container in the page with a fixed width and alignment.
     <div className="auth-page">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -51,7 +51,7 @@ const LoginPage = () => {
 
           <div className="text-center">
             {/* Tailwind v4 text color variables applied */}
-            <h1 className="auth-title text-2xl font-extrabold leading-tight">
+            <h1 className="auth-title">
               WELCOME BACK, <br />
               <span className="bg-linear-to-r from-brand-start via-brand-mid to-brand-end bg-clip-text text-transparent font-extrabold">
                 QUESTION MASTER.
@@ -86,7 +86,7 @@ const LoginPage = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              icon={<User className="w-4 h-4 text-muted" />}
+              icon={<User className="auth-icon" />}
             />
 
             <InputGroup
@@ -96,7 +96,7 @@ const LoginPage = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              icon={<KeyRound className="w-4 h-4 text-muted" />}
+              icon={<KeyRound className="auth-icon" />}
               suffix={
                 <button
                   type="button"
@@ -104,9 +104,9 @@ const LoginPage = () => {
                   className="text-muted hover:text-brand-start transition-colors p-1"
                 >
                   {showPassword ? (
-                    <EyeOff className="w-4 h-4" />
-                  ) : (
                     <Eye className="w-4 h-4" />
+                  ) : (
+                    <EyeOff className="w-4 h-4" />
                   )}
                 </button>
               }
@@ -115,7 +115,7 @@ const LoginPage = () => {
             <div className="flex justify-end">
               <Link
                 to="/auth/forget-password"
-                className="auth-link text-xs font-semibold text-brand-mid hover:text-brand-end transition-colors"
+                className="auth-link"
               >
                 Forgot Passcode?
               </Link>
@@ -141,7 +141,7 @@ const LoginPage = () => {
             </span>
             <Link
               to="/register"
-              className="flex items-center gap-1 text-xs font-extrabold text-brand-mid hover:text-brand-end transition-colors uppercase tracking-wider"
+              className="auth-link flex items-center gap-1 uppercase tracking-wider"
             >
               ENLIST NOW <ArrowRight className="w-3 h-3" />
             </Link>

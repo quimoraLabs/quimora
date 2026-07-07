@@ -19,6 +19,7 @@
 
   --color-text-main: #0f172a;
   --color-text-muted: #64748b;
+  --color-placeholder: #94a3b8;
 
   --color-border-main: #e2e8f0;
   --color-border-soft: #f1f5f9;
@@ -40,6 +41,7 @@
 
   --color-text-main: #f9fafb;
   --color-text-muted: #9ca3af;
+  --color-placeholder: #9ca3af;
 
   --color-border-main: #1f2937;
   --color-border-soft: rgba(255, 255, 255, 0.04);
@@ -59,47 +61,76 @@ body {
   font-family: var(--font-sans);
 }
 
+@utility bg-main {
+  background-color: var(--color-bg-main);
+}
+@utility bg-surface {
+  background-color: var(--color-bg-surface);
+}
+@utility bg-elevated {
+  background-color: var(--color-bg-elevated);
+}
+@utility text-main {
+  color: var(--color-text-main);
+}
+@utility text-muted {
+  color: var(--color-text-muted);
+}
+@utility placeholder-text-muted {
+  &::placeholder {
+    color: var(--color-placeholder);
+  }
+}
+@utility border-main {
+  border-color: var(--color-border-main);
+}
+@utility border-soft {
+  border-color: var(--color-border-soft);
+}
+@utility shadow-card {
+  box-shadow: var(--shadow-card);
+}
 
-  @utility bg-main {
-    background-color: var(--color-bg-main);
-  }
-  @utility bg-surface {
-    background-color: var(--color-bg-surface);
-  }
-  @utility bg-elevated {
-    background-color: var(--color-bg-elevated);
-  }
-  @utility text-main {
-    color: var(--color-text-main);
-  }
-  @utility text-muted {
-    color: var(--color-text-muted);
-  }
-  @utility border-main {
-    border-color: var(--color-border-main);
-  }
-  @utility border-soft {
-    border-color: var(--color-border-soft);
-  }
-  @utility shadow-card {
-    box-shadow: var(--shadow-card);
-  }
+@utility text-accent {
+  color: var(--color-brand-mid);
+}
+@utility bg-accent {
+  background: linear-gradient(
+    90deg,
+    var(--color-brand-start),
+    var(--color-brand-mid),
+    var(--color-brand-end)
+  );
+  color: white;
+}
+@utility border-accent {
+  border-color: var(--color-brand-mid);
+}
 
-  @utility text-accent {
-    color: var(--color-brand-mid);
-  }
-  @utility bg-accent {
-    background: linear-gradient(
-      90deg,
-      var(--color-brand-start),
-      var(--color-brand-mid),
-      var(--color-brand-end)
-    );
-    color: white;
-  }
-  @utility border-accent {
-    border-color: var(--color-brand-mid);
-  }
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0px 1000px var(--color-bg-elevated) inset !important; 
+    -webkit-text-fill-color: var(--color-text-main) !important; 
+    transition: background-color 5000s ease-in-out 0s;
+}
 
+button {
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+button:hover {
+  transform: scale(1.02);
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
 
 @import "./pages/auth/auth.css";

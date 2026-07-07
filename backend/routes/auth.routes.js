@@ -17,7 +17,7 @@ const otpLimiter = rateLimit({
   max: 5, // Limit each IP to 5 requests per window
   message: {
     success: false,
-    message: "Bhai thoda sabar karo, 15 minute baad try karna!",
+    message: "let's try again after 15 minutes",
   },
   standardHeaders: true,
   legacyHeaders: false,

@@ -97,9 +97,9 @@ export default function ProfileCard() {
 
   const handleSave = async (field) => {
     console.log(`Updating ${field} to:`, formData[field]);
-    // Yahan aap apna API call ya store update logic likh sakte hain
+    // Place your API call or store update logic here.
     await updateUser(user.id, { [field]: formData[field] });
-    await getProfile(); // Profile ko refresh karne ke liye
+    await getProfile(); // Refresh the profile.
     setEditingField(null);
   };
 

@@ -270,7 +270,7 @@ export const getQuizAttemptDetails = async (req, res, next) => {
     const { attemptId } = req.params;
     const userId = req.auth.userId;
 
-    // Ab populate bilkul makhan ki tarah chalega
+    // This will now populate correctly and cleanly.
     const attempt = await QuizAttempt.findOne({ _id: attemptId, userId })
       .populate({
         path: "quizId",

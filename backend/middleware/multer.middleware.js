@@ -1,6 +1,6 @@
 import multer from "multer";
 
-// Memory storage use karein kyunki hum ImageKit use kar rahe hain
+// Use memory storage because we are using ImageKit.
 const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
@@ -15,4 +15,4 @@ export const singleUpload = multer({
   storage, 
   fileFilter,
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
-}).single("avatar"); // "avatar" wahi key hai jo frontend se aayegi
+}).single("avatar"); // This is the key the frontend will send.

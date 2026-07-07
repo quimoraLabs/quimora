@@ -5,7 +5,7 @@ import {
   UserCheck,
   UserStar,
   X,
-} from "lucide-react"; // Close icon ke liye
+} from "lucide-react"; // For the close icon.
 import useAuthStore from "../store/authStore";
 import { Link } from "react-router-dom";
 import logo from "../assets/quimora.png";
@@ -70,7 +70,7 @@ export default function Sidebar({ isOpen, setIsOpen, role }) {
 
   return (
     <>
-      {/* 1. Backdrop (Mobile par jab sidebar khule toh piche ka area dark karne ke liye) */}
+      {/* 1. Backdrop (Darkens the area behind the sidebar when it opens on mobile) */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-[#050505]/50 z-40 lg:hidden"
