@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import morgan from "morgan";
 import connectDB from "../config/connectDB.js";
 import config from "../config/config.js";
 import authRoutes from "../routes/auth.routes.js";
@@ -26,6 +27,7 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
+app.use(morgan("tiny"));
 app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);

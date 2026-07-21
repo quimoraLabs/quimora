@@ -7,50 +7,89 @@ import {
 } from "../utils/assertion.utils.js";
 import { formatUniversalResponse } from "../utils/universalFormatter.js";
 
+// Fetch Student Specific Active & Published Available Quizzes
+export const getAvailableQuizzesForStudents = async (req, res, next) => {
+  try {
+    const now = new Date();
+    let { page = 1, limit = 10 } = req.query;
+    page = parseInt(page, 10);
+    limit = parseInt(limit, 10);
+
+    const query = {
+      status: "published",
+      isActive: true,
+      $and: [
+        { $or: [{ startDate: { $exists: false } }, { startDate: { $lte: now } }] },
+        { $or: [{ endDate: { $exists: false } }, { endDate: { $gte: now } }] },
+      ],
+    };
+
+    const totalItems = await Quiz.countDocuments(query);
+    const quizzes = await Quiz.find(query)
+      .populate("createdBy", "name email")
+      .sort({ startDate: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    res.status(200).json({
+      success: true,
+      pagination: {
+        totalItems,
+        totalPages: Math.ceil(totalItems / limit),
+        currentPage: page,
+        limit,
+      },
+      data: quizzes,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+// Create a new quiz (Allows empty question sets to add later)
 export const createQuiz = async (req, res, next) => {
   try {
-    const { title, description, questions, timeLimit, maxAttempts } = req.body;
+    const { title, description, timeLimit, maxAttempts, startDate, endDate,tags=[] } = req.body;
     await assertUserExists(req.auth.userId, false);
 
     const quiz = new Quiz({
       title,
       description,
-      questions,
       timeLimit,
       maxAttempts,
+      startDate,
+      endDate,
       createdBy: req.auth.userId,
+      tags,
     });
-    await quiz.save();
-    // next();
-    res.status(201).json({
-      success: true,
-      message: "Quiz created successfully",
-      data: quiz,
-    });
-  } catch (error) {
-    // console.error("Create Quiz Error:", error);
-    next(error);
-  }
+  await quiz.save();
+  // next();
+  res.status(201).json({
+    success: true,
+    message: "Quiz created successfully",
+    data: quiz,
+  });
+} catch (error) {
+  // console.error("Create Quiz Error:", error);
+  next(error);
+}
 };
 
+// Fetch detailed quiz information for tracking and editing
 export const getQuizDetails = async (req, res, next) => {
   try {
     const quiz = await Quiz.findById(req.params.quizId).populate(
       "createdBy",
       "name email",
-    );
+    ).populate("questions", "title description options correctAnswer");
     if (!quiz) {
       return res.status(404).json({ error: "Quiz not found" });
     }
 
     res.status(200).json({
       success: true,
-      data: {
-        title: quiz.title,
-        description: quiz.description,
-        questions: quiz.questions.length,
-        timeLimit: quiz.timeLimit,
-      },
+      data: formatUniversalResponse(quiz, "createdBy", ["name", "email"]),
     });
   } catch (error) {
     // Mongoose CastErrors are already intercepted at the application layer by your route middleware layout
@@ -58,20 +97,39 @@ export const getQuizDetails = async (req, res, next) => {
   }
 };
 
+// Fetch single quiz high-level details for tracking
 export const getQuizzesByInstructor = async (req, res, next) => {
   try {
+    let { page = 1, limit = 10 } = req.query;
+    page = parseInt(page, 10);
+    limit = parseInt(limit, 10); 
+    const totalItems = await Quiz.countDocuments({
+      createdBy: req.auth.userId.toString(),
+    });
+
     await assertUserExists(req.auth.userId, false);
+
     const quizzes = await Quiz.find({
       createdBy: req.auth.userId.toString(),
-    }).populate("createdBy", "name email");
+    }).populate("createdBy", "name email")
+    .skip((page - 1) * limit)
+    .limit(limit);
     if (!quizzes) {
       return res.status(404).json({
         message: "Quizzes not found",
       });
     }
+    const formattedQuizzes = formatUniversalResponse(quizzes, "createdBy", ["name", "email"]);
+    const totalPages = Math.ceil(formattedQuizzes.length / limit);
     res.status(200).json({
       success: true,
-      data: formatUniversalResponse(quizzes, "createdBy", ["name", "email"]),
+      pagination: {
+        totalItems,
+        totalPages: totalPages,
+        currentPage: page,
+        limit,
+      },
+      data: formattedQuizzes,
     });
   } catch (error) {
     // console.error("Get Quizzes Error:", error);
@@ -81,25 +139,37 @@ export const getQuizzesByInstructor = async (req, res, next) => {
 
 export const getAllQuizzes = async (req, res, next) => {
   try {
-    const quizzes = await Quiz.find().populate("createdBy", "name email");
+    const now = new Date();
 
-    if (!quizzes || !quizzes.length === 0) {
-      res.status(404).json({ success: false, message: "Quizzes are empty" });
+    // 1. Fetch quizzes directly from the database matching strict live constraints
+    const quizzes = await Quiz.find({
+      status: "published",         // Only fetch quizzes that are finalized and published
+      startDate: { $lte: now },    // Ensure the quiz availability has started (startDate <= now)
+      endDate: { $gte: now }       // Ensure the quiz has not expired yet (endDate >= now)
+    })
+      .populate("createdBy", "name email")
+      .sort({ startDate: -1 })       // Sort quizzes dynamically to display the newest ones first
+    // .select("-questions");         // 🔒 SECURITY: Exclude the questions array to prevent client-side leaks
+
+    // 2. Return an empty array response gracefully if no active quizzes are found
+    if (!quizzes || quizzes.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "No active quizzes available right now",
+        data: []
+      });
     }
 
-    const publishedQuizzes = quizzes.filter(
-      (quiz) => quiz.status === "published",
-    );
-
+    // 3. Format the active quizzes list using the universal utility wrapper
     res.status(200).json({
       success: true,
-      data: formatUniversalResponse(publishedQuizzes, "createdBy", [
+      data: formatUniversalResponse(quizzes, "createdBy", [
         "name",
         "email",
       ]),
     });
   } catch (error) {
-    // console.error("Get All Quizzes Error:", error);
+    // Forward any unexpected runtime database exceptions to the global error middleware
     next(error);
   }
 };

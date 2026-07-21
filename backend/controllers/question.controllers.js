@@ -1,222 +1,229 @@
 import mongoose from "mongoose";
 import Quiz from "../models/quiz.model.js";
-import User from "../models/user.model.js";
+// import User from "../models/user.model.js";
 import { isDuplicateQuestion } from "../utils/question.utils.js";
 
 import {
   assertQuestionExists,
   assertUserExists,
+  assertQuizExists,
 } from "../utils/assertion.utils.js";
 import { getQuizAccess } from "../utils/getQuizAccess.utils.js";
+import Question from "../models/question.model.js";
 
-export const createQuestion = async (req, res) => {
-  const data = req.body;
-  const { quizId } = req.params;
-  const rawUserId = req.auth?.userId;
-  
+// Create single question
+export const createQuestion = async (req, res, next) => {
   try {
-    // 1. Force convert explicit string mapping to match data layer
-    const userIdStr = rawUserId ? rawUserId.toString() : null;
-    
-    // console.log("--- SAFELY CHECKING QUERY PARAMETERS ---");
-    // console.log("Quiz ID:", quizId);
-    // console.log("User ID String:", userIdStr);
-    
-    // 2. Dynamic query using $or condition to handle both potential field names ('userId' or 'createdBy')
-    const quiz = await Quiz.findOne({
-      _id: quizId,
-      $or: [
-        { userId: userIdStr },
-        { createdBy: userIdStr }
-      ]
-    }).select("+questions.options.isCorrect");
+    const { quizId } = req.params;
+    const { questionText, marks, difficulty, options } = req.body;
+    const userId = req.auth?.userId;
 
-    // console.log("Fetched Quiz Document Instance:", quiz);
-    
-    if (!quiz) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "Quiz instance not found or access denied. Ensure field mappings match." 
+    const quiz = await assertQuizExists(quizId);
+    if (quiz.createdBy.toString() !== userId.toString()) {
+      return res.status(403).json({ success: false, message: "Unauthorized access to this quiz." });
+    }
+
+    const isDuplicate = await isDuplicateQuestion(quizId, questionText);
+    if (isDuplicate) {
+      return res.status(409).json({ success: false, message: "Conflict: Duplicate question structure text exists." });
+    }
+
+    const question = await Question.create({
+      quizId,
+      questionText,
+      marks,
+      difficulty,
+      options,
+    });
+
+    await Quiz.findByIdAndUpdate(quizId, {
+      $push: { questions: question._id },
+    });
+
+    res.status(201).json({ success: true, message: "Question created successfully", data: question });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Create bulk questions
+export const createBulkQuestions = async (req, res, next) => {
+  try {
+    const { quizId } = req.params;
+    const { questions } = req.body; // Expects an array of question objects
+    const userId = req.auth?.userId;
+
+    if (!Array.isArray(questions) || questions.length === 0) {
+      return res.status(400).json({ success: false, message: "Missing or empty questions array payload." });
+    }
+
+    const quiz = await assertQuizExists(quizId);
+    if (quiz.createdBy.toString() !== userId.toString()) {
+      return res.status(403).json({ success: false, message: "Unauthorized access to this quiz." });
+    }
+
+    const cleanedQuestions = [];
+    for (const q of questions) {
+      const isDuplicate = await isDuplicateQuestion(quizId, q.questionText);
+      if (!isDuplicate) {
+        cleanedQuestions.push({
+          quizId,
+          questionText: q.questionText,
+          marks: q.marks || 1,
+          difficulty: q.difficulty || "medium",
+          options: q.options,
+        });
+      }
+    }
+
+    if (cleanedQuestions.length === 0) {
+      return res.status(409).json({ success: false, message: "All provided questions are duplicates." });
+    }
+
+    const createdQuestions = await Question.insertMany(cleanedQuestions);
+    res.status(201).json({ success: true, message: `${createdQuestions.length} Questions imported successfully`, data: createdQuestions });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getQuestionById = async (req, res, next) => {
+  try {
+    const { quizId, questionId } = req.params;
+    const userId = req.auth?.userId;
+
+    await getQuizAccess(quizId, userId);
+
+    const question = await Question.findOne({ _id: questionId, quizId }).select(
+      "+options.isCorrect"
+    );
+
+    if (!question) {
+      return res.status(404).json({
+        success: false,
+        message: "Question not found",
       });
     }
 
-    // 3. Validate structural requirements for standard multiple-choice configurations
-    if (data.options && Array.isArray(data.options)) {
-      if (data.options.length !== 4) {
-        return res.status(400).json({
-          success: false,
-          message: "Validation Error: A standard multiple-choice question must contain exactly 4 options."
-        });
-      }
-
-      const hasCorrect = data.options.some(opt => opt.isCorrect === true || opt.isCorrect === "true");
-      if (!hasCorrect) {
-        return res.status(400).json({
-          success: false,
-          message: "Validation Error: At least one response alternative must be specified as correct."
-        });
-      }
-    } else {
-      return res.status(400).json({ success: false, message: "Missing required parameter: options array." });
-    }
-
-    // Filter incoming request entity to restrict mutation to permitted schema paths
-    const allowedFields = ["questionText", "marks", "difficulty", "options"];
-    const cleanData = {};
-    Object.keys(data).forEach((field) => {
-      if (allowedFields.includes(field)) {
-        cleanData[field] = data[field];
-      }
-    });
-
-    // 4. Safe helper verification check before invoking external layout logic
-    let duplicateDetected = false;
-    if (typeof isDuplicateQuestion === "function") {
-      duplicateDetected = isDuplicateQuestion(quiz.questions, cleanData);
-    }
-
-    if (duplicateDetected) {
-      return res.status(409).json({ message: "Conflict detected: Duplicate question structure exists." });
-    }
-
-    // Mutate internal document array hierarchy and invoke atomic persistence layer lifecycle
-    quiz.questions.push(cleanData);
-    await quiz.save();
-
-    return res.status(201).json({
-      success: true,
-      message: "Question created successfully",
-      question: quiz.questions[quiz.questions.length - 1], 
-    });
-    
-  } catch (error) {
-    console.error("Critical Server Catch Executed:", error);
-    return res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-export const getQuestionById = async (req, res) => {
-  const { quizId, questionId } = req.params;
-  try {
-    const quiz = await getQuizAccess(quizId, req.auth.userId);
-    const question = quiz.questions.id(questionId);
-
-    if (!question) {
-      return res.status(404).json({ message: "Question not found" });
-    }
     res.status(200).json({ success: true, question });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    next(error);
   }
 };
 
-export const getAllQuestions = async (req, res) => {
+// Get all questions for a quiz with Pagination Protection
+export const getQuizQuestions = async (req, res, next) => {
   try {
-    const quiz = await getQuizAccess(req.params.quizId, req.auth.userId);
-    res.status(200).json({ success: true, questions: quiz.questions });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
+    const { quizId } = req.params;
+    let { page = 1, limit = 10 } = req.query;
 
-export const updateQuestion = async (req, res) => {
-  const data = req.body;
-  const { quizId, questionId } = req.params;
-  const userId = req.auth.userId;
+    page = parseInt(page, 10);
+    limit = parseInt(limit, 10);
 
-  try {
-    // 1. Authorization & Existence checks
-    const quiz = await getQuizAccess(quizId, userId);
-    assertQuestionExists(quiz, questionId);
+    await assertQuizExists(quizId, "false");
 
-    // 2. Purely filter only the main fields
-    const allowedFields = ["questionText", "marks", "difficulty"];
-    const cleanData = {};
-    let extraFieldsIgnored = false;
+    const totalQuestions = await Question.countDocuments({ quizId });
+    const questions = await Question.find({ quizId })
+      .skip((page - 1) * limit)
+      .limit(limit);
 
-    Object.keys(data).forEach((field) => {
-      if (allowedFields.includes(field)) {
-        cleanData[field] = data[field];
-      } else {
-        extraFieldsIgnored = true;
-      }
+    res.status(200).json({
+      success: true,
+      pagination: {
+        totalItems: totalQuestions,
+        totalPages: Math.ceil(totalQuestions / limit),
+        currentPage: page,
+        limit,
+      },
+      data: questions,
     });
+  } catch (error) {
+    next(error);
+  }
+};
 
-    // 3. Duplicate text validation
-    if (isDuplicateQuestion(quiz.questions, cleanData, questionId)) {
-      return res.status(409).json({ message: "Duplicate question" });
+// Update standalone question
+export const updateQuestion = async (req, res, next) => {
+  try {
+    const { questionId } = req.params;
+    const { questionText, marks, difficulty, options } = req.body;
+    const userId = req.auth?.userId;
+
+    const question = await assertQuestionExists(questionId);
+    
+    const quiz = await assertQuizExists(question.quizId);
+
+    if (quiz.createdBy.toString() !== userId.toString()) {
+      return res.status(403).json({ success: false, message: "Unauthorized operational access." });
     }
 
-    // 4. 🌟 THE REAL ANTIDOTE: Map explicitly to avoid path collisions
-    // Map each field explicitly so Mongoose can apply the update path correctly.
-    const updatePayload = {};
-    Object.keys(cleanData).forEach((key) => {
-      updatePayload[`questions.$.${key}`] = cleanData[key];
-    });
+    if (questionText) {
+      const isDuplicate = await isDuplicateQuestion(question.quizId, questionText, questionId);
+      if (isDuplicate) {
+        return res.status(409).json({ success: false, message: "Duplicate question modification matched." });
+      }
+      question.questionText = questionText;
+    }
 
-    // Atomic database update using exact field mapping
-    const updatedQuiz = await Quiz.findOneAndUpdate(
-      { _id: quizId, "questions._id": questionId },
-      { $set: updatePayload }, // 👈 This prevents conflicts in this update path.
-      { returnDocument: 'after', runValidators: false }
-    );
+    if (marks) question.marks = marks;
+    if (difficulty) question.difficulty = difficulty;
+    if (options) question.options = options;
 
-    const updatedQuestion = updatedQuiz.questions.find(
-      (q) => q._id.toString() === questionId.toString()
-    );
-
-    // 5. Success Response
-    res.status(200).json({
-      success: true,
-      message: "Question updated successfully",
-      ...(extraFieldsIgnored && { warning: "Unallowed or extra fields were ignored safely." }),
-      question: updatedQuestion,
-    });
-    
+    await question.save();
+    res.status(200).json({ success: true, message: "Question updated cleanly", data: question });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    next(error);
   }
 };
 
-export const deleteQuestion = async (req, res) => {
-  const { quizId, questionId } = req.params;
-  const userId = req.auth.userId;
-
+// Delete single question
+export const deleteQuestion = async (req, res, next) => {
   try {
-    // 1. Authorization & Existence checks
-    const quiz = await getQuizAccess(quizId, userId);
-    assertQuestionExists(quiz, questionId);
+    const { questionId } = req.params;
+    const userId = req.auth?.userId;
 
-    // 2. 🌟 ATOMIC DELETE: Direct Database Level Pull (No .save() / No Hooks)
-    await Quiz.findOneAndUpdate(
-      { _id: quizId },
-      { $pull: { questions: { _id: questionId } } },
-      {returnDocument: 'after'}
-    );
+    const question = await assertQuestionExists(questionId);
+    const quiz = await assertQuizExists(question.quizId);
 
-    res.status(200).json({
-      success: true,
-      message: "Question deleted successfully",
-      deletedQuestionId: questionId,
+    if (quiz.createdBy.toString() !== userId.toString()) {
+      return res.status(403).json({ success: false, message: "Unauthorized access path." });
+    }
+
+    await Question.findByIdAndDelete(questionId);
+    await Quiz.findByIdAndUpdate(question.quizId, {
+      $pullAll: { questions: [question._id] },
     });
+    res.status(200).json({ success: true, message: "Question deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    next(error);
   }
 };
 
-export const deleteMultipleQuestions = async (req, res) => {
-  const { quizId } = req.params;
-  const userId = req.auth.userId;
-  const { questionIds } = req.body;
-
+export const deleteMultipleQuestions = async (req, res, next) => {
   try {
-    // 1. Authorization check
-    const quiz = await getQuizAccess(quizId, userId);
+    const { quizId } = req.params;
+    const userId = req.auth?.userId;
+    const { questionIds } = req.body;
 
-    // 2. Filter valid IDs to delete from the array
-    const existingIds = quiz.questions.map((q) => q._id.toString());
-    const idsToDelete = questionIds.filter((id) => existingIds.includes(id));
-    const invalidIds = questionIds.filter((id) => !existingIds.includes(id));
+    if (!Array.isArray(questionIds) || questionIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing or empty questionIds array.",
+      });
+    }
+
+    await getQuizAccess(quizId, userId);
+
+    const normalizedRequested = questionIds.map((id) => id.toString());
+
+    const questionsInQuiz = await Question.find({
+      _id: { $in: normalizedRequested },
+      quizId,
+    }).select("_id");
+
+    const idsToDelete = questionsInQuiz.map((q) => q._id);
+    const validSet = new Set(idsToDelete.map((id) => id.toString()));
+    const invalidIds = normalizedRequested.filter((id) => !validSet.has(id));
 
     if (idsToDelete.length === 0) {
       return res.status(400).json({
@@ -226,19 +233,19 @@ export const deleteMultipleQuestions = async (req, res) => {
       });
     }
 
-    // 3. 🌟 ATOMIC BULK DELETE: Pull all matching IDs in one shot ($pullAll)
-    await Quiz.findOneAndUpdate(
-      { _id: quizId },
-      { $pull: { questions: { _id: { $in: idsToDelete } } } },
-      {returnDocument: 'after'}
-    );
+    await Question.deleteMany({ _id: { $in: idsToDelete }, quizId });
+
+    await Quiz.findByIdAndUpdate(quizId, {
+      $pullAll: { questions: idsToDelete },
+    });
 
     res.status(200).json({
       success: true,
       message: "Questions deleted successfully",
-      deletedQuestionIds: idsToDelete,
+      deletedQuestionIds: idsToDelete.map((id) => id.toString()),
+      ...(invalidIds.length > 0 && { invalidIds }),
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    next(error);
   }
 };

@@ -1,14 +1,18 @@
-export const isDuplicateQuestion = (questions, incomingQuestion, excludeId = null) => {
-  return questions.some((q) => {
-    // Skip this question if the provided excludeId matches its ID.
-    if (excludeId && q._id && q._id.toString() === excludeId.toString()) {
-      return false;
-    }
+import Question from "../models/question.model.js";
 
-    const sameText =
-      q.questionText.trim().toLowerCase() ===
-      incomingQuestion.questionText.trim().toLowerCase();
+/**
+ * Checks for a duplicate question text within the scope of a specific quiz.
+ */
+export const isDuplicateQuestion = async (quizId, questionText, excludeId = null) => {
+  const query = {
+    quizId,
+    questionText: { $regex: new RegExp(`^${questionText?.trim() || ""}$`, "i") },
+  };
 
-    return sameText;
-  });
+  if (excludeId) {
+    query._id = { $ne: excludeId };
+  }
+
+  const exists = await Question.exists(query);
+  return !!exists;
 };

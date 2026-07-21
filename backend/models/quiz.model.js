@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import questionSchema from "./question.model.js";
 
 const quizSchema = new mongoose.Schema(
   {
@@ -13,22 +12,16 @@ const quizSchema = new mongoose.Schema(
       trim: true,
     },
     questions: {
-      type: [questionSchema],
-      required: true,
-      validate: [
-        {
-          validator: (q) => Array.isArray(q) && q.length > 0,
-          message: "At least one question is required",
-        },
-      ],
+      type: [mongoose.Schema.Types.ObjectId],
+      ref: "Question",
     },
     isActive: {
       type: Boolean,
-      default: false,
+      default: true,
     },
     tags: { type: [String], default: [] },
     timeLimit: {
-      type: Number, // Time limit in minutes
+      type: Number,
       default: 10,
       min: 5,
     },
@@ -44,7 +37,6 @@ const quizSchema = new mongoose.Schema(
         message: "End date must be after start date",
       },
     },
-
     maxAttempts: {
       type: Number,
       default: 1,
@@ -55,76 +47,30 @@ const quizSchema = new mongoose.Schema(
       enum: ["draft", "published", "archived"],
       default: "draft",
     },
-    stats: {
-      attempts: {
-        type: Number,
-        default: 0,
-        min: 0,
-      },
-    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
   },
-
-  { timestamps: true, versionKey: false },
+  { timestamps: true, versionKey: false }
 );
-
-quizSchema.set("toJSON", {
-  virtuals: true,
-  transform: function (doc, ret) {
-    delete ret._id;
-    delete ret.__v;
-    delete ret.isAvailable;
-    delete ret.totalMarks;
-    // ⚡ Safe check: Only loop if the questions array exists.
-    if (ret.questions && Array.isArray(ret.questions)) {
-      ret.questions.forEach((q) => {
-        delete q._id;
-        delete q.__v;
-
-        // ⚡ Safe check 2: Only loop if the options array exists.
-        if (q.options && Array.isArray(q.options)) {
-          q.options.forEach((opt) => {
-            delete opt._id;
-            delete opt.__v;
-            delete opt.isCorrect; // 🔒 hide correct answer in JSON output
-          });
-        }
-      });
-    }
-    return ret;
-  },
-});
-
-quizSchema.set("toObject", {
-  virtuals: true,
-});
 
 quizSchema.virtual("isAvailable").get(function () {
   const now = new Date();
   return (
     this.status === "published" &&
+    this.isActive &&
     (!this.startDate || now >= this.startDate) &&
     (!this.endDate || now <= this.endDate)
   );
 });
 
-quizSchema.virtual("totalMarks").get(function () {
-  return (this.questions || []).reduce((sum, q) => sum + (q.marks || 0), 0);
-});
+quizSchema.set("toJSON", { virtuals: true });
+quizSchema.set("toObject", { virtuals: true });
 
 quizSchema.index({ status: 1, startDate: 1, endDate: 1 });
 quizSchema.index({ createdBy: 1 });
 
-quizSchema.pre("save", function () {
-  if (this.status === "published" && this.questions.length === 0) {
-    throw new Error("Cannot publish quiz without questions");
-  }
-});
-
 const Quiz = mongoose.model("Quiz", quizSchema);
-
 export default Quiz;
