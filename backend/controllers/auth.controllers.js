@@ -138,7 +138,7 @@ export const verifyOTP = async (req, res, next) => {
     if (!/^\d{6}$/.test(otpCode || "")) {
       return res.status(400).json({ success: false, message: "OTP must be a 6-digit code" });
     }
-    
+
     // Validate that new password is provided
     if (!newPassword) {
       return res.status(400).json({ success: false, message: "New password is required" });
@@ -166,10 +166,10 @@ export const verifyOTP = async (req, res, next) => {
     // Save changes using the Mongoose save method (safer for triggers/hooks)
     await user.save();
 
-    res.status(200).json({ 
-        success: true, 
-        message: "Password updated successfully", 
-        mustReauthenticate: true 
+    res.status(200).json({
+      success: true,
+      message: "Password updated successfully",
+      mustReauthenticate: true
     });
   } catch (error) {
     // Pass error to the global error handler

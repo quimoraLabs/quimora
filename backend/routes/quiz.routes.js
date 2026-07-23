@@ -5,10 +5,10 @@ import {
   getQuizzesByInstructor,
   updateQuiz,
   changeQuizStatus,
-  changeQuizActivity,
+  toggleQuizActiveStatus,
   deleteQuiz,
-  getAllQuizzes,
-  getQuizDetails,
+  getQuizzes,
+  getAvailableQuizzesForStudents,
 } from "../controllers/quiz.controllers.js";
 import authMiddleware, {
   authorizeRoles,
@@ -18,9 +18,9 @@ import { validateObjectId } from "../middleware/validObjectId.middleware.js";
 const router = express.Router();
 
 router.post("/", authMiddleware, authorizeRoles("instructor"), createQuiz);
-router.get("/", authMiddleware,authorizeRoles("instructor"), getQuizzesByInstructor);
-router.get("/all", authMiddleware, getAllQuizzes);
-router.get("/details/:quizId", authMiddleware, getQuizDetails);
+router.get("/", authMiddleware, getQuizzes);
+router.get("/instructor", authMiddleware,authorizeRoles("instructor"), getQuizzesByInstructor);
+router.get("/student", authMiddleware, getAvailableQuizzesForStudents);
 router.get("/:quizId", validateObjectId("quizId"), authMiddleware, getQuizById);
 router.patch(
   "/:quizId",
@@ -41,7 +41,7 @@ router.patch(
   validateObjectId("quizId"),
   authMiddleware,
   authorizeRoles("instructor"),
-  changeQuizActivity,
+  toggleQuizActiveStatus,
 );
 router.delete(
   "/:quizId",

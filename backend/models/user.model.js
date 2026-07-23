@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
-import { removeSensitiveFields } from "../utils/removeSensitiveFields.js";
+import { removeSensitiveFields } from "../utils/helper.utils.js";
 
 const userSchema = new mongoose.Schema(
   {

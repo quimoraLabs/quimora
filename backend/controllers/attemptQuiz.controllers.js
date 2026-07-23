@@ -1,34 +1,42 @@
 import mongoose from "mongoose";
 import Quiz from "../models/quiz.model.js";
+import Question from "../models/question.model.js";
 import QuizAttempt from "../models/quizAttempt.model.js";
 import {
   assertUserExists,
   assertQuizExists,
 } from "../utils/assertion.utils.js";
-import { formatUniversalResponse } from "../utils/universalFormatter.js";
+import { formatUniversalResponse } from "../utils/universalFormatter.utils.js";
 
 /**
  * Initializes a secure quiz taking session for an authorized user profile.
  */
+
 export const startQuizAttempt = async (req, res, next) => {
   try {
     const { quizId } = req.body;
-    const userId = req.auth.userId; // Extracted safely from your authentication middleware
+    const userId = req.auth.userId.toString();
 
-    // 1. REUSE ASSERTIONS: Validate database identity states with zero-memory footprint where possible
-    await assertUserExists(userId, "false");
-
-    // We fetch the full quiz document here to read its question counts and attempt rule configurations
+    // 1. Fetch Parent Quiz
     const quiz = await assertQuizExists(quizId);
 
-    // 2. Structural Rule Validation: Ensure the quiz is published and active
+    // 2. Status & Availability Checks
     if (quiz.status !== "published" || !quiz.isActive) {
       return res.status(400).json({
         error: "This quiz is currently unavailable for testing",
       });
     }
 
-    // 3. Attempt Capacity Validation: Enforce maximum try boundaries if configured
+    // 3. Date Boundary Checks (Schedule Window)
+    const now = new Date();
+    if (quiz.startDate && now < new Date(quiz.startDate)) {
+      return res.status(400).json({ error: "Quiz session has not started yet" });
+    }
+    if (quiz.endDate && now > new Date(quiz.endDate)) {
+      return res.status(400).json({ error: "Quiz session has expired" });
+    }
+
+    // 4. Maximum Attempts Limit Check
     if (quiz.maxAttempts && quiz.maxAttempts > 0) {
       const pastAttemptsCount = await QuizAttempt.countDocuments({
         userId,
@@ -43,42 +51,63 @@ export const startQuizAttempt = async (req, res, next) => {
       }
     }
 
-    // 4. Initialize the Quiz Attempt Record Document
-    const totalQuestions = quiz.questions ? quiz.questions.length : 0;
-    if (totalQuestions === 0) {
-      return res
-        .status(400)
-        .json({ error: "Cannot start a quiz that contains no questions" });
-    }
-
-    const newAttempt = await QuizAttempt.create({
+    // 5. Check if User Already Has an Ongoing Active Attempt
+    let attempt = await QuizAttempt.findOne({
       userId,
       quizId,
-      totalQuestions,
       status: "started",
-      startedAt: Date.now(),
     });
 
-    // 5. SECURITY LAYER: Hydrate clean questions for the client screen
-    // We convert the Mongoose object to a plain JavaScript object to remove correct answer fields safely
-    const plainQuizObject = quiz.toObject();
+    // 6. Fetch Questions from Separated Question Collection
+    const rawQuestions = await Question.find({ quizId }).lean();
 
-    const secureQuestions = plainQuizObject.questions.map((question) => {
-      // Destructure and drop the correct answer path completely from the object mapping routine
-      const { correctAnswer, ...clientSafeFields } = question;
-      return clientSafeFields;
+    if (!rawQuestions || rawQuestions.length === 0) {
+      return res.status(400).json({
+        error: "Cannot start a quiz that contains no active questions",
+      });
+    }
+
+    // Create new attempt only if an ongoing one doesn't exist
+    if (!attempt) {
+      attempt = await QuizAttempt.create({
+        userId,
+        quizId,
+        totalQuestions: rawQuestions.length,
+        status: "started",
+        startedAt: new Date(),
+      });
+    }
+
+    // 7. SECURITY: Sanitize Questions for Student (Strip correct answers / flags)
+    const secureQuestions = rawQuestions.map((q) => {
+      return {
+        _id: q._id,
+        questionText: q.questionText,
+        marks: q.marks,
+        difficulty: q.difficulty,
+        // Strip `isCorrect` from options array if present in your Question schema
+        options: q.options ? q.options.map((opt) => ({
+          _id: opt._id,
+          optionText: opt.optionText || opt.text,
+        })) : [],
+      };
     });
 
-    // 6. Dispatch Response Packet
-    res.status(201).json({
+    // 8. Return Payload
+    res.status(200).json({
       success: true,
-      message: "Quiz session started successfully",
-      attemptId: newAttempt._id,
-      quiz: {
-        title: quiz.title,
-        description: quiz.description,
-        timeLimit: quiz.timeLimit,
-        questions: secureQuestions, // Frontend receives text options without keys
+      message: "Quiz session initialized successfully",
+      data: {
+        attemptId: attempt._id,
+        startedAt: attempt.startedAt,
+        quiz: {
+          _id: quiz._id,
+          title: quiz.title,
+          description: quiz.description,
+          timeLimit: quiz.timeLimit,
+          totalQuestions: rawQuestions.length,
+          questions: secureQuestions,
+        },
       },
     });
   } catch (error) {

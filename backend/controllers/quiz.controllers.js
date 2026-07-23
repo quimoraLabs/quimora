@@ -1,11 +1,13 @@
 import Quiz from "../models/quiz.model.js";
 import User from "../models/user.model.js";
+import Question from "../models/question.model.js";
 import mongoose from "mongoose";
 import {
   assertQuizExists,
   assertUserExists,
 } from "../utils/assertion.utils.js";
-import { formatUniversalResponse } from "../utils/universalFormatter.js";
+import { formatUniversalResponse } from "../utils/universalFormatter.utils.js";
+import { isDuplicateQuiz } from "../utils/duplicate.utils.js";
 
 // Fetch Student Specific Active & Published Available Quizzes
 export const getAvailableQuizzesForStudents = async (req, res, next) => {
@@ -50,8 +52,18 @@ export const getAvailableQuizzesForStudents = async (req, res, next) => {
 // Create a new quiz (Allows empty question sets to add later)
 export const createQuiz = async (req, res, next) => {
   try {
-    const { title, description, timeLimit, maxAttempts, startDate, endDate,tags=[] } = req.body;
-    await assertUserExists(req.auth.userId, false);
+    const { title, description, timeLimit, maxAttempts, startDate, endDate, tags = [] } = req.body;
+    const userId = req.auth.userId;
+    await assertUserExists(userId, false);
+
+    // Check for duplicate quiz title for this user
+    const isDuplicate = await isDuplicateQuiz(title, userId);
+    if (isDuplicate) {
+      return res.status(409).json({
+        success: false,
+        message: "A quiz with this title already exists.",
+      });
+    }
 
     const quiz = new Quiz({
       title,
@@ -60,49 +72,29 @@ export const createQuiz = async (req, res, next) => {
       maxAttempts,
       startDate,
       endDate,
-      createdBy: req.auth.userId,
+      createdBy: userId,
       tags,
     });
-  await quiz.save();
-  // next();
-  res.status(201).json({
-    success: true,
-    message: "Quiz created successfully",
-    data: quiz,
-  });
-} catch (error) {
-  // console.error("Create Quiz Error:", error);
-  next(error);
-}
-};
-
-// Fetch detailed quiz information for tracking and editing
-export const getQuizDetails = async (req, res, next) => {
-  try {
-    const quiz = await Quiz.findById(req.params.quizId).populate(
-      "createdBy",
-      "name email",
-    ).populate("questions", "title description options correctAnswer");
-    if (!quiz) {
-      return res.status(404).json({ error: "Quiz not found" });
-    }
-
-    res.status(200).json({
+    await quiz.save();
+    // next();
+    res.status(201).json({
       success: true,
-      data: formatUniversalResponse(quiz, "createdBy", ["name", "email"]),
+      message: "Quiz created successfully",
+      data: quiz,
     });
   } catch (error) {
-    // Mongoose CastErrors are already intercepted at the application layer by your route middleware layout
+    // console.error("Create Quiz Error:", error);
     next(error);
   }
 };
+
 
 // Fetch single quiz high-level details for tracking
 export const getQuizzesByInstructor = async (req, res, next) => {
   try {
     let { page = 1, limit = 10 } = req.query;
     page = parseInt(page, 10);
-    limit = parseInt(limit, 10); 
+    limit = parseInt(limit, 10);
     const totalItems = await Quiz.countDocuments({
       createdBy: req.auth.userId.toString(),
     });
@@ -111,15 +103,14 @@ export const getQuizzesByInstructor = async (req, res, next) => {
 
     const quizzes = await Quiz.find({
       createdBy: req.auth.userId.toString(),
-    }).populate("createdBy", "name email")
-    .skip((page - 1) * limit)
-    .limit(limit);
+    }).skip((page - 1) * limit)
+      .limit(limit);
     if (!quizzes) {
       return res.status(404).json({
         message: "Quizzes not found",
       });
     }
-    const formattedQuizzes = formatUniversalResponse(quizzes, "createdBy", ["name", "email"]);
+    const formattedQuizzes = formatUniversalResponse(quizzes);
     const totalPages = Math.ceil(formattedQuizzes.length / limit);
     res.status(200).json({
       success: true,
@@ -137,59 +128,66 @@ export const getQuizzesByInstructor = async (req, res, next) => {
   }
 };
 
-export const getAllQuizzes = async (req, res, next) => {
+export const getQuizzes = async (req, res, next) => {
   try {
-    const now = new Date();
+    let { page = 1, limit = 10 } = req.query;
+    page = Math.max(1, parseInt(page, 10));
+    limit = Math.max(1, parseInt(limit, 10));
 
-    // 1. Fetch quizzes directly from the database matching strict live constraints
-    const quizzes = await Quiz.find({
-      status: "published",         // Only fetch quizzes that are finalized and published
-      startDate: { $lte: now },    // Ensure the quiz availability has started (startDate <= now)
-      endDate: { $gte: now }       // Ensure the quiz has not expired yet (endDate >= now)
-    })
+    // Total count of ALL quizzes in the database
+    const totalItems = await Quiz.countDocuments();
+
+    // Fetch all quizzes sorted by newest first
+    const quizzes = await Quiz.find()
       .populate("createdBy", "name email")
-      .sort({ startDate: -1 })       // Sort quizzes dynamically to display the newest ones first
-    // .select("-questions");         // 🔒 SECURITY: Exclude the questions array to prevent client-side leaks
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit);
 
-    // 2. Return an empty array response gracefully if no active quizzes are found
-    if (!quizzes || quizzes.length === 0) {
-      return res.status(200).json({
-        success: true,
-        message: "No active quizzes available right now",
-        data: []
-      });
-    }
+    // Universal formatting
+    const formattedQuizzes = quizzes.length
+      ? formatUniversalResponse(quizzes, "createdBy", ["name", "email"])
+      : [];
 
-    // 3. Format the active quizzes list using the universal utility wrapper
     res.status(200).json({
       success: true,
-      data: formatUniversalResponse(quizzes, "createdBy", [
-        "name",
-        "email",
-      ]),
+      pagination: {
+        totalItems,
+        totalPages: Math.ceil(totalItems / limit) || 1,
+        currentPage: page,
+        limit,
+      },
+      data: formattedQuizzes,
     });
   } catch (error) {
-    // Forward any unexpected runtime database exceptions to the global error middleware
     next(error);
   }
 };
 
 export const getQuizById = async (req, res, next) => {
   try {
-    const quiz = await Quiz.findOne({
-      _id: req.params.quizId,
-      // createdBy: req.auth.userId,
-    }).populate("createdBy", "username email");
+    const { quizId } = req.params;
+
+    // 1. Fetch quiz with clean populated fields (.lean() for lightweight plain object)
+    const quiz = await Quiz.findById(quizId)
+      .populate("createdBy", "name email")
+      .lean();
+
     if (!quiz) {
       return res.status(404).json({ error: "Quiz not found" });
     }
+
+    // 2. Format response cleanly
     const result = formatUniversalResponse(quiz, "createdBy", [
       "name",
       "email",
     ]);
-    res.status(200).json({ success: true, data: result });
+
+    res.status(200).json({
+      success: true,
+      data: result,
+    });
   } catch (error) {
-    // Mongoose CastErrors are already intercepted at the application layer by your route middleware layout
     next(error);
   }
 };
@@ -197,20 +195,30 @@ export const getQuizById = async (req, res, next) => {
 export const updateQuiz = async (req, res, next) => {
   try {
     const { quizId } = req.params;
-    const userId = req.auth.userId;
+    const userId = req.auth.userId.toString();
     const data = req.body;
 
-    // 1. REUSE ASSERTION: Verify user presence using optimized zero-memory search index mapping
-    // Note: Corrected variable format token assignment to ensure string structure compatibility
-    await assertUserExists(req.auth.userId, "false");
-
-    // 2. Validate essential text payload strings
-    if (data.title !== undefined && !data.title.trim()) {
-      return res.status(400).json({
-        error: "Title cannot be empty",
-      });
+    // 1. Ownership & Existence Check (Single DB lookup)
+    const quiz = await assertQuizExists(quizId);
+    if (quiz.createdBy.toString() !== userId) {
+      return res.status(403).json({ error: "Unauthorized access to update this quiz" });
     }
 
+    // 2. Validate essential title
+    if (data.title !== undefined) {
+      if (!data.title.trim()) {
+        return res.status(400).json({ error: "Title cannot be empty" });
+      }
+      // Duplicate title check only if title is actually changing
+      if (data.title.trim() !== quiz.title) {
+        const isDuplicate = await isDuplicateQuiz(data.title.trim(), userId, quizId);
+        if (isDuplicate) {
+          return res.status(409).json({ error: "A quiz with this title already exists" });
+        }
+      }
+    }
+
+    // 3. Filter allowed updating fields
     const allowedFields = [
       "title",
       "description",
@@ -219,28 +227,24 @@ export const updateQuiz = async (req, res, next) => {
       "startDate",
       "endDate",
       "maxAttempts",
+      "status",
+      "isActive",
     ];
 
-    // 3. Isolate permitted updating fields
-    const filteredData = Object.keys(data).reduce((acc, key) => {
-      if (allowedFields.includes(key)) {
-        acc[key] = data[key];
+    const filteredData = {};
+    allowedFields.forEach((field) => {
+      if (data[field] !== undefined) {
+        filteredData[field] = data[field];
       }
-      return acc;
-    }, {});
+    });
 
     if (Object.keys(filteredData).length === 0) {
-      return res.status(400).json({
-        error: "No valid fields provided for update",
-      });
+      return res.status(400).json({ error: "No valid fields provided for update" });
     }
 
-    // 4. REUSE ASSERTION: Secure full quiz extraction to avoid properties of null application failures
-    const quiz = await assertQuizExists(quizId);
-
-    // 6. Evaluate data changes accurately (JSON stringification handles reference arrays like "tags" perfectly)
+    // Example Backend Check
     const hasChanges = Object.keys(filteredData).some(
-      (key) => JSON.stringify(filteredData[key]) !== JSON.stringify(quiz[key]),
+      (key) => JSON.stringify(filteredData[key]) !== JSON.stringify(quiz[key])
     );
 
     if (!hasChanges) {
@@ -249,44 +253,54 @@ export const updateQuiz = async (req, res, next) => {
       });
     }
 
-    // 7. Execute explicit atomic field updates
-    const updatedQuiz = await Quiz.findOneAndUpdate(
-      { _id: req.params.quizId, createdBy: req.auth.userId },
-      { $set: filteredData },
-      { new: true, runValidators: true },
-    );
+    // 4. Validate Start Date vs End Date logic
+    const finalStartDate = filteredData.startDate ? new Date(filteredData.startDate) : quiz.startDate;
+    const finalEndDate = filteredData.endDate ? new Date(filteredData.endDate) : quiz.endDate;
 
-    if (!updatedQuiz) {
-      return res.status(404).json({ error: "Quiz not found" });
+    if (finalStartDate && finalEndDate && finalEndDate <= finalStartDate) {
+      return res.status(400).json({ error: "End date must be after start date" });
     }
+
+    // 5. Direct Document Modification & Save (Triggers Mongoose Virtuals & Schema Hooks Properly)
+    Object.assign(quiz, filteredData);
+
+    // Save document (runValidators: true works natively on .save())
+    const updatedQuiz = await quiz.save();
+
     res.status(200).json({
       success: true,
       message: "Quiz updated successfully",
       data: updatedQuiz,
     });
   } catch (error) {
-    // Mongoose CastErrors are already intercepted at the application layer by your route middleware layout
     next(error);
   }
 };
 
 export const deleteQuiz = async (req, res, next) => {
   try {
-    await assertQuizExists(req.params.quizId, false);
+    const { quizId } = req.params;
+    const userId = req.auth.userId.toString();
 
-    const quiz = await Quiz.findOneAndDelete({
-      _id: req.params.quizId,
-    });
+    // 1. Existence Check
+    const quiz = await assertQuizExists(quizId);
 
-    if (!quiz) {
-      return res.status(404).json({ error: "Quiz not found" });
+    // 2. Authorization Check (Only creator can delete)
+    if (quiz.createdBy.toString() !== userId) {
+      return res.status(403).json({ error: "Unauthorized access to delete this quiz" });
     }
 
-    res
-      .status(200)
-      .json({ success: true, message: "Quiz deleted successfully" });
+    // 3. Delete the Quiz
+    await quiz.deleteOne();
+
+    // 4. CASCADING DELETE: Remove all linked questions to prevent database junk
+    await Question.deleteMany({ quizId });
+
+    res.status(200).json({
+      success: true,
+      message: "Quiz and its associated questions deleted successfully",
+    });
   } catch (error) {
-    // Mongoose CastErrors are already intercepted at the application layer by your route middleware layout
     next(error);
   }
 };
@@ -295,87 +309,70 @@ export const changeQuizStatus = async (req, res, next) => {
   try {
     const { status } = req.body;
     const { quizId } = req.params;
-    const userId = req.auth.userId;
+    const userId = req.auth.userId.toString();
 
-    const allowedStatus = ["draft", "published"];
-
-    if (!allowedStatus.includes(status)) {
-      return res.status(400).json({
-        error: "Invalid status",
-      });
+    // 1. Direct status validation (No unnecessary array declaration)
+    if (status !== "draft" && status !== "published") {
+      return res.status(400).json({ error: "Invalid status" });
     }
 
-    // 1. REUSE ASSERTION: Hydrate the quiz document safely
+    // 2. Fetch Quiz
     const quiz = await assertQuizExists(quizId);
 
-    // 2. Authorization Boundary Check
-    if (!quiz.createdBy.equals(userId)) {
-      return res
-        .status(403)
-        .json({ error: "Unauthorized access to this resource" });
+    // 3. Authorization Check
+    if (quiz.createdBy.toString() !== userId) {
+      return res.status(403).json({ error: "Unauthorized access to this resource" });
     }
 
-    // 3. Idempotency Check: Prevent duplicate state setting operations
+    // 4. Idempotency Check
     if (quiz.status === status) {
-      return res.status(400).json({
-        error: `Quiz is already ${status}`,
-      });
+      return res.status(400).json({ error: `Quiz is already ${status}` });
     }
 
-    // 4. Simple Data Rule Check: Bas khali quiz publish na ho jaye
-    if (
-      status === "published" &&
-      (!quiz.questions || quiz.questions.length === 0)
-    ) {
-      return res.status(400).json({
-        error: "Cannot publish a quiz containing zero active questions",
-      });
+    // 5. Correct Count Check for Separated Question Collection
+    if (status === "published") {
+      const questionCount = await Question.countDocuments({ quizId });
+      if (questionCount === 0) {
+        return res.status(400).json({
+          error: "Cannot publish a quiz containing zero active questions",
+        });
+      }
     }
 
-    // 5. Update and apply save mutations securely
+    // 6. Save Updated Status
     quiz.status = status;
-    await quiz.save({ validateBeforeSave: false });
+    await quiz.save();
 
     res.status(200).json({
       success: true,
-      message: `Quiz status updated successfully`,
+      message: `Quiz status updated to ${status} successfully`,
       data: { status: quiz.status },
     });
   } catch (error) {
-    if (error.name === "CastError") {
-      return res.status(400).json({ error: "Invalid quiz ID" });
-    }
     next(error);
   }
 };
 
-export const changeQuizActivity = async (req, res, next) => {
+export const toggleQuizActiveStatus = async (req, res, next) => {
   try {
     const { quizId } = req.params;
-    const userId = req.auth.userId;
+    const userId = req.auth.userId.toString();
 
-    // 1. REUSE ASSERTION: Verify quiz record presence using an optimized metadata check
-    // We pass "false" to assert existence cleanly without loading massive sub-document nested structures
-    await assertQuizExists(quizId, "false");
+    // 1. Fetch & Existence Check
+    const quiz = await assertQuizExists(quizId);
 
-    // 2. ATOMIC FIELD INVERSION: Fetch the current activity state and flip it cleanly using an array pipe
-    // This removes the race-condition risk of concurrent document overwrite failures completely
-    const quiz = await Quiz.findOneAndUpdate(
-      { _id: quizId, createdBy: userId },
-      [{ $set: { isActive: { $not: "$isActive" } } }],
-      { returnDocument: 'after', runValidators: true },
-    );
-
-    // 3. Authorization or record ownership match fallback fallback validation check
-    if (!quiz) {
-      return res
-        .status(403)
-        .json({ error: "Unauthorized access to this resource" });
+    // 2. Authorization Check
+    if (quiz.createdBy.toString() !== userId) {
+      return res.status(403).json({ error: "Unauthorized access" });
     }
+
+    // 3. Simple Boolean Flip
+    quiz.isActive = !quiz.isActive;
+    await quiz.save();
 
     res.status(200).json({
       success: true,
-      message: "Quiz activity status changed successfully",
+      message: `Quiz ${quiz.isActive ? "activated" : "deactivated"} successfully`,
       data: { isActive: quiz.isActive },
     });
   } catch (error) {
