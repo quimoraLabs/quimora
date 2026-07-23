@@ -7,6 +7,15 @@ import {
   assertQuizExists,
 } from "../utils/assertion.utils.js";
 import { formatUniversalResponse } from "../utils/universalFormatter.utils.js";
+import { evaluateSnapshotSubmission } from "../utils/grading.utils.js";
+import {
+  calculateDashboardMetrics,
+  getLeaderboardData,
+} from "../utils/dashboard.utils.js";
+import { sanitizeQuestionsForStudent } from "../utils/attempt.utils.js";
+import { createAttemptSession, handleExpiredAttempt,submitAttemptSession } from "../services/quizAttempt.service.js";
+
+
 
 /**
  * Initializes a secure quiz taking session for an authorized user profile.
@@ -17,84 +26,38 @@ export const startQuizAttempt = async (req, res, next) => {
     const { quizId } = req.body;
     const userId = req.auth.userId.toString();
 
-    // 1. Fetch Parent Quiz
+    // 1. Fetch & Validate Quiz Availability
     const quiz = await assertQuizExists(quizId);
-
-    // 2. Status & Availability Checks
-    if (quiz.status !== "published" || !quiz.isActive) {
-      return res.status(400).json({
-        error: "This quiz is currently unavailable for testing",
-      });
+    if (!quiz.status === "published" || !quiz.isActive) {
+      return res.status(400).json({ error: "Quiz is currently unavailable" });
     }
 
-    // 3. Date Boundary Checks (Schedule Window)
-    const now = new Date();
-    if (quiz.startDate && now < new Date(quiz.startDate)) {
-      return res.status(400).json({ error: "Quiz session has not started yet" });
-    }
-    if (quiz.endDate && now > new Date(quiz.endDate)) {
-      return res.status(400).json({ error: "Quiz session has expired" });
-    }
+    // 2. Resolve Active Attempt / Auto-Abandon Logic
+    let activeAttempt = await QuizAttempt.findOne({ userId, quizId, status: "started" });
+    activeAttempt = await handleExpiredAttempt(activeAttempt, quiz.timeLimit);
 
-    // 4. Maximum Attempts Limit Check
-    if (quiz.maxAttempts && quiz.maxAttempts > 0) {
-      const pastAttemptsCount = await QuizAttempt.countDocuments({
-        userId,
-        quizId,
-        status: "completed",
-      });
-
-      if (pastAttemptsCount >= quiz.maxAttempts) {
-        return res.status(403).json({
-          error: `You have exhausted your maximum allotment of ${quiz.maxAttempts} attempts for this quiz`,
-        });
+    // 3. Attempt Allocation Limit Check
+    if (quiz.maxAttempts > 0) {
+      const pastAttempts = await QuizAttempt.countDocuments({ userId, quizId, status: { $in: ["completed", "abandoned"] } });
+      if (pastAttempts >= quiz.maxAttempts) {
+        return res.status(403).json({ error: `Maximum allotment of ${quiz.maxAttempts} attempts reached` });
       }
     }
 
-    // 5. Check if User Already Has an Ongoing Active Attempt
-    let attempt = await QuizAttempt.findOne({
-      userId,
-      quizId,
-      status: "started",
-    });
+    // 4. Reuse Existing or Create Fresh Attempt
+    let attempt = activeAttempt;
+    let rawQuestions;
 
-    // 6. Fetch Questions from Separated Question Collection
-    const rawQuestions = await Question.find({ quizId }).lean();
-
-    if (!rawQuestions || rawQuestions.length === 0) {
-      return res.status(400).json({
-        error: "Cannot start a quiz that contains no active questions",
-      });
-    }
-
-    // Create new attempt only if an ongoing one doesn't exist
     if (!attempt) {
-      attempt = await QuizAttempt.create({
-        userId,
-        quizId,
-        totalQuestions: rawQuestions.length,
-        status: "started",
-        startedAt: new Date(),
-      });
+      const sessionData = await createAttemptSession(userId, quizId);
+      attempt = sessionData.attempt;
+      rawQuestions = sessionData.rawQuestions;
+    } else {
+      rawQuestions = await Question.find({ quizId }).lean();
     }
 
-    // 7. SECURITY: Sanitize Questions for Student (Strip correct answers / flags)
-    const secureQuestions = rawQuestions.map((q) => {
-      return {
-        _id: q._id,
-        questionText: q.questionText,
-        marks: q.marks,
-        difficulty: q.difficulty,
-        // Strip `isCorrect` from options array if present in your Question schema
-        options: q.options ? q.options.map((opt) => ({
-          _id: opt._id,
-          optionText: opt.optionText || opt.text,
-        })) : [],
-      };
-    });
-
-    // 8. Return Payload
-    res.status(200).json({
+    // 5. Send Clean Secure Payload Response
+    return res.status(200).json({
       success: true,
       message: "Quiz session initialized successfully",
       data: {
@@ -106,7 +69,7 @@ export const startQuizAttempt = async (req, res, next) => {
           description: quiz.description,
           timeLimit: quiz.timeLimit,
           totalQuestions: rawQuestions.length,
-          questions: secureQuestions,
+          questions: sanitizeQuestionsForStudent(rawQuestions),
         },
       },
     });
@@ -120,174 +83,22 @@ export const startQuizAttempt = async (req, res, next) => {
  */
 export const submitQuizAttempt = async (req, res, next) => {
   try {
-    // const { attemptId } = req.params;
-    const { answers: userAnswers, attemptId } = req.body; // Expects array of { questionId, selectedOptions }
-    const userId = req.auth.userId;
+    const { attemptId, answers } = req.body;
+    const userId = req.auth.userId.toString();
 
-    // 1. Core State Guard: Verify attempt presence and context ownership
-    const attempt = await QuizAttempt.findOne({ _id: attemptId, userId });
-    if (!attempt) {
-      return res
-        .status(404)
-        .json({ error: "Active quiz attempt session not found" });
+    // 1. Input Validation Check
+    if (!attemptId || !Array.isArray(answers)) {
+      return res.status(400).json({ error: "Invalid submission request payload" });
     }
 
-    if (attempt.status !== "started") {
-      return res
-        .status(400)
-        .json({ error: "This quiz session has already been processed" });
-    }
+    // 2. Execute Submission Logic via Service Layer
+    const result = await submitAttemptSession(attemptId, userId, answers);
 
-    // 2. Structural Layer Validation: Hydrate master schema record parameters
-    const quiz = await Quiz.findById(attempt.quizId).select(
-      "+questions.options.isCorrect",
-    );
-    if (!quiz) {
-      return res
-        .status(404)
-        .json({ error: "The origin quiz for this session no longer exists" });
-    }
-
-    // 3. Time Constraints Verification Block
-    const timeSpentInSeconds = Math.floor(
-      (Date.now() - attempt.startedAt.getTime()) / 1000,
-    );
-    const serverBufferInSeconds = 15;
-
-    if (quiz.timeLimit && quiz.timeLimit > 0) {
-      const maximumAllowedSeconds = quiz.timeLimit * 60 + serverBufferInSeconds;
-      if (timeSpentInSeconds > maximumAllowedSeconds) {
-        attempt.status = "abandoned";
-        await attempt.save();
-        return res.status(400).json({
-          error:
-            "Submission rejected: The time limit allocated for this session has expired",
-        });
-      }
-    }
-
-    if (!Array.isArray(userAnswers)) {
-      return res.status(400).json({
-        error: "Malformatted payload: Answers field must be a valid array",
-      });
-    }
-
-    // 4. ANTI-CHEAT LAYER: Map master IDs using a secure key collection lookup string
-    const masterQuestionIds = new Set(
-      quiz.questions.map((q) => q._id.toString()),
-    );
-
-    for (const ans of userAnswers) {
-      if (ans.questionId === undefined || ans.questionId === null) {
-        return res.status(400).json({
-          error:
-            "Malformatted payload: Each submission element requires a 'questionId'",
-        });
-      }
-
-      const submittedIdStr = ans.questionId.toString().trim();
-      if (!masterQuestionIds.has(submittedIdStr)) {
-        return res.status(400).json({
-          error: `Security Violation: Question ID '${submittedIdStr}' does not match this quiz scope`,
-        });
-      }
-    }
-
-    // Map user answers using O(1) optimization key mapping variables
-    const userAnswersMap = new Map();
-    userAnswers.forEach((ans) => {
-      userAnswersMap.set(ans.questionId.toString().trim(), ans.selectedOptions);
-    });
-
-    let correctAnswersCount = 0;
-    const compiledSnapshotArray = [];
-
-    // GRADING ENGINE
-    for (const masterQuestion of quiz.questions) {
-      const qIdString = masterQuestion._id.toString();
-      const rawUserSelection = userAnswersMap.get(qIdString);
-
-      // Handle structural scenarios where questions are completely un-attempted or skipped
-      if (
-        rawUserSelection === undefined ||
-        rawUserSelection === null ||
-        (Array.isArray(rawUserSelection) && rawUserSelection.length === 0)
-      ) {
-        compiledSnapshotArray.push({
-          questionId: masterQuestion._id,
-          selectedOptions: ["-1"], // Default to skipped state indicators
-          isCorrect: false,
-          timeSpent: 0,
-        });
-        continue;
-      }
-
-      // FIX: Extract element safely since frontend passes an array of stringified numbers
-      const primarySelection = Array.isArray(rawUserSelection)
-        ? rawUserSelection[0]
-        : rawUserSelection;
-      let sanitizedIndex = Number(primarySelection);
-
-      if (
-        isNaN(sanitizedIndex) ||
-        primarySelection === "" ||
-        rawUserSelection === null
-      ) {
-        sanitizedIndex = -1;
-      }
-
-      // 6. DYNAMIC INDEX EXTRACTION: Locate the correct answer index from your native option objects
-      const masterCorrectIndex = masterQuestion.options.findIndex(
-        (opt) => opt.isCorrect === true,
-      );
-
-      // Evaluate accuracy strictly by validating bounds and checking structural matching positions
-      const isCorrect =
-        sanitizedIndex !== -1 && sanitizedIndex === masterCorrectIndex;
-
-      if (isCorrect) {
-        correctAnswersCount++;
-      }
-
-      compiledSnapshotArray.push({
-        questionId: masterQuestion._id,
-        selectedOptions: [sanitizedIndex.toString()],
-        isCorrect,
-        timeSpent: 0,
-      });
-    }
-
-    // 7. Security Size Validation Bounds Verification Check
-    if (userAnswersMap.size > quiz.questions.length) {
-      return res.status(400).json({
-        error:
-          "Security Violation: Injected properties detected inside your payload data",
-      });
-    }
-
-    // 8. Compile and finalize aggregate metrics calculations
-    const scorePercentage = (correctAnswersCount / quiz.questions.length) * 100;
-
-    attempt.correctAnswersCount = correctAnswersCount;
-    attempt.score = parseFloat(scorePercentage.toFixed(2));
-    attempt.answers = compiledSnapshotArray;
-    attempt.timeTaken = timeSpentInSeconds;
-    attempt.status = "completed";
-    attempt.completedAt = Date.now();
-
-    await attempt.save();
-
-    res.status(200).json({
+    // 3. Send Success Response
+    return res.status(200).json({
       success: true,
-      message: "Quiz session evaluated and processed successfully",
-      summary: {
-        title: quiz.title,
-        totalQuestions: quiz.questions.length,
-        correctAnswersCount,
-        score: attempt.score,
-        timeTakenInSeconds: timeSpentInSeconds,
-        status: attempt.status,
-      },
+      message: "Quiz submitted successfully",
+      data: result,
     });
   } catch (error) {
     next(error);
@@ -586,7 +397,7 @@ export const getGlobalQuizAnalytics = async (req, res, next) => {
     const quizStats = await QuizAttempt.aggregate([
       // Only consider completed quizzes for accurate analytics
       { $match: { status: "completed" } },
-      
+
       // Grouping by student to see their individual performance
       {
         $group: {
@@ -596,7 +407,7 @@ export const getGlobalQuizAnalytics = async (req, res, next) => {
           lastAttemptDate: { $max: "$completedAt" },
         },
       },
-      
+
       // Connecting to the Users collection to get participant names
       {
         $lookup: {
@@ -607,7 +418,7 @@ export const getGlobalQuizAnalytics = async (req, res, next) => {
         },
       },
       { $unwind: "$participant" },
-      
+
       // Selecting only relevant quiz-taker info
       {
         $project: {
@@ -619,7 +430,7 @@ export const getGlobalQuizAnalytics = async (req, res, next) => {
           lastAttemptDate: 1,
         },
       },
-      
+
       // Sorting by performance
       { $sort: { averageScore: -1 } },
     ]);
@@ -649,10 +460,10 @@ export const getInstructorStudents = async (req, res, next) => {
         }
       },
       { $unwind: "$quizDetails" },
-      
+
       // 2. Filter: Only students who took this instructor's quizzes
       { $match: { "quizDetails.instructorId": instructorId, status: "completed" } },
-      
+
       // 3. Group by student to get individual stats
       {
         $group: {
@@ -662,7 +473,7 @@ export const getInstructorStudents = async (req, res, next) => {
           lastAttemptDate: { $max: "$completedAt" }
         }
       },
-      
+
       // 4. Get student details
       {
         $lookup: {
@@ -673,7 +484,7 @@ export const getInstructorStudents = async (req, res, next) => {
         }
       },
       { $unwind: "$studentInfo" },
-      
+
       // 5. Final projection
       {
         $project: {

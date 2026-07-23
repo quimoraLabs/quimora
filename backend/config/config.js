@@ -12,4 +12,5 @@ export default {
   imagekitPrivate: process.env.IMAGEKIT_PRIVATE_KEY,
   imagekitEndpoint: process.env.IMAGEKIT_URL_ENDPOINT,
   nodeENV: process.env.NODE_ENV,
+  apiPrefix: process.env.API_PREFIX
 };

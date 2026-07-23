@@ -1,5 +1,47 @@
 import mongoose from "mongoose";
 
+// Snapshot schema to lock question state at start time
+const optionSnapshotSchema = new mongoose.Schema(
+  {
+    _id: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+    },
+    optionText: {
+      type: String,
+      required: true,
+    },
+    isCorrect: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
+  },
+  { _id: false }
+);
+
+const questionSnapshotSchema = new mongoose.Schema(
+  {
+    questionId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+    },
+    questionText: {
+      type: String,
+      required: true,
+    },
+    marks: {
+      type: Number,
+      default: 1,
+    },
+    difficulty: {
+      type: String,
+    },
+    options: [optionSnapshotSchema],
+  },
+  { _id: false }
+);
+
 const answerSnapshotSchema = new mongoose.Schema(
   {
     questionId: {
@@ -27,60 +69,65 @@ const answerSnapshotSchema = new mongoose.Schema(
   { _id: false },
 ); // Disabling _id for sub-documents optimizes database size
 
-const quizAttemptSchema = new mongoose.Schema({
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    required: true,
-    index: true, // Indexed for rapid user dashboard statistics generation
-  },
-  quizId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Quiz",
-    required: true,
-    index: true,
-  },
-  // Storing a copy of total questions prevents stats breaking if the admin deletes a question later
-  totalQuestions: {
-    type: Number,
-    required: true,
-  },
-  correctAnswersCount: {
-    type: Number,
-    required: true,
-    default: 0,
-  },
-  score: {
-    type: Number,
-    required: true,
-    default: 0, // Percentage score (e.g., 85.5) or absolute marks points
-  },
+const quizAttemptSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true, // Indexed for rapid user dashboard statistics generation
+    },
+    quizId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Quiz",
+      required: true,
+      index: true,
+    },
+    // Storing a copy of total questions prevents stats breaking if the admin deletes a question later
+    totalQuestions: {
+      type: Number,
+      required: true,
+    },
 
-  // Detailed mapping profile array of every question handled during the session
-  answers: [answerSnapshotSchema],
+    // Freeze full question set at test initialization
+    questionSnapshots: [questionSnapshotSchema],
 
-  // Tracks total time taken to finish the entire exam (in seconds)
-  timeTaken: {
-    type: Number,
-    required: true,
-    default: 0,
-  },
-  status:{
-    type:String,
-    required:true,
-    enum:["started","completed","abandoned"],
-    default:"started"
-  },
-  startedAt:{
-    type:Date,
-    default:Date.now
-  },
-  completedAt:{
-    type:Date
-  }
-},{timestamps:true});
+    correctAnswersCount: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+    score: {
+      type: Number,
+      required: true,
+      default: 0, // Percentage score (e.g., 85.5) or absolute marks points
+    },
 
+    // Detailed mapping profile array of every question handled during the session
+    answers: [answerSnapshotSchema],
 
+    // Tracks total time taken to finish the entire exam (in seconds)
+    timeTaken: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+    status: {
+      type: String,
+      required: true,
+      enum: ["started", "completed", "abandoned"],
+      default: "started",
+    },
+    startedAt: {
+      type: Date,
+      default: Date.now,
+    },
+    completedAt: {
+      type: Date,
+    },
+  },
+  { timestamps: true }
+);
 
 // Compound index to quickly find how many times a specific user attempted a specific quiz
 quizAttemptSchema.index({ userId: 1, quizId: 1 });
@@ -89,13 +136,11 @@ quizAttemptSchema.set("toJSON", {
   transform: (doc, ret) => {
     ret.id = ret._id ? ret._id.toString() : ret.id;
     return ret;
-  }
+  },
 });
 
 quizAttemptSchema.set("toObject", { virtuals: true });
 
-const QuizAttempt = mongoose.model("QuizAttempt",quizAttemptSchema);
+const QuizAttempt = mongoose.model("QuizAttempt", quizAttemptSchema);
 
 export default QuizAttempt;
-
-

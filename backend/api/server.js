@@ -6,7 +6,7 @@ import config from "../config/config.js";
 import authRoutes from "../routes/auth.routes.js";
 import userRoutes from "../routes/user.routes.js";
 import quizRoutes from "../routes/quiz.routes.js";
-import attemptQuizRoutes from "../routes/attempQuiz.routes.js";
+import studentQuizRoutes from "../routes/studentQuiz.routes.js";
 import { errorHandler } from "../middleware/error.middleware.js";
 import questionRoutes from "../routes/question.routes.js";
 import { validateObjectId } from "../middleware/validObjectId.middleware.js";
@@ -26,18 +26,25 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-
 app.use(morgan("tiny"));
 app.use(express.json());
-app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/quizzes", quizRoutes);
-app.use("/api/attempts", attemptQuizRoutes);
-app.use(
-  "/api/quiz/:quizId/questions",
+
+
+// Create a versioned router
+const apiRouter = express.Router();
+
+apiRouter.use("/auth", authRoutes);
+apiRouter.use("/users", userRoutes);
+apiRouter.use("/quizzes", quizRoutes);
+apiRouter.use("/student", studentQuizRoutes);
+apiRouter.use(
+  "/quiz/:quizId/questions",
   validateObjectId("quizId"),
-  questionRoutes,
+  questionRoutes
 );
+
+// Mount the versioned router centrally
+app.use(config.apiPrefix, apiRouter);
 
 app.get("/", (req, res) => {
   res.send("server works fine");
