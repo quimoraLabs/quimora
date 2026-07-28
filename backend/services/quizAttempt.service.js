@@ -1,9 +1,52 @@
 import Question from "../models/question.model.js";
 import QuizAttempt from "../models/quizAttempt.model.js";
 import { evaluateSnapshotSubmission } from "../utils/grading.utils.js";
+import Quiz from "../models/quiz.model.js";
 
 
+/**
+ * Quick eligibility check before letting user open quiz modal or start test
+ */
+export const checkQuizEligibility = async (quizId, userId) => {
+    const quiz = await Quiz.findById(quizId).lean();
 
+    if (!quiz || !quiz.isActive || quiz.status !== "published") {
+        return {
+            isEligible: false,
+            reason: "Quiz is currently inactive or unavailable.",
+        };
+    }
+
+    // Check completed or abandoned attempts count
+    const attemptCount = await QuizAttempt.countDocuments({
+        userId,
+        quizId,
+        status: { $in: ["completed", "abandoned"] },
+    });
+
+    if (quiz.maxAttempts > 0 && attemptCount >= quiz.maxAttempts) {
+        return {
+            isEligible: false,
+            reason: `Maximum allotment of ${quiz.maxAttempts} attempts reached for this quiz.`,
+            attemptsUsed: attemptCount,
+            maxAttempts: quiz.maxAttempts,
+        };
+    }
+
+    // Check if there's an ongoing active session
+    const activeAttempt = await QuizAttempt.findOne({
+        userId,
+        quizId,
+        status: "started",
+    }).lean();
+
+    return {
+        isEligible: true,
+        hasActiveSession: Boolean(activeAttempt),
+        activeAttemptId: activeAttempt ? activeAttempt._id : null,
+        attemptsRemaining: quiz.maxAttempts > 0 ? quiz.maxAttempts - attemptCount : null,
+    };
+};
 
 // Helper to handle auto-abandoning expired attempts
 export const handleExpiredAttempt = async (attempt, quizTimeLimit) => {
@@ -115,4 +158,45 @@ export const submitAttemptSession = async (attemptId, userId, userAnswers) => {
         timeTakenInSeconds,
         completedAt: attempt.completedAt,
     };
+};
+
+/**
+ * Sanitizes attempt data.
+ * @param {Object} attempt - Raw attempt object from database
+ * @param {boolean} includeQuestions - Flag to conditionally attach questions array
+ */
+export const sanitizeAttemptData = (attempt, includeQuestions = false) => {
+    if (!attempt) return null;
+
+    // Default lightweight summary object
+    const sanitized = {
+        _id: attempt._id,
+        quizTitle: attempt.quizId?.title || "Quiz",
+        tags: Array.isArray(attempt.quizId?.tags) ? attempt.quizId.tags : [],
+        totalQuestions: attempt.totalQuestions,
+        correctAnswersCount: attempt.correctAnswersCount,
+        score: attempt.score,
+        status: attempt.status,
+        startedAt: attempt.startedAt,
+        completedAt: attempt.completedAt,
+        timeTakenInSeconds: attempt.timeTaken,
+    };
+
+    // Conditionally attach questions array ONLY when explicitly requested
+    if (includeQuestions && Array.isArray(attempt.questionSnapshots)) {
+        sanitized.questions = attempt.questionSnapshots.map((snapshot) => {
+            const answer = attempt.answers?.find(
+                (ans) => ans.questionId.toString() === snapshot.questionId.toString()
+            );
+
+            return {
+                questionId: snapshot.questionId,
+                questionText: snapshot.questionText,
+                marks: snapshot.marks,
+                isCorrect: Boolean(answer?.isCorrect),
+            };
+        });
+    }
+
+    return sanitized;
 };

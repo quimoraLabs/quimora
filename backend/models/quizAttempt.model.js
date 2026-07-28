@@ -141,6 +141,9 @@ quizAttemptSchema.set("toJSON", {
 
 quizAttemptSchema.set("toObject", { virtuals: true });
 
+quizAttemptSchema.index({ quizId: 1, status: 1, score: -1, timeTaken: 1 });
+quizAttemptSchema.index({ status: 1, score: -1, timeTaken: 1 });
+
 const QuizAttempt = mongoose.model("QuizAttempt", quizAttemptSchema);
 
 export default QuizAttempt;

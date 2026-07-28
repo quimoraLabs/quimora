@@ -13,9 +13,29 @@ import {
   getLeaderboardData,
 } from "../utils/dashboard.utils.js";
 import { sanitizeQuestionsForStudent } from "../utils/attempt.utils.js";
-import { createAttemptSession, handleExpiredAttempt,submitAttemptSession } from "../services/quizAttempt.service.js";
+import { createAttemptSession, handleExpiredAttempt, submitAttemptSession, sanitizeAttemptData, checkQuizEligibility } from "../services/quizAttempt.service.js";
+import { fetchStudentDashboardAnalytics, getQuizLeaderboard } from "../services/studentDashboard.service.js";
 
+/**
+ * @desc    Quick eligibility check before user enters rules/start screen
+ * @route   GET /api/v1/student/quiz/:quizId/eligibility
+ * @access  Private (Student)
+ */
+export const checkStudentQuizEligibility = async (req, res, next) => {
+    try {
+        const { quizId } = req.params;
+        const userId = req.auth.userId.toString();
 
+        const eligibility = await checkQuizEligibility(quizId, userId);
+
+        return res.status(200).json({
+            success: true,
+            data: eligibility,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
 
 /**
  * @desc    Start or resume a quiz session for student
@@ -80,8 +100,11 @@ export const startQuizAttempt = async (req, res, next) => {
   }
 };
 
+
 /**
- * Evaluates, grades, and secures an ongoing quiz session based on object choice options.
+ * @desc    Submit or finish current quiz session for student
+ * @route   POST /api/v1/student/quiz/submit
+ * @access  Private (Student)
  */
 export const submitQuizAttempt = async (req, res, next) => {
   try {
@@ -121,7 +144,7 @@ export const getStudentAttemptDetails = async (req, res, next) => {
         const attempt = await QuizAttempt.findOne({ _id: attemptId, userId })
             .populate({
                 path: "quizId",
-                select: "title description timeLimit tags",
+                select: "title timeLimit",
             })
             .lean();
 
@@ -131,9 +154,12 @@ export const getStudentAttemptDetails = async (req, res, next) => {
             });
         }
 
+        // Service call for single object
+        const sanitizedData = sanitizeAttemptData(attempt,true);
+
         return res.status(200).json({
             success: true,
-            data: attempt,
+            data: sanitizedData,
         });
     } catch (error) {
         next(error);
@@ -145,7 +171,8 @@ export const getStudentAttemptDetails = async (req, res, next) => {
  * @route   GET /api/v1/student/attempts
  * @access  Private (Student)
  */
-export const getAllStudentAttempts = async (req, res, next) => {
+
+export const getStudentAttemptHistory = async (req, res, next) => {
     try {
         const userId = req.auth.userId.toString();
 
@@ -157,10 +184,15 @@ export const getAllStudentAttempts = async (req, res, next) => {
             })
             .lean();
 
+        // Pass false so question snapshots are NOT included in the list view
+        const sanitizedAttempts = attempts.map((attempt) =>
+            sanitizeAttemptData(attempt, false)
+        );
+
         return res.status(200).json({
             success: true,
-            count: attempts.length,
-            data: attempts,
+            count: sanitizedAttempts.length,
+            data: sanitizedAttempts,
         });
     } catch (error) {
         next(error);
@@ -213,191 +245,33 @@ export const getStudentDashboardStats = async (req, res, next) => {
     try {
         const userId = req.auth.userId.toString();
 
-        // 1. Fetch user's completed attempts
-        const completedAttempts = await QuizAttempt.find({
-            userId,
-            status: "completed",
-        })
-            .sort({ completedAt: -1 })
-            .populate({ path: "quizId", select: "title tags" })
-            .lean();
+        // Delegate all heavy aggregation & metric logic to the service
+        const dashboardData = await fetchStudentDashboardAnalytics(userId);
 
-        // Default empty dashboard state for fresh student
-        if (!completedAttempts || completedAttempts.length === 0) {
-            return res.status(200).json({
-                success: true,
-                data: {
-                    totalTestsTaken: 0,
-                    averageScore: 0,
-                    maxScore: 0,
-                    minScore: 0,
-                    currentRank: null,
-                    latestResult: null,
-                    performanceTrend: [],
-                    predictedNextScore: 0,
-                    weakAreas: [],
-                    recentHistory: [],
-                    leaderboard: [],
-                },
-            });
-        }
-
-        // 2. Metric Calculations
-        const totalTestsTaken = completedAttempts.length;
-        const scores = completedAttempts.map((attempt) => attempt.score);
-        const averageScore = parseFloat(
-            (scores.reduce((sum, score) => sum + score, 0) / totalTestsTaken).toFixed(2)
-        );
-        const maxScore = Math.max(...scores);
-        const minScore = Math.min(...scores);
-
-        const latestAttempt = completedAttempts[0];
-
-        // 3. Format History & Trends
-        const recentHistory = completedAttempts.slice(0, 5).map((attempt) => ({
-            id: attempt._id,
-            quizTitle: attempt.quizId?.title || "Untitled Quiz",
-            score: attempt.score,
-            status: attempt.status,
-            completedAt: attempt.completedAt,
-            totalQuestions: attempt.totalQuestions,
-            correctAnswersCount: attempt.correctAnswersCount,
-            timeTakenInSeconds: attempt.timeTaken,
-            tags: Array.isArray(attempt.quizId?.tags) ? attempt.quizId.tags : [],
-        }));
-
-        const performanceTrend = completedAttempts
-            .slice(0, 8)
-            .reverse()
-            .map((attempt) => ({
-                label: new Date(attempt.completedAt).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                }),
-                score: attempt.score,
-            }));
-
-        // 4. Trend Slope Prediction
-        const predictedNextScore = (() => {
-            if (performanceTrend.length <= 1) {
-                return performanceTrend[0]?.score ?? averageScore;
-            }
-            const firstScore = performanceTrend[0].score;
-            const lastScore = performanceTrend[performanceTrend.length - 1].score;
-            const slope = (lastScore - firstScore) / (performanceTrend.length - 1);
-            return Number(Math.min(100, Math.max(0, lastScore + slope)).toFixed(1));
-        })();
-
-        // 5. Weak Areas Breakdown
-        const tagBuckets = completedAttempts.reduce((acc, attempt) => {
-            const tags = Array.isArray(attempt.quizId?.tags) ? attempt.quizId.tags : [];
-            tags.forEach((tag) => {
-                const tagKey = typeof tag === "object" ? tag.toString() : tag;
-                if (!acc[tagKey]) {
-                    acc[tagKey] = { totalScore: 0, count: 0 };
-                }
-                acc[tagKey].totalScore += attempt.score;
-                acc[tagKey].count += 1;
-            });
-            return acc;
-        }, {});
-
-        const weakAreas = Object.entries(tagBuckets)
-            .map(([tag, bucket]) => ({
-                tag,
-                averageScore: parseFloat((bucket.totalScore / bucket.count).toFixed(1)),
-                attempts: bucket.count,
-            }))
-            .sort((a, b) => a.averageScore - b.averageScore)
-            .slice(0, 4);
-
-        // 6. Optimized Aggregate Leaderboard & User Rank Calculation
-        const globalLeaderboard = await QuizAttempt.aggregate([
-            { $match: { status: "completed" } },
-            {
-                $group: {
-                    _id: "$userId",
-                    averageScore: { $avg: "$score" },
-                    totalTests: { $sum: 1 },
-                    maxScore: { $max: "$score" },
-                },
-            },
-            { $sort: { averageScore: -1, totalTests: -1 } },
-            {
-                $facet: {
-                    top20: [
-                        { $limit: 20 },
-                        {
-                            $lookup: {
-                                from: "users",
-                                localField: "_id",
-                                foreignField: "_id",
-                                as: "user",
-                            },
-                        },
-                        { $unwind: "$user" },
-                        {
-                            $project: {
-                                _id: 0,
-                                userId: "$_id",
-                                name: "$user.name",
-                                averageScore: { $round: ["$averageScore", 2] },
-                                totalTests: 1,
-                                maxScore: 1,
-                            },
-                        },
-                    ],
-                    allRanks: [
-                        {
-                            $project: {
-                                userId: "$_id",
-                            },
-                        },
-                    ],
-                },
-            },
-        ]);
-
-        const top20Data = globalLeaderboard[0]?.top20 || [];
-        const allRanksData = globalLeaderboard[0]?.allRanks || [];
-
-        const userRankIndex = allRanksData.findIndex(
-            (entry) => entry.userId.toString() === userId
-        );
-        const currentRank = userRankIndex !== -1 ? userRankIndex + 1 : null;
-
-        const leaderboard = top20Data.map((entry, index) => ({
-            rank: index + 1,
-            name: entry.name,
-            averageScore: entry.averageScore,
-            totalTests: entry.totalTests,
-            isMe: entry.userId.toString() === userId,
-        }));
-
-        // 7. Final Clean Dashboard Payload Response
         return res.status(200).json({
             success: true,
-            data: {
-                totalTestsTaken,
-                averageScore,
-                maxScore,
-                minScore,
-                currentRank,
-                latestResult: {
-                    quizTitle: latestAttempt.quizId?.title || "Untitled Quiz",
-                    score: latestAttempt.score,
-                    completedAt: latestAttempt.completedAt,
-                    status: latestAttempt.status,
-                    totalQuestions: latestAttempt.totalQuestions,
-                    correctAnswersCount: latestAttempt.correctAnswersCount,
-                    timeTakenInSeconds: latestAttempt.timeTaken,
-                },
-                performanceTrend,
-                predictedNextScore,
-                weakAreas,
-                recentHistory,
-                leaderboard,
-            },
+            data: dashboardData,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * @desc    Get leaderboard specifically for a single quiz
+ * @route   GET /api/v1/student/leaderboard/quiz/:quizId
+ * @access  Private (Student)
+ */
+export const getStudentQuizWiseLeaderboard = async (req, res, next) => {
+    try {
+        const { quizId } = req.params;
+        const userId = req.auth.userId.toString();
+
+        const leaderboardData = await getQuizLeaderboard(quizId, userId, 10);
+
+        return res.status(200).json({
+            success: true,
+            data: leaderboardData,
         });
     } catch (error) {
         next(error);
