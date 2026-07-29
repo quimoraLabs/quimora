@@ -1,16 +1,27 @@
 import { Navigate, Outlet } from "react-router-dom";
 import useAuthStore from "../store/authStore";
+import Loader from "../components/Loader";
 
 const PublicRoutes = () => {
-  const { isAuthenticated, authInitialized } = useAuthStore();
+  const { isAuthenticated, user, authInitialized } = useAuthStore();
 
   if (!authInitialized) {
-    return null;
+    return <Loader />;
   }
 
-  return isAuthenticated
-    ? <Navigate to="/" replace />
-    : <Outlet />;
+  if (isAuthenticated) {
+    const role = user?.role?.toLowerCase();
+    const targetDashboard =
+      role === "admin"
+        ? "/admin"
+        : role === "instructor"
+          ? "/instructor"
+          : "/student";
+
+    return <Navigate to={targetDashboard} replace />;
+  }
+
+  return <Outlet />;
 };
 
 export default PublicRoutes;
