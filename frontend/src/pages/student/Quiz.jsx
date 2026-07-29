@@ -2,8 +2,8 @@ import { useEffect, useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { Play } from "lucide-react";
-import useQuizStore from "../../../../../store/quizStore";
-import DataTable from "../../../components/DataTable";
+import useQuizStore from "../../store/quizStore";
+import DataTable from "../../components/DataTable";
 
 function StudentQuiz() {
 

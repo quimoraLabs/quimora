@@ -6,13 +6,13 @@ import {
   CheckCircle2,
   TrendingUp,
 } from "lucide-react";
-import useStudentQuizStore from "../../../../store/useStudentQuizStore";
-import StatsCard from "../components/StatsCard";
-import PerformanceTrend from "../components/PerformanceTrend";
-import RecentAttempt from "../components/RecentAttempt";
-import LatestResult from "../components/LatestResult";
-import Leaderboard from "../components/Leaderboard";
-import WeakestArea from "../components/WeakestArea";
+import useStudentQuizStore from "../../features/student/store/useStudentQuizStore"
+import StatsCard from "../../features/student/components/StatsCard";
+import PerformanceTrend from "../../features/student/components/PerformanceTrend";
+import RecentAttempt from "../../features/student/components/RecentAttempt";
+import LatestResult from "../../features/student/components/LatestResult";
+import Leaderboard from "../../features/student/components/Leaderboard";
+import WeakestArea from "../../features/student/components/WeakestArea";
 
 function StudentDashboard() {
   const { dashboardStats, dashboardLoading, fetchDashboardStats } = useStudentQuizStore();

@@ -9,9 +9,9 @@ import {
   Award,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import useStudentQuizStore from "../../../../../store/useStudentQuizStore";
-import Loader from "../../../../../components/Loader";
-import { exitFullScreen } from "../../components/enterFullScreen";
+import useStudentQuizStore from "../../features/student/store/useStudentQuizStore";
+import Loader from "../../components/Loader";
+import { exitFullScreen } from "../../features/student/utils/enterFullScreen";
 
 export const ResultCard = () => {
   const navigate = useNavigate();

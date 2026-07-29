@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 
 import { useNavigate } from "react-router-dom";
-import useStudentQuizStore from "../../../../../store/useStudentQuizStore";
-import { exitFullScreen } from "../../components/enterFullScreen";
-import { Watermark } from "../../components/Watermark";
+import useStudentQuizStore from "../../features/student/store/useStudentQuizStore";
+import { exitFullScreen } from "../../features/student/utils/enterFullScreen";
+import { Watermark } from "../../features/student/components/Watermark";
 
 function StudentQuizQuestions() {
   const navigate = useNavigate();

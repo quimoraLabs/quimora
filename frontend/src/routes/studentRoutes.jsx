@@ -1,11 +1,11 @@
 import { Route } from "react-router-dom";
 import ProtectedRoutes from "./ProtectedRoutes";
-import StudentDashboard from "../pages/dashboards/student/dashboard/StudentDashboard";
-import StudentQuiz from "../pages/dashboards/student/dashboard/quiz/Quiz";
-import StudentResult from "../pages/dashboards/student/result/StudentResult";
-import { QuizLanding } from "../pages/dashboards/student/dashboard/quiz/QuizLanding";
-import StudentQuizQuestions from "../pages/dashboards/student/dashboard/quiz/QuizQuestions";
-import { ResultCard } from "../pages/dashboards/student/dashboard/quiz/TestResult";
+import StudentDashboard from "../pages/student/StudentDashboard";
+import StudentQuiz from "../pages/student/Quiz";
+import StudentResult from "../pages/student/StudentResult";
+import { QuizLanding } from "../pages/student/QuizLanding";
+import StudentQuizQuestions from "../pages/student/QuizQuestions";
+import { ResultCard } from "../pages/student/TestResult";
 
 export const StudentRoutes = () => (
   <>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import DataTable from "../../components/DataTable";
+import DataTable from "../../../../components/DataTable";
 import useQuizStore from "../../../../store/quizStore"; 
 import { Loader } from "lucide-react";
 import { Link } from "react-router-dom";

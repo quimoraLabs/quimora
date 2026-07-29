@@ -1,6 +1,6 @@
 // import React from 'react'
 import { XCircle, Clock, Calendar, X, BarChart3, Award } from "lucide-react";
-import { formatDate } from "../../../../utils/formatDate";
+import { formatDate } from "../../../utils/formatDate";
 // import { useNavigate } from "react-router-dom";
 function ResultModal({ selectedAttempt, closeModal }) {
   return (
@@ -98,7 +98,9 @@ function ResultModal({ selectedAttempt, closeModal }) {
                 <p className="text-xs text-text-muted">Time Consumed</p>
                 <p className="text-base font-semibold text-text-main mt-1 flex items-center gap-1.5">
                   <Clock className="w-4 h-4 text-text-muted" />
-                  {selectedAttempt?.timeTaken ? `${selectedAttempt.timeTaken} mins` : `${selectedAttempt?.timeTakenInSeconds} secs`}
+                  {selectedAttempt?.timeTaken
+                    ? `${selectedAttempt.timeTaken} mins`
+                    : `${selectedAttempt?.timeTakenInSeconds} secs`}
                 </p>
               </div>
               <div className="bg-surface/50 p-3.5 rounded-xl border border-main">

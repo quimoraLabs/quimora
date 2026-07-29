@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { ArrowUpRight, Calendar, Clock } from "lucide-react";
-import ResultModal from "../components/ResultModal";
-import useStudentQuizStore from "../../../../store/useStudentQuizStore";
-import Loader from "../../../../components/Loader";
-import { formatDate } from "../../../../utils/formatDate";
+import ResultModal from "../../features/student/components/ResultModal";
+import useStudentQuizStore from "../../features/student/store/useStudentQuizStore";
+import Loader from "../../components/Loader";
+import { formatDate } from "../../utils/formatDate";
 
 export default function StudentResult() {
   const { studentAllResults } = useStudentQuizStore();

@@ -3,7 +3,7 @@ import useQuizStore from "../../../../store/quizStore";
 import useQuestionStore from "../../../../store/questionStore";
 import { useEffect, useState } from "react";
 import Loader from "../../../../components/Loader";
-import DataTable from "../../components/DataTable";
+import DataTable from "../../../../components/DataTable";
 import { Clock, Award, FileText, Plus, X } from "lucide-react";
 import QuestionForm from "../components/QuestionForm";
 /* IMPORT HOOK: Bringing in our newly styled theme-agnostic question card layout component */

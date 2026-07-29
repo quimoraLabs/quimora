@@ -10,8 +10,11 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 
 import toast from "react-hot-toast";
-import useStudentQuizStore from "../../../../../store/useStudentQuizStore";
-import { enterFullScreen, exitFullScreen } from "../../components/enterFullScreen";
+import useStudentQuizStore from "../../features/student/store/useStudentQuizStore";
+import {
+  enterFullScreen,
+  exitFullScreen,
+} from "../../features/student/utils/enterFullScreen";
 
 export const QuizLanding = () => {
     const rules = [
