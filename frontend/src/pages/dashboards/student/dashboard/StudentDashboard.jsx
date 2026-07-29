@@ -6,7 +6,7 @@ import {
   CheckCircle2,
   TrendingUp,
 } from "lucide-react";
-import useAttemptQuizStore from "../../../../store/useAttemptQuizStore";
+import useStudentQuizStore from "../../../../store/useStudentQuizStore";
 import StatsCard from "../components/StatsCard";
 import PerformanceTrend from "../components/PerformanceTrend";
 import RecentAttempt from "../components/RecentAttempt";
@@ -15,7 +15,7 @@ import Leaderboard from "../components/Leaderboard";
 import WeakestArea from "../components/WeakestArea";
 
 function StudentDashboard() {
-  const { dashboardStats, dashboardLoading, fetchDashboardStats } = useAttemptQuizStore();
+  const { dashboardStats, dashboardLoading, fetchDashboardStats } = useStudentQuizStore();
 
   useEffect(() => {
     fetchDashboardStats();

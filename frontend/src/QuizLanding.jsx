@@ -1,4 +1,4 @@
-import { motion } from "motion/react";
+import { motion } from "framer-motion";
 import {
   ShieldCheck,
   AlertCircle,
@@ -10,33 +10,42 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 
 import toast from "react-hot-toast";
-import useAttemptQuizStore from "../../../../../store/useAttemptQuizStore";
-import { enterFullScreen, exitFullScreen } from "../../components/enterFullScreen";
+import useStudentQuizStore from "../../../../../store/useStudentQuizStore";
+import {
+  enterFullScreen,
+  exitFullScreen,
+} from "../../components/enterFullScreen";
+
+const rules = [
+  "Do not switch tabs or windows during the test. Doing so will be flagged.",
+  "Multiple tab switches will result in automatic submission.",
+  "Keyboard shortcuts (Ctrl+C, Ctrl+V, etc.) are strictly disabled.",
+  "The test is timed. Ensure you submit before the countdown ends.",
+  "Questions are presented one by one. You can skip and return later.",
+];
 
 export const QuizLanding = () => {
-  const rules = [
-    "Do not switch tabs or windows during the test. Doing so will be flagged.",
-    "Multiple tab switches will result in automatic submission.",
-    "Keyboard shortcuts (Ctrl+C, Ctrl+V, etc.) are strictly disabled.",
-    "The test is timed. Ensure you submit before the countdown ends.",
-    "Questions are presented one by one. You can skip and return later.",
-  ];
-
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { startAttempt, loading } = useAttemptQuizStore();
+  const { startAttempt, loading } = useStudentQuizStore();
 
+  // Extract quiz details from location state
   const quizId = location.state?.quizId;
   const quizTitle = location.state?.title || "Assessment";
-  const quizDuration = location.state?.timeLimit || 10; 
+  const quizDuration = location.state?.timeLimit || 10;
   const totalQuestions = location.state?.totalQuestions || 0;
 
+  // Log quiz details for debugging
+  // console.log(quizId, quizTitle, quizDuration, totalQuestions);
+
+  // Handles navigation back to the student quizzes list
   const handleGoBack = () => {
-    exitFullScreen();
+    exitFullScreen(); // Ensure fullscreen is exited
     navigate("/student/quizzes");
   };
 
+  // Initiates the quiz attempt, including entering fullscreen mode
   const handleStartQuiz = async () => {
     if (!quizId) {
       toast.error("Quiz metadata is missing!");
@@ -44,17 +53,19 @@ export const QuizLanding = () => {
     }
 
     try {
-      enterFullScreen();
-      await startAttempt(quizId, navigate);
+      enterFullScreen(); // Request fullscreen mode
+      await startAttempt(quizId, navigate); // Start the quiz attempt
     } catch (error) {
-      console.error("Initialization Failed: ", error);
-      exitFullScreen();
-      toast.error("Security validation failed. Please check browser permissions.");
+      console.error("Quiz initialization failed:", error);
+      exitFullScreen(); // Exit fullscreen if an error occurs
+      toast.error(
+        "Security validation failed. Please check browser permissions.",
+      );
     }
   };
 
   return (
-    // FIX: Outer screen background use bg-main instead of bg-surface for nice depth
+    // Outer screen background for a clean, focused look
     <div className="min-h-screen flex items-center justify-center p-6 bg-surface">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -76,7 +87,7 @@ export const QuizLanding = () => {
         </div>
 
         <div className="space-y-6 mb-10">
-          {/* FIX 1: Amber Alert box handled for both light & dark modes nicely */}
+          {/* Alert box for security protocols */}
           <div className="flex items-start gap-3 p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/40 rounded-lg">
             <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-500 shrink-0 mt-0.5" />
             <p className="text-sm text-amber-800 dark:text-amber-300 italic">
@@ -98,7 +109,6 @@ export const QuizLanding = () => {
                   transition={{ delay: 0.1 * idx }}
                   className="flex items-start gap-3"
                 >
-                  {/* FIX 2: List Number circle colors adapted to theme tokens */}
                   <span className="shrink-0 w-6 h-6 rounded-full bg-main text-muted text-xs flex items-center justify-center font-bold border border-main">
                     {idx + 1}
                   </span>
@@ -108,7 +118,7 @@ export const QuizLanding = () => {
             </ul>
           </div>
 
-          {/* FIX 3: Central Stats Box cleaned from hardcoded slate-800 texts */}
+          {/* Central Stats Box for quiz details */}
           <div className="flex items-center gap-6 mt-8 p-4 bg-main rounded-xl shadow shadow-bg-main/20">
             <div className="flex flex-col items-center gap-1 flex-1">
               <Clock className="w-5 h-5 text-muted" />
@@ -119,7 +129,7 @@ export const QuizLanding = () => {
                 {quizDuration} Minutes
               </span>
             </div>
-            {/* Divider border token adapted */}
+            {/* Divider */}
             <div className="w-px h-10 bg-border-main shadow-inner" />
             <div className="flex flex-col items-center gap-1 flex-1">
               <FileText className="w-5 h-5 text-muted" />
@@ -137,12 +147,15 @@ export const QuizLanding = () => {
           <button
             onClick={handleStartQuiz}
             className="flex-1 bg-brand-mid hover:bg-brand-primary text-white font-bold py-4 px-6 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand-mid/10"
+            disabled={loading} // Disable button while loading
           >
-            <Play className="w-5 h-5 animate-pulse" /> {loading ? "Initializing..." : "Enter Examination Hall"}
+            <Play className="w-5 h-5 animate-pulse" />{" "}
+            {loading ? "Initializing..." : "Enter Examination Hall"}
           </button>
           <button
             onClick={handleGoBack}
             className="flex-1 bg-red-500/10 hover:bg-red-500/20 text-red-500 dark:text-red-400 font-semibold py-4 px-6 rounded-xl border border-red-500/20 transition-all flex items-center justify-center gap-2"
+            disabled={loading} // Disable button while loading
           >
             <X className="w-5 h-5" /> Cancel Attempt
           </button>

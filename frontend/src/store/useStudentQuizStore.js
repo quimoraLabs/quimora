@@ -5,7 +5,7 @@ import { cacheBusterHeaders } from "../utils/httpHeaders";
 
 const getAuthToken = () => localStorage.getItem("token");
 
-const useAttemptQuizStore = create((set, get) => ({
+const useStudentQuizStore = create((set, get) => ({
   attemptQuiz: null,
   attemptId: null,
   loading: false,
@@ -19,7 +19,7 @@ const useAttemptQuizStore = create((set, get) => ({
   dashboardStats: null,
   dashboardLoading: false,
   lastAttemptId: null,
-  url: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
+  url: import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1",
 
   loadPersistedQuizResult: async () => {
     const persistedAttemptId = localStorage.getItem("lastAttemptId");
@@ -44,7 +44,7 @@ const useAttemptQuizStore = create((set, get) => ({
     }
 
     try {
-      const response = await axios.get(`${url}/attempts/results/${persistedAttemptId}`, {
+      const response = await axios.get(`${url}/student/attempts/${persistedAttemptId}/result`, {
         headers: {
           Authorization: `Bearer ${token}`,
           ...cacheBusterHeaders,
@@ -94,34 +94,32 @@ const useAttemptQuizStore = create((set, get) => ({
     set({ loading: true });
     try {
       const response = await axios.post(
-        `${get().url}/attempts/start`,
+        `${get().url}/student/quiz/start`,
         { quizId },
         {
           headers: {
             Authorization: `Bearer ${getAuthToken()}`,
             ...cacheBusterHeaders,
           },
-        },
+        }
       );
       if (response.data.success) {
-        // Extract properties safely from cleanly mapped response.data
-        const { attemptId, quiz } = response.data;
+        const { attemptId, quiz } = response.data.data;
 
         set({
-          attemptId: attemptId, // Store your persistent database attempt tracker session ID
+          attemptId: attemptId,
           lastAttemptId: attemptId,
-          attemptQuiz: quiz, // This contains title, description, and your clean dynamic questions array
+          attemptQuiz: quiz,
           currentIndex: 0,
-          timer: quiz.timeLimit ? quiz.timeLimit * 60 : 600, // Convert minutes from backend database directly to local countdown seconds
-          answers: {}, // Clean object format for instant hash map lookups
+          timer: quiz.timeLimit ? quiz.timeLimit * 60 : 600,
+          answers: {},
           warningCount: 0,
           isFinished: false,
           quizResults: null,
         });
-        localStorage.setItem("lastAttemptId", attemptId);
 
-        // after state is set, navigate to the quiz interface
-        navigate("/student/start-quiz");
+                localStorage.setItem("lastAttemptId", attemptId); // Persist attempt ID
+        navigate("/student/quiz/start"); // Navigate to the quiz questions page
       }
     } catch (error) {
       console.error("Error starting quiz attempt:", error);
@@ -133,13 +131,26 @@ const useAttemptQuizStore = create((set, get) => ({
 
   // 2. Select Option Handler (Save against questionId)
   selectOption: (questionId, selectedOptions) => {
-    set((state) => ({
+    const { attemptQuiz } = get();
+    const question = attemptQuiz?.questions.find(q => q._id === questionId);
+
+    if (!question) {
+      toast.error("Could not find the question to save answer for.");
+      return;
+    }
+
+    const optionIds = (Array.isArray(selectedOptions) ? selectedOptions : [selectedOptions])
+      .map(selectedIndex => {
+        const index = Number(selectedIndex);
+        return question.options[index]?._id;
+      })
+      .filter(Boolean); // Filter out any undefined IDs if index is invalid
+
+    set(state => ({
       answers: {
         ...state.answers,
-        // Keep it clean as an array or comma-separated string depending on selection source
-        [questionId]: Array.isArray(selectedOptions)
-          ? selectedOptions.toString()
-          : selectedOptions.toString(),
+        // Store the comma-separated string of actual option _id's
+        [questionId]: optionIds.join(','),
       },
     }));
   },
@@ -188,7 +199,7 @@ const useAttemptQuizStore = create((set, get) => ({
     }
   },
 
-  //   6. Submit quiz attempt
+  // 2. Submit Attempt
   submitAttempt: async (navigate) => {
     const { attemptId, attemptQuiz, answers, isFinished, loading } = get();
     if (!attemptId || !attemptQuiz) {
@@ -206,31 +217,29 @@ const useAttemptQuizStore = create((set, get) => ({
         ([questionId, selectedOptions]) => ({
           questionId,
           selectedOptions: selectedOptions ? selectedOptions.split(",") : [],
-        }),
+        })
       );
 
       const response = await axios.post(
-        `${get().url}/attempts/submit`,
+        `${get().url}/student/quiz/submit`, // 👈 Exact controller route
         { attemptId, answers: formattedAnswers },
         {
           headers: {
             Authorization: `Bearer ${getAuthToken()}`,
             ...cacheBusterHeaders,
           },
-        },
+        }
       );
       if (response.data.success) {
         toast.success("Quiz submitted successfully!");
-        // Store results in state for display on results page
         set({
-          quizResults: response.data.summary,
+          quizResults: response.data.data, // 👈 Access via .data.data
           isFinished: true,
           loading: false,
         });
-        localStorage.setItem("lastAttemptId", attemptId);
-        localStorage.setItem("lastQuizResults", JSON.stringify(response.data.summary));
-        // Navigate to results page after submission
-        navigate("/student/quiz-results", { replace: true }); // Use replace to prevent going back to quiz interface
+        localStorage.setItem("lastAttemptId", attemptId); // Persist attempt ID
+        localStorage.setItem("lastQuizResults", JSON.stringify(response.data.data)); // Persist quiz results
+        navigate("/student/quiz/results", { replace: true }); // Navigate to the quiz results page
         return true;
       }
       return false;
@@ -243,21 +252,20 @@ const useAttemptQuizStore = create((set, get) => ({
     }
   },
 
+  // 3. Get All Student Attempt History
   studentAllResults: async () => {
     set({ loading: true });
     const token = getAuthToken();
     try {
-      const response = await axios.get(`${get().url}/attempts/my-results`, {
+      const response = await axios.get(`${get().url}/student/attempts`, { // 👈 Exact controller route
         headers: {
           Authorization: `Bearer ${token}`,
           ...cacheBusterHeaders,
         },
       });
-      // console.log(response.data.attempts.data);
 
       if (response.data.success) {
-        set({ quizResults: response.data.attempts?.data ?? response.data.attempts ?? [] });
-        // navigate("/student/my-results");
+        set({ quizResults: response.data.data }); // 👈 Access via .data.data
       }
     } catch (error) {
       console.error("Error fetching all quiz results:", error);
@@ -267,6 +275,7 @@ const useAttemptQuizStore = create((set, get) => ({
     }
   },
 
+  // 4. Dashboard Stats
   fetchDashboardStats: async () => {
     set({ dashboardLoading: true });
     const { url } = get();
@@ -278,7 +287,7 @@ const useAttemptQuizStore = create((set, get) => ({
     }
 
     try {
-      const response = await axios.get(`${url}/attempts/dashboard/stats`, {
+      const response = await axios.get(`${url}/student/dashboard`, { // 👈 Exact controller route
         headers: {
           Authorization: `Bearer ${token}`,
           ...cacheBusterHeaders,
@@ -286,16 +295,16 @@ const useAttemptQuizStore = create((set, get) => ({
       });
 
       if (response.data.success) {
-        set({ dashboardStats: response.data.dashboard });
+        set({ dashboardStats: response.data.data }); // 👈 Access via .data.data
       }
     } catch (error) {
       console.error("Error fetching dashboard stats:", error);
-      // toast.error("Failed to load dashboard stats.");
     } finally {
       set({ dashboardLoading: false });
     }
   },
 
+  // 5. Single Result / Attempt Details
   studentResults: async (navigate) => {
     set({ loading: true });
     const { attemptId } = get();
@@ -307,19 +316,19 @@ const useAttemptQuizStore = create((set, get) => ({
     }
     try {
       const response = await axios.get(
-        `${get().url}/attempts/results/${attemptId}`,
+        `${get().url}/student/attempts/${attemptId}`, // 👈 Exact controller route
         {
           headers: {
             Authorization: `Bearer ${token}`,
             ...cacheBusterHeaders,
           },
-        },
+        }
       );
       if (response.data.success) {
-        set({ quizResults: response.data.summary });
+        set({ quizResults: response.data.data }); // 👈 Access via .data.data
         localStorage.setItem("lastAttemptId", attemptId);
-        localStorage.setItem("lastQuizResults", JSON.stringify(response.data.summary));
-        navigate("/student/quiz-results");
+        localStorage.setItem("lastQuizResults", JSON.stringify(response.data.data));
+        navigate("/student/quiz/results"); // Navigate to the quiz results page
       }
     } catch (error) {
       console.error("Error fetching quiz results:", error);
@@ -327,7 +336,7 @@ const useAttemptQuizStore = create((set, get) => ({
     } finally {
       set({ loading: false });
     }
-  },
+  }
 }));
 
-export default useAttemptQuizStore;
+export default useStudentQuizStore;

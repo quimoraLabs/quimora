@@ -2,19 +2,18 @@ import { useEffect, useState } from "react";
 import { ArrowUpRight, Calendar, Clock } from "lucide-react";
 import ResultModal from "../components/ResultModal";
 import useStudentQuizStore from "../../../../store/useStudentQuizStore";
-import Loader from "../../../../components/Loader";
+import Loader from "../../../components/Loader"; // Adjusted path for Loader
 import { formatDate } from "../../../../utils/formatDate";
 
-export default function StudentResult() {
+export default function StudentResults() {
   const { studentAllResults } = useStudentQuizStore();
 
   useEffect(() => {
     studentAllResults();
   }, [studentAllResults]);
 
-  // console.log(studentAllResults);
+  // console.log("All student quiz results:", quizResults); // Log quiz results for debugging
   const { quizResults, loading } = useStudentQuizStore();
-  console.log(quizResults);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import "./App.css";
+// import "./App.css";
 import { Route, Routes, Outlet, Navigate } from "react-router-dom";
 import ProtectedRoutes from "./routes/ProtectedRoutes";
 import LoginPage from "./pages/auth/Login";
@@ -22,7 +22,7 @@ import StudentQuiz from "./pages/dashboards/student/dashboard/quiz/Quiz";
 import StudentQuizQuestions from "./pages/dashboards/student/dashboard/quiz/QuizQuestions";
 import StudentDashboard from "./pages/dashboards/student/dashboard/StudentDashboard";
 import StudentResult from "./pages/dashboards/student/result/StudentResult";
-import { QuizLanding } from "./pages/dashboards/student/dashboard/quiz/InstructionQuiz";
+import { QuizLanding } from "./pages/dashboards/student/dashboard/quiz/QuizLanding";
 import { ResultCard } from "./pages/dashboards/student/dashboard/quiz/TestResult";
 import Loader from "./components/Loader";
 import AdminDashboard from "./pages/dashboards/admin/AdminDashboard";
@@ -201,10 +201,10 @@ function App() {
 
         {/* ================= 5. PROTECTED ROUTES (Full Screen Quiz - No Sidebar) ================= */}
         <Route element={<ProtectedRoutes allowedRoles={["user"]} />}>
-          <Route path="/student">
-            <Route path="quiz-rules" element={<QuizLanding />} />
-            <Route path="start-quiz" element={<StudentQuizQuestions />} />
-            <Route path="quiz-results" element={<ResultCard />} />
+          <Route path="/student/quiz">
+            <Route path="rules" element={<QuizLanding />} />
+            <Route path="start" element={<StudentQuizQuestions />} />
+            <Route path="results" element={<ResultCard />} />
           </Route>
         </Route>
 

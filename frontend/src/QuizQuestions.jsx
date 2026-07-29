@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 
 import { useNavigate } from "react-router-dom";
-import useStudentQuizStore from "../../../../../store/useStudentQuizStore";
-import { exitFullScreen } from "../../components/enterFullScreen";
-import { Watermark } from "../../components/Watermark";
+import useStudentQuizStore from "../../../../store/useStudentQuizStore";
+import { exitFullScreen } from "../../../components/enterFullScreen";
+import { Watermark } from "../../../components/Watermark";
 
 function StudentQuizQuestions() {
   const navigate = useNavigate();
@@ -24,7 +24,7 @@ function StudentQuizQuestions() {
     submitAttempt,
   } = useStudentQuizStore();
 
-  console.log(attemptId);
+  // console.log("Current Quiz Attempt ID:", attemptId); // Log attempt ID for debugging
 
   // Local states to handle overlay locks
   const [isFullscreenLocked, setIsFullscreenLocked] = useState(true);
@@ -32,7 +32,7 @@ function StudentQuizQuestions() {
   const [timerPosition, setTimerPosition] = useState("center");
   const isSubmittingRef = useRef(false);
   const lastWarningAtRef = useRef(0);
-  const [hasExitedOnce, setHasExitedOnce] = useState(false); // 🔥 TRACKS REAL CHEATING
+  const [hasExitedOnce, setHasExitedOnce] = useState(false); // Tracks if the user has exited fullscreen at least once
 
   // Helper function to handle full screen lock activation
   const triggerFullscreenLock = () => {
@@ -69,7 +69,7 @@ function StudentQuizQuestions() {
         document.msFullscreenElement
       );
 
-      // Wrap state update in a 0ms timeout so it runs AFTER the current render cycle completely finishes
+      // If not in fullscreen, set lock to false after current render cycle
       if (!isNowFullscreen) {
         setTimeout(() => {
           setIsFullscreenLocked(false);
@@ -80,7 +80,7 @@ function StudentQuizQuestions() {
     checkInitialFullscreen();
   }, [attemptQuiz, attemptId, isFinished]);
 
-  // ⏱️ ENGINE 1: Clock Sync Loop
+  // Timer synchronization loop
   useEffect(() => {
     if (isFinished || !attemptQuiz) return;
 
@@ -91,10 +91,10 @@ function StudentQuizQuestions() {
     return () => clearInterval(intervalId);
   }, [isFinished, attemptQuiz, tickTimer, navigate]);
 
-  // ⚠️ ENGINE 2: Proctoring Engine
+  // Proctoring Engine: Monitors for security violations
   useEffect(() => {
     if (isFinished || !attemptQuiz) return;
-
+    // Helper to add a security warning and rate-limit them
     const addSecurityWarning = (message) => {
       if (isSubmittingRef.current) return;
 
@@ -114,6 +114,7 @@ function StudentQuizQuestions() {
       );
 
       if (!isNowFullscreen && !isFinished && !isSubmittingRef.current) {
+        // If not in fullscreen and not already finished/submitting
         // 🔥 Set cheating state to TRUE since user actively left fullscreen during exam
         setHasExitedOnce(true);
 
@@ -126,6 +127,7 @@ function StudentQuizQuestions() {
     };
 
     const handleVisibilityChange = () => {
+      // Detects if the user switches tabs
       if (document.hidden) {
         setHasExitedOnce(true);
         setIsFullscreenLocked(false);
@@ -136,6 +138,7 @@ function StudentQuizQuestions() {
     };
 
     const handleWindowBlur = () => {
+      // Detects if the window loses focus while in fullscreen
       const isCurrentlyFullscreen = !!(
         document.fullscreenElement ||
         document.webkitFullscreenElement ||
@@ -151,6 +154,7 @@ function StudentQuizQuestions() {
     };
 
     const handleContextMenu = (e) => {
+      // Prevents right-clicking
       e.preventDefault();
       toast.error("Right-clicking is disabled during this exam.");
     };
@@ -159,6 +163,7 @@ function StudentQuizQuestions() {
       const key = e.key?.toLowerCase();
 
       if (
+        // Block common copy/paste/dev tool shortcuts
         (e.ctrlKey || e.metaKey) &&
         (key === "c" || key === "v" || key === "u" || key === "s")
       ) {
@@ -170,6 +175,7 @@ function StudentQuizQuestions() {
       }
 
       if (e.key === "F12" || e.keyCode === 123) {
+        // Block F12 (Developer Tools)
         e.preventDefault();
         addSecurityWarning(
           "Security Alert: Developer Tools inspection (F12) blocked.",
@@ -178,6 +184,7 @@ function StudentQuizQuestions() {
       }
     };
 
+    // Add event listeners
     document.addEventListener("fullscreenchange", handleFullscreenChange);
     document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
     document.addEventListener("mozfullscreenchange", handleFullscreenChange);
@@ -188,6 +195,7 @@ function StudentQuizQuestions() {
     document.addEventListener("contextmenu", handleContextMenu);
     window.addEventListener("keydown", handleKeyDown);
 
+    // Cleanup event listeners on component unmount
     return () => {
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
       document.removeEventListener(
@@ -211,6 +219,7 @@ function StudentQuizQuestions() {
   }, [isFinished, attemptQuiz, incrementWarning, navigate]);
 
   if (!attemptQuiz || !attemptId) {
+    // Display message if no active quiz session is found
     return (
       <div className="p-6 bg-main min-h-screen flex flex-col items-center justify-center">
         <p className="mb-4 text-muted font-semibold">
@@ -227,6 +236,7 @@ function StudentQuizQuestions() {
   }
 
   if (loading) {
+    // Display loading state during submission
     return (
       <div className="p-6 bg-main min-h-screen flex items-center justify-center text-main">
         Processing secure transaction submission...
@@ -238,10 +248,12 @@ function StudentQuizQuestions() {
   const minutes = Math.floor(timer / 60);
   const seconds = timer % 60;
 
+  // Handles selecting an option for the current question
   const handleSelectOptionIndex = (optionIndex) => {
     selectOption(currentQuestion._id, [optionIndex]);
   };
 
+  // Handles final submission of the quiz
   const handleFinalSubmit = async () => {
     try {
       isSubmittingRef.current = true;
@@ -261,7 +273,7 @@ function StudentQuizQuestions() {
     <div className="relative min-h-screen bg-main text-main select-none">
       <Watermark />
 
-      {/* 🔥 THE INTUATIVE SMART DUAL-MODE OVERLAY LOCK */}
+      {/* Fullscreen Overlay Lock */}
       {!isFullscreenLocked && (
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/95 p-6 text-center backdrop-blur-md">
           {hasExitedOnce ? (
@@ -307,7 +319,7 @@ function StudentQuizQuestions() {
       <div className="p-6 min-h-screen flex flex-col items-center justify-center">
         {/* Floating Timer (position selectable) */}
         <div className={`absolute top-6 left-0 right-0 px-4`}>
-          <div
+          <div // Timer display
             className={`flex ${timerPosition === "left" ? "justify-start" : timerPosition === "right" ? "justify-end" : "justify-center"}`}
           >
             <div className="flex items-center gap-3 px-5 py-3 bg-surface/80 backdrop-blur-sm border border-soft rounded-full shadow-card">
@@ -320,7 +332,7 @@ function StudentQuizQuestions() {
               </div>
             </div>
 
-            {/* small control to switch timer position */}
+            {/* Controls to switch timer position */}
             <div className="ml-4 flex items-center gap-1">
               <button
                 onClick={() => setTimerPosition("left")}
@@ -338,15 +350,14 @@ function StudentQuizQuestions() {
           </div>
         </div>
 
+        {/* Main Quiz Question Card */}
         <div className="w-full mx-4 max-w-3xl p-6 md:p-8 border border-soft rounded-2xl bg-surface shadow-card transition-all">
           <p className="text-muted mb-2 font-medium">
             Question {currentIndex + 1} of {attemptQuiz.questions.length}
           </p>
-
           <h2 className="text-2xl font-semibold mb-6">
             {currentQuestion.questionText}
           </h2>
-
           <div className="space-y-3">
             {currentQuestion.options?.map((option, idx) => {
               const storedSelections = answers[currentQuestion._id];
@@ -389,6 +400,8 @@ function StudentQuizQuestions() {
           </div>
 
           <div className="flex justify-between mt-8">
+            {" "}
+            {/* Navigation buttons */}
             <button
               onClick={goToPreviousQuestion}
               disabled={currentIndex === 0}
@@ -396,7 +409,6 @@ function StudentQuizQuestions() {
             >
               Previous
             </button>
-
             {currentIndex === attemptQuiz.questions.length - 1 ? (
               <button
                 onClick={handleFinalSubmit}

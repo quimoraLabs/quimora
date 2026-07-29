@@ -6,7 +6,7 @@ import { cacheBusterHeaders } from "../utils/httpHeaders";
 const useQuizStore = create((set, get) => ({
   quizzes: [],
   loading: false,
-  url: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
+  url: import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1",
   currentQuiz: null,
 
   // Helper function to dynamically get the freshest token from localStorage
@@ -21,11 +21,10 @@ const useQuizStore = create((set, get) => ({
   fetchQuizzes: async () => {
     set({ loading: true });
     try {
-      const response = await axios.get(`${get().url}/quizzes/all`, {
+      const response = await axios.get(`${get().url}/quizzes`, {
         headers: get().getAuthHeaders(),
       });
-      // Double check if your backend returns data nested inside .data.data
-      set({ quizzes: response.data?.data?.data || [] });
+      set({ quizzes: response.data?.data || [] });
     } catch (error) {
       console.error("Error fetching quizzes:", error);
       toast.error("Failed to fetch quizzes.");

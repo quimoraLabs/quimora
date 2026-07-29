@@ -9,13 +9,13 @@ import {
   Award,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import useAttemptQuizStore from "../../../../../store/useAttemptQuizStore";
+import useStudentQuizStore from "../../../../../store/useStudentQuizStore";
 import Loader from "../../../../../components/Loader";
 import { exitFullScreen } from "../../components/enterFullScreen";
 
 export const ResultCard = () => {
   const navigate = useNavigate();
-  const { loadPersistedQuizResult, clearQuizSession, quizResults, warningCount, loading } = useAttemptQuizStore();
+  const { loadPersistedQuizResult, clearQuizSession, quizResults, warningCount, loading } = useStudentQuizStore();
 
   console.log("Quiz Results Data:", quizResults);
 
