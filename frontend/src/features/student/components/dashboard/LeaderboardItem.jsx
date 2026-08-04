@@ -1,6 +1,6 @@
 // import React from 'react'
 
-const Leaderboard = ({ entry }) => {
+const LeaderboardItem = ({ entry }) => {
   return (
     <div
     //   key={entry.rank}
@@ -26,4 +26,4 @@ const Leaderboard = ({ entry }) => {
   );
 };
 
-export default Leaderboard;
+export default LeaderboardItem;

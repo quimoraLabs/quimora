@@ -1,7 +1,7 @@
 // import React from 'react'
 import { motion } from "motion/react";
 
-const WeakestArea = ({ weakAreas }) => {
+const WeakestAreasCard = ({ weakAreas }) => {
   return (
               <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -36,4 +36,4 @@ const WeakestArea = ({ weakAreas }) => {
   )
 }
 
-export default WeakestArea
+export default WeakestAreasCard

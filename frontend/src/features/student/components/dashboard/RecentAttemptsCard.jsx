@@ -1,12 +1,10 @@
 import React from 'react'
 import { motion } from "motion/react";
 import { Link } from "react-router-dom";
-import ResultModal from "./ResultModal";
-const RecentAttempt = ({ dashboardLoading, recentAttempts }) => {
+import ResultModal from "../quiz/ResultModal";
+const RecentAttemptsCard = ({ dashboardLoading, recentAttempts }) => {
     const [isMOdalOpen, setIsModalOpen] = React.useState(false);
     const [selectedAttempt, setSelectedAttempt] = React.useState(null);
-
-    console.log("Recent Attempts:", selectedAttempt);
 
     const openReport = (attempt) => {
       setSelectedAttempt(attempt);
@@ -83,4 +81,4 @@ const RecentAttempt = ({ dashboardLoading, recentAttempts }) => {
   );
 };
 
-export default RecentAttempt;
+export default RecentAttemptsCard;

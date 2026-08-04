@@ -4,8 +4,8 @@ import { motion } from "motion/react";
 import { useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { useLocation, useNavigate } from "react-router-dom";
-import useAuthStore from "../../../store/authStore";
-import InputGroup from "../components/InputField";
+import useAuthStore from "../../features/auth/store/authStore";
+import InputGroup from "../../features/auth/components/InputField";
 function VerifyOTP() {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [password, setPassword] = useState("");
@@ -18,8 +18,7 @@ function VerifyOTP() {
 
   const navigate = useNavigate();
 
-const isBackShow = location.key !== 'default';
-  
+  const isBackShow = location.key !== "default";
 
   const handleChangePassword = async () => {
     if (password !== confirmPassword) {

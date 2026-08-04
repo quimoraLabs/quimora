@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { ArrowUpRight, Calendar, Clock } from "lucide-react";
-import ResultModal from "../../features/student/components/ResultModal";
+import ResultModal from "../../features/student/components/quiz/ResultModal";
 import useStudentQuizStore from "../../features/student/store/useStudentQuizStore";
 import Loader from "../../components/common/Loader";
 import { formatDate } from "../../utils/formatDate";
 
-export default function StudentResult() {
+export default function QuizHistoryPage() {
   const { studentAllResults } = useStudentQuizStore();
 
   useEffect(() => {
@@ -14,7 +14,7 @@ export default function StudentResult() {
 
   // console.log(studentAllResults);
   const { quizResults, loading } = useStudentQuizStore();
-  console.log(quizResults);
+
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);

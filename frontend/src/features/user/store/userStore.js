@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { cacheBusterHeaders } from "../utils/httpHeaders";
+import { cacheBusterHeaders } from "../../../utils/httpHeaders";
 
 const useUserStore = create((set, get) => ({
   user: null,
@@ -19,7 +19,7 @@ const useUserStore = create((set, get) => ({
       const response = await axios.get(`${get().url}/auth/me`, {
         headers: {
           Authorization: `Bearer ${token}`,
-          ...cacheBusterHeaders
+          ...cacheBusterHeaders,
         },
       });
       set({ user: response.data });
@@ -38,13 +38,13 @@ const useUserStore = create((set, get) => ({
       const response = await axios.get(`${get().url}/users/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
-          ...cacheBusterHeaders
+          ...cacheBusterHeaders,
         },
       });
       set({ user: response.data });
     } catch (error) {
       console.error("Error fetching user profile:", error);
-    //   toast.error("Failed to fetch user profile.");
+      //   toast.error("Failed to fetch user profile.");
       set({ user: null });
     } finally {
       set({ loading: false });
@@ -55,16 +55,12 @@ const useUserStore = create((set, get) => ({
     try {
       const token = localStorage.getItem("token");
 
-      const response = await axios.patch(
-        `${get().url}/users/${id}`,
-        data,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            ...cacheBusterHeaders
-          },
+      const response = await axios.patch(`${get().url}/users/${id}`, data, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          ...cacheBusterHeaders,
         },
-      );
+      });
       set({ user: response.data });
       toast.success("Profile updated successfully!");
     } catch (error) {

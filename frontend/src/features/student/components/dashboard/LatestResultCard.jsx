@@ -1,6 +1,6 @@
 // import React from 'react'
 import { motion } from "motion/react";
-const LatestResult = ({ latestResult, dashboardStats }) => {
+const LatestResultCard = ({ latestResult, dashboardStats }) => {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
@@ -63,4 +63,4 @@ const LatestResult = ({ latestResult, dashboardStats }) => {
   );
 };
 
-export default LatestResult;
+export default LatestResultCard;

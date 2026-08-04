@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { cacheBusterHeaders } from "../utils/httpHeaders";
+import { cacheBusterHeaders } from "../../../utils/httpHeaders";
 
 const useAuthStore = create((set, get) => ({
   user: null,
@@ -69,11 +69,11 @@ const useAuthStore = create((set, get) => ({
   requestSendOTP: async (email) => {
     set({ loading: true });
     try {
-      const response = await axios.patch(`${get().url}/auth/request-otp`, {"email":email});
+      const response = await axios.patch(`${get().url}/auth/request-otp`, {
+        email: email,
+      });
       if (response.data.success) {
-        toast.success(
-          response.data.message || "Otp request send successfully",
-        );
+        toast.success(response.data.message || "Otp request send successfully");
       }
       console.log("OTP request send :", response.data.message);
       return true;
@@ -91,16 +91,17 @@ const useAuthStore = create((set, get) => ({
     try {
       const response = await axios.patch(`${get().url}/auth/verify-otp`, body);
       if (response.data.success) {
-        toast.success(
-          response.data.message || "Change password successfully",
-        );
+        toast.success(response.data.message || "Change password successfully");
       }
       console.log("Password changed successfully:", response.data.message);
       toast.success("Password changed successfully. Please log in again.");
       get().logout();
       return true;
     } catch (error) {
-      toast.error(error?.response?.data?.message || "An error occurred during password reset.");
+      toast.error(
+        error?.response?.data?.message ||
+          "An error occurred during password reset.",
+      );
       console.error("Password changed failed:", error);
       return false;
     } finally {

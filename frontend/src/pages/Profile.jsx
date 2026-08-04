@@ -1,14 +1,7 @@
 import { useEffect, useState } from "react";
-import useAuthStore from "../../store/authStore";
-import useUserStore from "../../store/userStore";
-import {
-  Pencil,
-  Save,
-  X,
-  Camera,
-  Hexagon,
-  Sparkles,
-} from "lucide-react";
+import useAuthStore from "../features/auth/store/authStore";
+import useUserStore from "../features/user/store/userStore";
+import { Pencil, Save, X, Camera, Hexagon, Sparkles } from "lucide-react";
 
 const DataNode = ({
   label,
@@ -103,7 +96,6 @@ export default function ProfileCard() {
     setEditingField(null);
   };
 
-
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0f172a] text-slate-900 dark:text-white selection:bg-blue-500/30 font-sans transition-colors duration-300 pb-2 rounded-2xl">
       {/* 1. COVER SECTION */}
@@ -197,10 +189,7 @@ export default function ProfileCard() {
             onEdit={handleEdit}
           />
         </div>
-
       </div>
-
     </div>
   );
 }
-    

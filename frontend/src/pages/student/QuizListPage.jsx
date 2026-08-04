@@ -5,7 +5,7 @@ import { Play } from "lucide-react";
 import useQuizStore from "../../store/quizStore";
 import DataTable from "../../components/common/DataTable";
 
-function StudentQuiz() {
+function QuizListPage() {
 
   const navigate = useNavigate();
   const { fetchQuizzes } = useQuizStore();
@@ -70,4 +70,4 @@ function StudentQuiz() {
   );
 }
 
-export default StudentQuiz;
+export default QuizListPage;

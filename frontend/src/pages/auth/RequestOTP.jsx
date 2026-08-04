@@ -3,8 +3,8 @@ import { Mail, ArrowRight, KeyRound, ChevronLeft } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import useAuthStore from "../../../store/authStore";
-import InputGroup from "../components/InputField";
+import useAuthStore from "../../features/auth/store/authStore";
+import InputGroup from "../../features/auth/components/InputField";
 import toast from "react-hot-toast";
 // import toast from "react-hot-toast";
 function RequestOTP() {
@@ -15,7 +15,7 @@ function RequestOTP() {
 
   const handleNextStep = async () => {
     setLoading(true);
-    if(!email) {
+    if (!email) {
       toast.error("Please enter your email");
       setLoading(false);
       return;
@@ -74,11 +74,11 @@ function RequestOTP() {
         <p className="text-center mt-4 text-muted flex items-center gap-2 justify-center">
           Remember your password?
           <Link
-              to="/login"
-              className="auth-link flex items-center gap-1 uppercase tracking-wider"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" /> RETREAT TO ACCESS
-            </Link>
+            to="/login"
+            className="auth-link flex items-center gap-1 uppercase tracking-wider"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" /> RETREAT TO ACCESS
+          </Link>
         </p>
       </motion.div>
     </div>

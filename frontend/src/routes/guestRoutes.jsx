@@ -2,8 +2,8 @@ import { Route } from "react-router-dom";
 import PublicRoutes from "./PublicRoutes";
 import LoginPage from "../pages/auth/Login";
 import RegisterPage from "../pages/auth/Register";
-import RequestOTP from "../pages/auth/forgetPassword/RequestOTP";
-import VerifyOTP from "../pages/auth/forgetPassword/VerifyOTP";
+import RequestOTP from "../pages/auth/RequestOTP";
+import VerifyOTP from "../pages/auth/VerifyOTP";
 
 export const GuestRoutes = () => (
   <Route element={<PublicRoutes />}>

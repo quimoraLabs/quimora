@@ -10,7 +10,7 @@ import {
   AreaChart,
 } from "recharts";
 
-const PerformanceTrend = ({ dashboardStats, performanceData }) => {
+const PerformanceTrendCard = ({ dashboardStats, performanceData }) => {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.98 }}
@@ -33,8 +33,8 @@ const PerformanceTrend = ({ dashboardStats, performanceData }) => {
         </div>
       </div>
 
-      <div className="h-85 w-full">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="w-full min-w-0">
+        <ResponsiveContainer width="100%" height={320}>
           <AreaChart data={performanceData}>
             <defs>
               <linearGradient id="lineGradient" x1="0" y1="0" x2="0" y2="1">
@@ -82,4 +82,4 @@ const PerformanceTrend = ({ dashboardStats, performanceData }) => {
   );
 };
 
-export default PerformanceTrend;
+export default PerformanceTrendCard;

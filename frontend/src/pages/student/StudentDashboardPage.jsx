@@ -7,14 +7,14 @@ import {
   TrendingUp,
 } from "lucide-react";
 import useStudentQuizStore from "../../features/student/store/useStudentQuizStore"
-import StatsCard from "../../features/student/components/StatsCard";
-import PerformanceTrend from "../../features/student/components/PerformanceTrend";
-import RecentAttempt from "../../features/student/components/RecentAttempt";
-import LatestResult from "../../features/student/components/LatestResult";
-import Leaderboard from "../../features/student/components/Leaderboard";
-import WeakestArea from "../../features/student/components/WeakestArea";
+import StatsCard from "../../features/student/components/dashboard/StatsCard";
+import PerformanceTrend from "../../features/student/components/dashboard/PerformanceTrendCard";
+import RecentAttempt from "../../features/student/components/dashboard/RecentAttemptsCard";
+import LatestResult from "../../features/student/components/dashboard/LatestResultCard";
+import Leaderboard from "../../features/student/components/dashboard/LeaderboardItem";
+import WeakestArea from "../../features/student/components/dashboard/WeakestAreasCard";
 
-function StudentDashboard() {
+function StudentDashboardPage() {
   const { dashboardStats, dashboardLoading, fetchDashboardStats } = useStudentQuizStore();
 
   useEffect(() => {
@@ -125,5 +125,5 @@ function StudentDashboard() {
   );
 }
 
-export default StudentDashboard;
+export default StudentDashboardPage;
 

@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Route, Routes, Outlet, Navigate } from "react-router-dom";
-import useAuthStore from "../store/authStore";
+import useAuthStore from "../features/auth/store/authStore";
 import { useTheme } from "../utils/useTheme";
 
 // Wrappers & Guards
 import ProtectedRoutes from "./ProtectedRoutes";
-import Profile from "../pages/profile/Profile";
+import Profile from "../pages/Profile";
 import AccessDenied from "../pages/restriction/AccessDenied";
 
 // UI Components

@@ -1,5 +1,5 @@
 import { Menu, Moon, Sun } from "lucide-react";
-import useAuthStore from "../../store/authStore";
+import useAuthStore from "../../features/auth/store/authStore";
 
 export function Header({ title, setSidebarOpen, toggleDarkMode, darkMode }) {
   const user = useAuthStore((state) => state.user);

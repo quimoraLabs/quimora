@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import InputGroup from "./components/InputField";
+import InputGroup from "../../features/auth/components/InputField";
 import quimoraLogo from "../../assets/quimora.png";
-import useAuthStore from "../../store/authStore";
+import useAuthStore from "../../features/auth/store/authStore";
 import toast from "react-hot-toast";
 import { motion } from "motion/react";
 import {

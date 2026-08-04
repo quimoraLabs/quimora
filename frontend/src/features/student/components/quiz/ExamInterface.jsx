@@ -2,11 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 
 import { useNavigate } from "react-router-dom";
-import useStudentQuizStore from "../../features/student/store/useStudentQuizStore";
-import { exitFullScreen } from "../../features/student/utils/enterFullScreen";
-import { Watermark } from "../../features/student/components/Watermark";
+import useStudentQuizStore from "../../store/useStudentQuizStore";
+import { exitFullScreen } from "../../utils/enterFullScreen";
+import { Watermark } from "./Watermark";
 
-function StudentQuizQuestions() {
+function ExamInterface() {
   const navigate = useNavigate();
   const {
     attemptQuiz,
@@ -419,4 +419,4 @@ function StudentQuizQuestions() {
   );
 }
 
-export default StudentQuizQuestions;
+export default ExamInterface;

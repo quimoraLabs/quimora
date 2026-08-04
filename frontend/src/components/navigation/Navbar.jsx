@@ -1,5 +1,5 @@
 import { Sun, Moon, Menu, X } from "lucide-react";
-import useAuthStore from "../../store/authStore";
+import useAuthStore from "../../features/auth/store/authStore";
 import { useState } from "react";
 import { motion } from "motion/react";
 import { Link } from "react-router-dom";
