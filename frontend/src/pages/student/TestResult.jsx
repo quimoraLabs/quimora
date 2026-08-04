@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import useStudentQuizStore from "../../features/student/store/useStudentQuizStore";
-import Loader from "../../components/Loader";
+import Loader from "../../components/common/Loader";
 import { exitFullScreen } from "../../features/student/utils/enterFullScreen";
 
 export const ResultCard = () => {

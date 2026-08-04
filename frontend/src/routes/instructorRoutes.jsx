@@ -1,6 +1,6 @@
 import { Route } from "react-router-dom";
 import ProtectedRoutes from "./ProtectedRoutes";
-import InstructorDashboard from "../pages/dashboards/instructor/InstructorDashboard";
+import InstructorDashboard from "../pages/instructor/index";
 import InstructorQuizzesDashboard from "../pages/dashboards/instructor/quiz/Quiz";
 import ViewQuiz from "../pages/dashboards/instructor/quiz/ViewQuiz";
 import CreateQuiz from "../pages/dashboards/instructor/quiz/AddQuiz";

@@ -2,12 +2,12 @@ import { useParams } from "react-router-dom";
 import useQuizStore from "../../../../store/quizStore";
 import useQuestionStore from "../../../../store/questionStore";
 import { useEffect, useState } from "react";
-import Loader from "../../../../components/Loader";
-import DataTable from "../../../../components/DataTable";
+import Loader from "../../../../components/common/Loader";
+import DataTable from "../../../../components/common/DataTable";
 import { Clock, Award, FileText, Plus, X } from "lucide-react";
 import QuestionForm from "../components/QuestionForm";
 /* IMPORT HOOK: Bringing in our newly styled theme-agnostic question card layout component */
-import QuestionView from "../components/QuestionView"; 
+import QuestionView from "../components/QuestionView";
 
 const ViewQuiz = () => {
   const { loading: quizLoading, fetchQuizById, currentQuiz } = useQuizStore();
@@ -47,7 +47,8 @@ const ViewQuiz = () => {
 
   const difficultyStyles = {
     easy: "bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20",
-    medium: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20",
+    medium:
+      "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20",
     hard: "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20",
   };
 
@@ -230,7 +231,6 @@ const ViewQuiz = () => {
           onUpdate={handleUpdateDispatch}
           onEditClick={handleEditClickTrigger}
           loading={questionLoading}
-          
           /* FUNCTION HOOK: Cleanly rendering our custom card inside the View Modal Wrapper container */
           renderViewDetails={() => {
             if (questionLoading || !questionForm?.questionText) {
@@ -247,13 +247,12 @@ const ViewQuiz = () => {
               <div className="mt-2 text-left">
                 <QuestionView
                   question={questionForm}
-                  index={questions.findIndex(q => q.id === questionForm.id)}
+                  index={questions.findIndex((q) => q.id === questionForm.id)}
                   onDelete={handleDeleteDispatch}
                 />
               </div>
             );
           }}
-          
           renderUpdateForm={() => {
             if (questionLoading || !questionForm?.questionText) {
               return (

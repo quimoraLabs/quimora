@@ -1,7 +1,7 @@
-import HeroSection from "./components/HeroSection";
-import HowItWorks from "./components/HowItWorks";
-import Topics from "./components/Topics";
-import Why from "./components/Why";
+import HeroSection from "../../features/public/components/HeroSection";
+import HowItWorks from "../../features/public/components/HowItWorks";
+import Topics from "../../features/public/components/Topics";
+import Why from "../../features/public/components/Why";
 
 const topics = [
   {
@@ -27,7 +27,6 @@ const topics = [
 ];
 
 function LandingPage() {
-
   return (
     <main className="bg-main text-text-main transition-colors duration-300">
       {/* Header */}
@@ -36,7 +35,7 @@ function LandingPage() {
       <HeroSection />
 
       {/* HOW IT WORKS */}
-      <HowItWorks/>
+      <HowItWorks />
 
       {/* TOPICS */}
       <Topics topics={topics} />

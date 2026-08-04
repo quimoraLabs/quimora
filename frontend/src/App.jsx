@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Toaster } from "react-hot-toast";
 import useAuthStore from "./store/authStore";
-import Loader from "./components/Loader";
+import Loader from "./components/common/Loader";
 import { AppRouter } from "./routes/AppRouter";
 
 function App() {

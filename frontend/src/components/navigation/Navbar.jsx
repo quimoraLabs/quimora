@@ -1,10 +1,10 @@
 import { Sun, Moon, Menu, X } from "lucide-react";
-import useAuthStore from "../store/authStore";
+import useAuthStore from "../../store/authStore";
 import { useState } from "react";
 import { motion } from "motion/react";
 import { Link } from "react-router-dom";
-import ProfileDropdown from "../components/ProfileDropDown";
-import logo from "../assets/quimora.png"
+import ProfileDropdown from "../ProfileDropDown";
+import logo from "../../assets/quimora.png"
 
 const Navbar = ({ darkMode, toggleDarkMode, navLinks, isLoggedIn }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);

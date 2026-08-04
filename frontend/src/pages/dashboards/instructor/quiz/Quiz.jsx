@@ -1,13 +1,20 @@
 import { useEffect, useState } from "react";
-import DataTable from "../../../../components/DataTable";
-import useQuizStore from "../../../../store/quizStore"; 
+import DataTable from "../../../../components/common/DataTable";
+import useQuizStore from "../../../../store/quizStore";
 import { Loader } from "lucide-react";
 import { Link } from "react-router-dom";
 import QuizForm from "../components/QuizForm"; // Imported form clean wrapper
 
 const InstructorQuizzesDashboard = () => {
-  const { quizzes, fetchQuizzesByInstructor, deleteQuiz, updateQuiz, loading,changeQuizStatus } = useQuizStore();
-  
+  const {
+    quizzes,
+    fetchQuizzesByInstructor,
+    deleteQuiz,
+    updateQuiz,
+    loading,
+    changeQuizStatus,
+  } = useQuizStore();
+
   // Minimal parent input payload binding block
   const [quizForm, setQuizForm] = useState({
     title: "",
@@ -25,24 +32,32 @@ const InstructorQuizzesDashboard = () => {
 
   const handleChangeStatus = async (quizId, newStatus) => {
     await changeQuizStatus(quizId, newStatus);
-  }
+  };
 
   const quizHeaders = ["Quiz Title", "Time Limit", "Total Questions", "Status"];
 
   const renderQuizRow = (quiz) => (
     <>
-      <td className="px-6 py-4 font-medium max-w-50 truncate text-main">{quiz.title}</td>
+      <td className="px-6 py-4 font-medium max-w-50 truncate text-main">
+        {quiz.title}
+      </td>
       <td className="px-6 py-4 text-muted">{quiz.timeLimit} mins</td>
       <td className="px-6 py-4 text-muted">
-        {(quiz.questions?.length || quiz.questionsCount || 0)} Qs
+        {quiz.questions?.length || quiz.questionsCount || 0} Qs
       </td>
       <td className="px-6 py-4">
-        <span className={`px-2 py-1 rounded-md text-xs font-semibold cursor-pointer ${
-          quiz.status === "published" ? "bg-green-500/10 text-green-500" : "bg-yellow-500/10 text-yellow-500"
-        }`} onClick={() => {
-          const newStatus = quiz.status === "published" ? "draft" : "published";
-          handleChangeStatus(quiz.id, newStatus);
-        }} >
+        <span
+          className={`px-2 py-1 rounded-md text-xs font-semibold cursor-pointer ${
+            quiz.status === "published"
+              ? "bg-green-500/10 text-green-500"
+              : "bg-yellow-500/10 text-yellow-500"
+          }`}
+          onClick={() => {
+            const newStatus =
+              quiz.status === "published" ? "draft" : "published";
+            handleChangeStatus(quiz.id, newStatus);
+          }}
+        >
           {quiz.status || "draft"}
         </span>
       </td>
@@ -67,10 +82,12 @@ const InstructorQuizzesDashboard = () => {
   return (
     <div className="p-6 min-h-screen bg-main">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold font-display text-main">Manage Quizzes</h2>
+        <h2 className="text-2xl font-bold font-display text-main">
+          Manage Quizzes
+        </h2>
         <Link to={"/instructor/quizzes/create"}>Add Quiz</Link>
       </div>
-      
+
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20 bg-surface border border-main rounded-xl shadow-sm">
           <Loader className="w-8 h-8 animate-spin text-brand-primary" />
@@ -80,7 +97,7 @@ const InstructorQuizzesDashboard = () => {
         <DataTable
           type="quiz"
           headers={quizHeaders}
-          data={quizzes?.data || []} 
+          data={quizzes?.data || []}
           onDelete={deleteQuiz}
           onUpdate={handleUpdateDispatch}
           onEditClick={handleEditSetup}
@@ -91,8 +108,9 @@ const InstructorQuizzesDashboard = () => {
           loading={loading}
           isStatus={true}
           onChangeStatus={handleChangeStatus}
-
-          renderUpdateForm={() => <QuizForm quizData={quizForm} setQuizData={setQuizForm} />}
+          renderUpdateForm={() => (
+            <QuizForm quizData={quizForm} setQuizData={setQuizForm} />
+          )}
         />
       )}
     </div>

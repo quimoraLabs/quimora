@@ -6,9 +6,9 @@ import {
   UserStar,
   X,
 } from "lucide-react"; // For the close icon.
-import useAuthStore from "../store/authStore";
+import useAuthStore from "../../store/authStore";
 import { Link } from "react-router-dom";
-import logo from "../assets/quimora.png";
+import logo from "../../assets/quimora.png";
 
 // import { useEffect } from "react";
 

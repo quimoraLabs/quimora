@@ -14,9 +14,9 @@ const DataTable = ({
   type = "quiz",
   onDelete,
   onUpdate,
-  onEditClick,          // Triggers when edit button is clicked, passes row item data to parent form
-  renderUpdateForm,     // Function prop to render the specific dynamic form safely
-  renderViewDetails,    // Function prop to render view layout if needed for modal view types
+  onEditClick, // Triggers when edit button is clicked, passes row item data to parent form
+  renderUpdateForm, // Function prop to render the specific dynamic form safely
+  renderViewDetails, // Function prop to render view layout if needed for modal view types
   loading = false,
 }) => {
   const navigate = useNavigate();
@@ -35,7 +35,7 @@ const DataTable = ({
     } else {
       // Trigger modal overlay display for other generic types (like question parameters)
       setSelectedItemId(id);
-      
+
       if (onEditClick) onEditClick(item);
       setViewModalOpen(true);
     }
@@ -44,7 +44,7 @@ const DataTable = ({
   const handleEditOpen = (item) => {
     const id = item._id || item.id;
     setSelectedItemId(id);
-    
+
     // Developer Hook: Alerts parent to pre-fill their local primitive input fields
     if (onEditClick) {
       onEditClick(item);
@@ -171,7 +171,7 @@ const DataTable = ({
         >
           {/* Injecting functional form dynamically cleanly inside container */}
           {renderUpdateForm && renderUpdateForm()}
-          
+
           <div className="flex justify-between gap-3 mt-4">
             <button
               onClick={handleEditClose}

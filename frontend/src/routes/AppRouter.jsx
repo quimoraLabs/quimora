@@ -9,10 +9,10 @@ import Profile from "../pages/profile/Profile";
 import AccessDenied from "../pages/restriction/AccessDenied";
 
 // UI Components
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
-import Sidebar from "../components/Sidebar";
-import { Header } from "../components/Header";
+import Navbar from "../components/navigation/Navbar";
+import Footer from "../components/navigation/Footer";
+import Sidebar from "../components/navigation/Sidebar";
+import { Header } from "../components/navigation/Header";
 
 // Clean Route Imports (No Naming Conflicts!)
 import { GuestRoutes } from "./guestRoutes";
