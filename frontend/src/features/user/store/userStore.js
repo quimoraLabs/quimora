@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { cacheBusterHeaders } from "../../../utils/httpHeaders";
+import { cacheBusterHeaders } from "../../utils/httpHeaders";
 
 const useUserStore = create((set, get) => ({
   user: null,

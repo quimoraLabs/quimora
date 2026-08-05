@@ -2,17 +2,17 @@ import { useEffect, useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { Play } from "lucide-react";
-import useQuizStore from "../../store/quizStore";
+import useQuizListStore from "../../features/student/quiz/store/useQuizListStore";
 import DataTable from "../../components/common/DataTable";
 
 function QuizListPage() {
 
   const navigate = useNavigate();
-  const { fetchQuizzes } = useQuizStore();
+  const { fetchAvailableQuizzes } = useQuizListStore();
   useEffect(() => {
-    fetchQuizzes();
-  }, [fetchQuizzes]);
-  const { quizzes } = useQuizStore();
+    fetchAvailableQuizzes();
+  }, [fetchAvailableQuizzes]);
+  const { quizzes } = useQuizListStore();
 
   const handleStart = useCallback((quiz) => {
     if (!quiz || !quiz.id) {

@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { cacheBusterHeaders } from "../utils/httpHeaders";
+import { cacheBusterHeaders } from "../features/utils/httpHeaders";
 import useQuizStore from "./quizStore";
 
 const useQuestionStore = create((set, get) => ({
