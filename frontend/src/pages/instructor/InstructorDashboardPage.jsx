@@ -8,11 +8,11 @@ import {
   BarChart3,
   Clock,
 } from "lucide-react";
-import StatsOverview from "../../features/instructor/components/StatsOverview";
-import RecentQuizzesTable from "../../features/instructor/components/RecentQuizzesTable";
-import AiGeneratorBanner from "../../features/instructor/components/AiGeneratorBanner";
+import StatsOverview from "../../features/instructor/dashboard/StatsOverview";
+import RecentQuizzesTable from "../../features/instructor/dashboard/RecentQuizzesTable";
+import AiGeneratorBanner from "../../features/instructor/dashboard/AiGeneratorBanner";
 
-const InstructorDashboard = () => {
+const InstructorDashboardPage = () => {
   const [quizzes, setQuizzes] = useState([
     {
       id: 1,
@@ -200,4 +200,4 @@ const InstructorDashboard = () => {
   );
 };
 
-export default InstructorDashboard;
+export default InstructorDashboardPage;

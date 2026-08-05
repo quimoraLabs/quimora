@@ -5,7 +5,8 @@ import QuizListPage from "../pages/student/QuizListPage";
 import StudentResult from "../pages/student/QuizHistoryPage";
 import ExamInstructionsPage from "../pages/student/ExamInstructionsPage";
 import TakeExamPage from "../pages/student/TakeExamPage";
-import { ResultCard } from "../pages/student/TestResult";
+import SingleAttemptResultPage from "../pages/student/SingleAttemptResultPage";
+
 
 export const StudentRoutes = () => (
   <>
@@ -24,7 +25,10 @@ export const StudentQuizRoutes = () => (
     <Route element={<ProtectedRoutes allowedRoles={["user"]} />}>
       <Route path="/student/quiz/rules" element={<ExamInstructionsPage />} />
       <Route path="/student/quiz/start" element={<TakeExamPage />} />
-      <Route path="/student/quiz/results" element={<ResultCard />} />
+      <Route
+        path="/student/quiz/results"
+        element={<SingleAttemptResultPage />}
+      />
     </Route>
   </>
 );

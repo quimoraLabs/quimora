@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { cacheBusterHeaders } from "../../../utils/httpHeaders";
+import { cacheBusterHeaders } from "../../../../utils/httpHeaders";
 
 const getAuthToken = () => localStorage.getItem("token");
 
@@ -44,12 +44,15 @@ const useStudentQuizStore = create((set, get) => ({
     }
 
     try {
-      const response = await axios.get(`${url}/student/attempts/${persistedAttemptId}/result`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          ...cacheBusterHeaders,
+      const response = await axios.get(
+        `${url}/student/attempts/${persistedAttemptId}/result`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            ...cacheBusterHeaders,
+          },
         },
-      });
+      );
 
       if (response.data.success) {
         const persistedResults =
@@ -59,9 +62,16 @@ const useStudentQuizStore = create((set, get) => ({
           null;
 
         if (persistedResults) {
-          set({ quizResults: persistedResults, attemptId: persistedAttemptId, lastAttemptId: persistedAttemptId });
+          set({
+            quizResults: persistedResults,
+            attemptId: persistedAttemptId,
+            lastAttemptId: persistedAttemptId,
+          });
           localStorage.setItem("lastAttemptId", persistedAttemptId);
-          localStorage.setItem("lastQuizResults", JSON.stringify(persistedResults));
+          localStorage.setItem(
+            "lastQuizResults",
+            JSON.stringify(persistedResults),
+          );
         }
       }
     } catch (error) {
@@ -101,7 +111,7 @@ const useStudentQuizStore = create((set, get) => ({
             Authorization: `Bearer ${getAuthToken()}`,
             ...cacheBusterHeaders,
           },
-        }
+        },
       );
       if (response.data.success) {
         const { attemptId, quiz } = response.data.data;
@@ -118,7 +128,7 @@ const useStudentQuizStore = create((set, get) => ({
           quizResults: null,
         });
 
-                localStorage.setItem("lastAttemptId", attemptId); // Persist attempt ID
+        localStorage.setItem("lastAttemptId", attemptId); // Persist attempt ID
         navigate("/student/quiz/start"); // Navigate to the quiz questions page
       }
     } catch (error) {
@@ -132,25 +142,27 @@ const useStudentQuizStore = create((set, get) => ({
   // 2. Select Option Handler (Save against questionId)
   selectOption: (questionId, selectedOptions) => {
     const { attemptQuiz } = get();
-    const question = attemptQuiz?.questions.find(q => q._id === questionId);
+    const question = attemptQuiz?.questions.find((q) => q._id === questionId);
 
     if (!question) {
       toast.error("Could not find the question to save answer for.");
       return;
     }
 
-    const optionIds = (Array.isArray(selectedOptions) ? selectedOptions : [selectedOptions])
-      .map(selectedIndex => {
+    const optionIds = (
+      Array.isArray(selectedOptions) ? selectedOptions : [selectedOptions]
+    )
+      .map((selectedIndex) => {
         const index = Number(selectedIndex);
         return question.options[index]?._id;
       })
       .filter(Boolean); // Filter out any undefined IDs if index is invalid
 
-    set(state => ({
+    set((state) => ({
       answers: {
         ...state.answers,
         // Store the comma-separated string of actual option _id's
-        [questionId]: optionIds.join(','),
+        [questionId]: optionIds.join(","),
       },
     }));
   },
@@ -217,7 +229,7 @@ const useStudentQuizStore = create((set, get) => ({
         ([questionId, selectedOptions]) => ({
           questionId,
           selectedOptions: selectedOptions ? selectedOptions.split(",") : [],
-        })
+        }),
       );
 
       const response = await axios.post(
@@ -228,7 +240,7 @@ const useStudentQuizStore = create((set, get) => ({
             Authorization: `Bearer ${getAuthToken()}`,
             ...cacheBusterHeaders,
           },
-        }
+        },
       );
       if (response.data.success) {
         toast.success("Quiz submitted successfully!");
@@ -238,7 +250,10 @@ const useStudentQuizStore = create((set, get) => ({
           loading: false,
         });
         localStorage.setItem("lastAttemptId", attemptId); // Persist attempt ID
-        localStorage.setItem("lastQuizResults", JSON.stringify(response.data.data)); // Persist quiz results
+        localStorage.setItem(
+          "lastQuizResults",
+          JSON.stringify(response.data.data),
+        ); // Persist quiz results
         navigate("/student/quiz/results", { replace: true }); // Navigate to the quiz results page
         return true;
       }
@@ -257,7 +272,8 @@ const useStudentQuizStore = create((set, get) => ({
     set({ loading: true });
     const token = getAuthToken();
     try {
-      const response = await axios.get(`${get().url}/student/attempts`, { // 👈 Exact controller route
+      const response = await axios.get(`${get().url}/student/attempts`, {
+        // 👈 Exact controller route
         headers: {
           Authorization: `Bearer ${token}`,
           ...cacheBusterHeaders,
@@ -287,7 +303,8 @@ const useStudentQuizStore = create((set, get) => ({
     }
 
     try {
-      const response = await axios.get(`${url}/student/dashboard`, { // 👈 Exact controller route
+      const response = await axios.get(`${url}/student/dashboard`, {
+        // 👈 Exact controller route
         headers: {
           Authorization: `Bearer ${token}`,
           ...cacheBusterHeaders,
@@ -322,12 +339,15 @@ const useStudentQuizStore = create((set, get) => ({
             Authorization: `Bearer ${token}`,
             ...cacheBusterHeaders,
           },
-        }
+        },
       );
       if (response.data.success) {
         set({ quizResults: response.data.data }); // 👈 Access via .data.data
         localStorage.setItem("lastAttemptId", attemptId);
-        localStorage.setItem("lastQuizResults", JSON.stringify(response.data.data));
+        localStorage.setItem(
+          "lastQuizResults",
+          JSON.stringify(response.data.data),
+        );
         navigate("/student/quiz/results"); // Navigate to the quiz results page
       }
     } catch (error) {
@@ -336,7 +356,7 @@ const useStudentQuizStore = create((set, get) => ({
     } finally {
       set({ loading: false });
     }
-  }
+  },
 }));
 
 export default useStudentQuizStore;

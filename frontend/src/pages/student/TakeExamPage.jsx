@@ -1,15 +1,14 @@
-
 import { useNavigate } from "react-router-dom";
 
 // Store & Utils
-import useStudentQuizStore from "../../features/student/store/useStudentQuizStore";
-import { exitFullScreen } from "../../features/student/utils/enterFullScreen";
+import useStudentQuizStore from "../../features/student/exam/store/useStudentQuizStore";
+import { exitFullScreen } from "../../features/student/exam/hooks/enterFullScreen";
 
 // Exam Feature Hooks & Components
-import { useExamProctoring } from "../../features/student/components/exam/hooks/useExamProctoring";
-import { ExamTimer } from "../../features/student/components/exam/components/ExamTimer";
-import { FullscreenLockOverlay } from "../../features/student/components/exam/components/FullscreenLockOverlay";
-import { Watermark } from "../../features/student/components/exam/components/Watermark";
+import { useExamProctoring } from "../../features/student/exam/hooks/useExamProctoring";
+import { ExamTimer } from "../../features/student/exam/components/ExamTimer";
+import { FullscreenLockOverlay } from "../../features/student/exam/components/FullscreenLockOverlay";
+import { Watermark } from "../../features/student/exam/components/Watermark";
 
 export default function TakeExamPage() {
   const navigate = useNavigate();

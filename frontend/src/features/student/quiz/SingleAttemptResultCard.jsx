@@ -9,9 +9,9 @@ import {
   Award,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import useStudentQuizStore from "../../store/useStudentQuizStore";
+import useStudentQuizStore from "../exam/store/useStudentQuizStore";
 import Loader from "../../components/common/Loader";
-import { exitFullScreen } from "../../utils/enterFullScreen";
+import { exitFullScreen } from "../exam/hooks/enterFullScreen";
 
 export const SingleAttemptResultCard = () => {
   const navigate = useNavigate();

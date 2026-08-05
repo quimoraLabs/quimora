@@ -9,13 +9,19 @@ import {
   Award,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import useStudentQuizStore from "../../features/student/store/useStudentQuizStore";
+import useStudentQuizStore from "../../features/student/exam/store/useStudentQuizStore";
 import Loader from "../../components/common/Loader";
-import { exitFullScreen } from "../../features/student/utils/enterFullScreen";
+import { exitFullScreen } from "../../features/student/exam/hooks/enterFullScreen";
 
-export const ResultCard = () => {
+const SingleAttemptResultPage = () => {
   const navigate = useNavigate();
-  const { loadPersistedQuizResult, clearQuizSession, quizResults, warningCount, loading } = useStudentQuizStore();
+  const {
+    loadPersistedQuizResult,
+    clearQuizSession,
+    quizResults,
+    warningCount,
+    loading,
+  } = useStudentQuizStore();
 
   console.log("Quiz Results Data:", quizResults);
 
@@ -29,9 +35,7 @@ export const ResultCard = () => {
 
   // 1. If the store is still processing the network transaction, show a clean loader
   if (loading) {
-    return (
-     <Loader/>
-    );
+    return <Loader />;
   }
 
   // 2. CRITICAL DEEP GUARD: Fallback checks matching your exact API response structure
@@ -97,31 +101,48 @@ export const ResultCard = () => {
         animate={{ opacity: 1, scale: 1 }}
         className="max-w-xl w-full bg-surface rounded-3xl shadow-card border border-soft overflow-hidden"
       >
-        <div className={`p-10 text-center bg-elevated`}
-             style={{ borderBottom: '1px solid var(--color-border-soft)'}}>
+        <div
+          className={`p-10 text-center bg-elevated`}
+          style={{ borderBottom: "1px solid var(--color-border-soft)" }}
+        >
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2 }}
             className="flex justify-center mb-6"
           >
-            <Icon className="w-20 h-20 text-accent" style={{color:'var(--color-brand-mid)'}} />
+            <Icon
+              className="w-20 h-20 text-accent"
+              style={{ color: "var(--color-brand-mid)" }}
+            />
           </motion.div>
-          <h1 className={`text-3xl font-black uppercase tracking-tight mb-2 text-main`}>
+          <h1
+            className={`text-3xl font-black uppercase tracking-tight mb-2 text-main`}
+          >
             {feedback.message}
           </h1>
-          <p className="text-muted font-medium">Official Examination Results Portfolio</p>
+          <p className="text-muted font-medium">
+            Official Examination Results Portfolio
+          </p>
         </div>
 
         <div className="p-8 md:p-12 space-y-8">
           <div className="grid grid-cols-2 gap-4">
             <div className="p-6 rounded-2xl border border-soft bg-surface flex flex-col items-center">
-              <span className="text-3xl font-black text-main">{score}/{totalQuestions}</span>
-              <span className="text-xs text-muted font-bold uppercase tracking-widest mt-1">Total Score</span>
+              <span className="text-3xl font-black text-main">
+                {score}/{totalQuestions}
+              </span>
+              <span className="text-xs text-muted font-bold uppercase tracking-widest mt-1">
+                Total Score
+              </span>
             </div>
             <div className="p-6 rounded-2xl border border-soft bg-surface flex flex-col items-center">
-              <span className="text-3xl font-black text-main">{percentage}%</span>
-              <span className="text-xs text-muted font-bold uppercase tracking-widest mt-1">Percentage</span>
+              <span className="text-3xl font-black text-main">
+                {percentage}%
+              </span>
+              <span className="text-xs text-muted font-bold uppercase tracking-widest mt-1">
+                Percentage
+              </span>
             </div>
           </div>
 
@@ -131,26 +152,47 @@ export const ResultCard = () => {
             </h3>
             <div className="space-y-2">
               <div className="flex items-center justify-between p-4 bg-surface rounded-xl">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-accent" style={{color:'var(--color-brand-mid)'}} />
-                    <span className="text-muted font-semibold">Correct Answers</span>
-                  </div>
-                  <span className="text-main font-bold">{score}</span>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2
+                    className="w-4 h-4 text-accent"
+                    style={{ color: "var(--color-brand-mid)" }}
+                  />
+                  <span className="text-muted font-semibold">
+                    Correct Answers
+                  </span>
+                </div>
+                <span className="text-main font-bold">{score}</span>
               </div>
-                <div className="flex items-center justify-between p-4 bg-surface rounded-xl">
-                  <div className="flex items-center gap-2">
-                    <XCircle className="w-4 h-4 text-accent" style={{color:'var(--color-brand-mid)'}} />
-                    <span className="text-muted font-semibold">Incorrect / Skipped</span>
-                  </div>
-                  <span className="text-main font-bold">{totalQuestions - score}</span>
+              <div className="flex items-center justify-between p-4 bg-surface rounded-xl">
+                <div className="flex items-center gap-2">
+                  <XCircle
+                    className="w-4 h-4 text-accent"
+                    style={{ color: "var(--color-brand-mid)" }}
+                  />
+                  <span className="text-muted font-semibold">
+                    Incorrect / Skipped
+                  </span>
                 </div>
-                <div className="flex items-center justify-between p-4 bg-surface rounded-xl">
-                  <div className="flex items-center gap-2">
-                    <Award className="w-4 h-4 text-accent" style={{color:'var(--color-brand-mid)'}} />
-                    <span className="text-muted font-semibold">Security Infractions</span>
-                  </div>
-                  <span className={`font-bold ${warningCount > 0 ? 'text-accent' : 'text-accent'}`}>{warningCount || 0} Flags</span>
+                <span className="text-main font-bold">
+                  {totalQuestions - score}
+                </span>
+              </div>
+              <div className="flex items-center justify-between p-4 bg-surface rounded-xl">
+                <div className="flex items-center gap-2">
+                  <Award
+                    className="w-4 h-4 text-accent"
+                    style={{ color: "var(--color-brand-mid)" }}
+                  />
+                  <span className="text-muted font-semibold">
+                    Security Infractions
+                  </span>
                 </div>
+                <span
+                  className={`font-bold ${warningCount > 0 ? "text-accent" : "text-accent"}`}
+                >
+                  {warningCount || 0} Flags
+                </span>
+              </div>
             </div>
           </div>
 
@@ -159,7 +201,8 @@ export const ResultCard = () => {
               onClick={() => handleCleanExit("/student/quizzes")}
               className="flex-1 bg-accent hover:opacity-95 text-white py-4 px-6 rounded-2xl flex items-center justify-center gap-2 transition-all font-bold group"
             >
-              <RefreshCcw className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" /> Retake Another Exam
+              <RefreshCcw className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />{" "}
+              Retake Another Exam
             </button>
             <button
               onClick={() => handleCleanExit("/student/quizzes")}
@@ -173,3 +216,6 @@ export const ResultCard = () => {
     </div>
   );
 };
+
+
+export  default SingleAttemptResultPage;

@@ -1,6 +1,6 @@
 import { Route } from "react-router-dom";
 import ProtectedRoutes from "./ProtectedRoutes";
-import InstructorDashboard from "../pages/instructor/index";
+import InstructorDashboardPage from "../pages/instructor/InstructorDashboardPage";
 import InstructorQuizzesDashboard from "../pages/dashboards/instructor/quiz/Quiz";
 import ViewQuiz from "../pages/dashboards/instructor/quiz/ViewQuiz";
 import CreateQuiz from "../pages/dashboards/instructor/quiz/AddQuiz";
@@ -8,7 +8,7 @@ import InstructorStudentDash from "../pages/dashboards/instructor/student/Studen
 
 export const InstructorRoutes = () => (
   <Route element={<ProtectedRoutes allowedRoles={["instructor"]} />}>
-    <Route path="/instructor" element={<InstructorDashboard />} />
+    <Route path="/instructor" element={<InstructorDashboardPage />} />
     <Route
       path="/instructor/quizzes"
       element={<InstructorQuizzesDashboard />}

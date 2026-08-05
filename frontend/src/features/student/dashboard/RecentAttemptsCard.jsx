@@ -1,15 +1,15 @@
-import React from 'react'
+import React from "react";
 import { motion } from "motion/react";
 import { Link } from "react-router-dom";
 import ResultModal from "../quiz/ResultModal";
 const RecentAttemptsCard = ({ dashboardLoading, recentAttempts }) => {
-    const [isMOdalOpen, setIsModalOpen] = React.useState(false);
-    const [selectedAttempt, setSelectedAttempt] = React.useState(null);
+  const [isMOdalOpen, setIsModalOpen] = React.useState(false);
+  const [selectedAttempt, setSelectedAttempt] = React.useState(null);
 
-    const openReport = (attempt) => {
-      setSelectedAttempt(attempt);
-      setIsModalOpen(true);
-    };
+  const openReport = (attempt) => {
+    setSelectedAttempt(attempt);
+    setIsModalOpen(true);
+  };
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -25,7 +25,10 @@ const RecentAttemptsCard = ({ dashboardLoading, recentAttempts }) => {
             Your latest completed tests, sorted by date.
           </p>
         </div>
-        <Link to="/student/my-attempts" className="px-3 py-1 bg-bg-main border border-border-main rounded-lg text-[10px] uppercase tracking-widest font-bold text-text-secondary hover:text-text-main transition-colors">
+        <Link
+          to="/student/my-attempts"
+          className="px-3 py-1 bg-bg-main border border-border-main rounded-lg text-[10px] uppercase tracking-widest font-bold text-text-secondary hover:text-text-main transition-colors"
+        >
           View all
         </Link>
       </div>
@@ -66,9 +69,12 @@ const RecentAttemptsCard = ({ dashboardLoading, recentAttempts }) => {
                   Details
                 </button>
               </div>
-              {
-                isMOdalOpen && <ResultModal selectedAttempt={selectedAttempt} closeModal={() => setIsModalOpen(false)} />
-              }
+              {isMOdalOpen && (
+                <ResultModal
+                  selectedAttempt={selectedAttempt}
+                  closeModal={() => setIsModalOpen(false)}
+                />
+              )}
             </div>
           ))
         ) : (
