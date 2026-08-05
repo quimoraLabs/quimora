@@ -10,6 +10,7 @@ import studentQuizRoutes from "../routes/studentQuiz.routes.js";
 import { errorHandler } from "../middleware/error.middleware.js";
 import questionRoutes from "../routes/question.routes.js";
 import { validateObjectId } from "../middleware/validObjectId.middleware.js";
+import instructorDashboardRoutes from "../routes/instructorDashboard.routes.js"
 
 const app = express();
 if (config.nodeENV !== "production") {
@@ -42,6 +43,7 @@ apiRouter.use(
   validateObjectId("quizId"),
   questionRoutes
 );
+apiRouter.use("/instructor", instructorDashboardRoutes);
 
 // Mount the versioned router centrally
 app.use(config.apiPrefix, apiRouter);

@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import Card from "./Card";
+import StatCard from "./StatCard";
 
 const StatsOverview = ({ stats }) => {
   return (
@@ -11,7 +11,7 @@ const StatsOverview = ({ stats }) => {
     >
       {stats.map((stat, idx) => (
         <motion.div key={stat.title} whileHover={{ y: -4 }}>
-          <Card idx={idx} stat={stat} />
+          <StatCard idx={idx} stat={stat} />
         </motion.div>
       ))}
     </motion.div>
