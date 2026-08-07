@@ -1,9 +1,9 @@
 import { create } from "zustand";
-import axios from "axios";
 import toast from "react-hot-toast";
-import { cacheBusterHeaders } from "../../utils/httpHeaders";
+import axiosClient from "../../../api/axiosClient";
 
-const useUserStore = create((set, get) => ({
+
+const useUserStore = create((set) => ({
   user: null,
   loading: false,
   url: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
@@ -16,12 +16,7 @@ const useUserStore = create((set, get) => ({
       return false;
     }
     try {
-      const response = await axios.get(`${get().url}/auth/me`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          ...cacheBusterHeaders,
-        },
-      });
+      const response = await axiosClient.get(`/auth/me`);
       set({ user: response.data });
     } catch (error) {
       console.error("Error checking token:", error);
@@ -33,14 +28,9 @@ const useUserStore = create((set, get) => ({
   getUser: async (id) => {
     set({ loading: true });
     try {
-      const token = localStorage.getItem("token");
 
-      const response = await axios.get(`${get().url}/users/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          ...cacheBusterHeaders,
-        },
-      });
+
+      const response = await axiosClient.get(`/users/${id}`);
       set({ user: response.data });
     } catch (error) {
       console.error("Error fetching user profile:", error);
@@ -53,14 +43,9 @@ const useUserStore = create((set, get) => ({
   updateUser: async (id, data) => {
     set({ loading: true });
     try {
-      const token = localStorage.getItem("token");
 
-      const response = await axios.patch(`${get().url}/users/${id}`, data, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          ...cacheBusterHeaders,
-        },
-      });
+
+      const response = await axiosClient.patch(`/users/${id}`, data);
       set({ user: response.data });
       toast.success("Profile updated successfully!");
     } catch (error) {

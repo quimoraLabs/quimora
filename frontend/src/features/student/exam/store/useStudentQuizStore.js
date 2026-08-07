@@ -1,7 +1,6 @@
 import { create } from "zustand";
-import axios from "axios";
 import toast from "react-hot-toast";
-import { cacheBusterHeaders } from "../../../utils/httpHeaders";
+import axiosClient from "../../../../api/axiosClient";
 
 const getAuthToken = () => localStorage.getItem("token");
 
@@ -19,7 +18,6 @@ const useStudentQuizStore = create((set, get) => ({
   dashboardStats: null,
   dashboardLoading: false,
   lastAttemptId: null,
-  url: import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1",
 
   loadPersistedQuizResult: async () => {
     const persistedAttemptId = localStorage.getItem("lastAttemptId");
@@ -36,22 +34,14 @@ const useStudentQuizStore = create((set, get) => ({
     if (!persistedAttemptId) {
       return;
     }
-
-    const { url } = get();
     const token = getAuthToken();
     if (!token) {
       return;
     }
 
     try {
-      const response = await axios.get(
-        `${url}/student/attempts/${persistedAttemptId}/result`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            ...cacheBusterHeaders,
-          },
-        },
+      const response = await axiosClient.get(
+        `/student/attempts/${persistedAttemptId}/result`
       );
 
       if (response.data.success) {
@@ -103,16 +93,7 @@ const useStudentQuizStore = create((set, get) => ({
     }
     set({ loading: true });
     try {
-      const response = await axios.post(
-        `${get().url}/student/quiz/start`,
-        { quizId },
-        {
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-            ...cacheBusterHeaders,
-          },
-        },
-      );
+      const response = await axiosClient.post(`/student/quiz/start`,{ quizId });
       if (response.data.success) {
         const { attemptId, quiz } = response.data.data;
 
@@ -232,16 +213,9 @@ const useStudentQuizStore = create((set, get) => ({
         }),
       );
 
-      const response = await axios.post(
-        `${get().url}/student/quiz/submit`, // 👈 Exact controller route
-        { attemptId, answers: formattedAnswers },
-        {
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-            ...cacheBusterHeaders,
-          },
-        },
-      );
+      const response = await axiosClient.post(
+        `/student/quiz/submit`, // 👈 Exact controller route
+        { attemptId, answers: formattedAnswers });
       if (response.data.success) {
         toast.success("Quiz submitted successfully!");
         set({
@@ -260,7 +234,6 @@ const useStudentQuizStore = create((set, get) => ({
       return false;
     } catch (error) {
       console.error("Error submitting quiz attempt:", error);
-      toast.error("Failed to submit quiz attempt.");
       return false;
     } finally {
       set({ loading: false });
@@ -270,15 +243,8 @@ const useStudentQuizStore = create((set, get) => ({
   // 3. Get All Student Attempt History
   studentAllResults: async () => {
     set({ loading: true });
-    const token = getAuthToken();
     try {
-      const response = await axios.get(`${get().url}/student/attempts`, {
-        // 👈 Exact controller route
-        headers: {
-          Authorization: `Bearer ${token}`,
-          ...cacheBusterHeaders,
-        },
-      });
+      const response = await axiosClient.get(`/student/attempts`);
 
       if (response.data.success) {
         set({ quizResults: response.data.data }); // 👈 Access via .data.data
@@ -294,7 +260,6 @@ const useStudentQuizStore = create((set, get) => ({
   // 4. Dashboard Stats
   fetchDashboardStats: async () => {
     set({ dashboardLoading: true });
-    const { url } = get();
     const token = getAuthToken();
 
     if (!token) {
@@ -303,13 +268,7 @@ const useStudentQuizStore = create((set, get) => ({
     }
 
     try {
-      const response = await axios.get(`${url}/student/dashboard`, {
-        // 👈 Exact controller route
-        headers: {
-          Authorization: `Bearer ${token}`,
-          ...cacheBusterHeaders,
-        },
-      });
+      const response = await axiosClient.get(`/student/dashboard`);
 
       if (response.data.success) {
         set({ dashboardStats: response.data.data }); // 👈 Access via .data.data
@@ -325,22 +284,15 @@ const useStudentQuizStore = create((set, get) => ({
   studentResults: async (navigate) => {
     set({ loading: true });
     const { attemptId } = get();
-    const token = getAuthToken();
     if (!attemptId) {
       toast.error("Attempt ID is required to fetch results.");
       set({ loading: false });
       return;
     }
     try {
-      const response = await axios.get(
-        `${get().url}/student/attempts/${attemptId}`, // 👈 Exact controller route
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            ...cacheBusterHeaders,
-          },
-        },
-      );
+      const response = await axiosClient.get(
+        `/student/attempts/${attemptId}`, // 👈 Exact controller route
+        );
       if (response.data.success) {
         set({ quizResults: response.data.data }); // 👈 Access via .data.data
         localStorage.setItem("lastAttemptId", attemptId);
@@ -352,7 +304,6 @@ const useStudentQuizStore = create((set, get) => ({
       }
     } catch (error) {
       console.error("Error fetching quiz results:", error);
-      toast.error("Failed to fetch quiz results.");
     } finally {
       set({ loading: false });
     }

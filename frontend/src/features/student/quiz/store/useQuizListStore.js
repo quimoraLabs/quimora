@@ -1,9 +1,6 @@
 import { create } from "zustand";
-import axios from "axios";
-import toast from "react-hot-toast";
-import { cacheBusterHeaders } from "../../../utils/httpHeaders";
 
-const getAuthToken = () => localStorage.getItem("token");
+import axiosClient from "../../../../api/axiosClient";
 
 const useQuizListStore = create((set, get) => ({
   quizzes: [],
@@ -13,16 +10,10 @@ const useQuizListStore = create((set, get) => ({
   fetchAvailableQuizzes: async () => {
     set({ loading: true });
     try {
-      const response = await axios.get(`${get().url}/quizzes/student`, {
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-          ...cacheBusterHeaders,
-        },
-      });
+      const response = await axiosClient.get(`${get().url}/quizzes/student`);
       set({ quizzes: response.data?.data || [] });
     } catch (error) {
       console.error("Error fetching student quizzes:", error);
-      toast.error("Failed to load available quizzes.");
     } finally {
       set({ loading: false });
     }

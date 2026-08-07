@@ -1,7 +1,6 @@
 import { create } from "zustand";
-import axios from "axios";
 import toast from "react-hot-toast";
-import { cacheBusterHeaders } from "../../utils/httpHeaders";
+import axiosClient from "../../../api/axiosClient";
 
 const useAuthStore = create((set, get) => ({
   user: null,
@@ -9,12 +8,11 @@ const useAuthStore = create((set, get) => ({
   loading: false,
   authInitialized: false,
   token: localStorage.getItem("token") || null,
-  url: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
 
   login: async (formData) => {
     set({ loading: true });
     try {
-      const res = await axios.post(`${get().url}/auth/login`, formData);
+      const res = await axiosClient.post(`/auth/login`, formData);
       const token = res.data?.token;
 
       if (!token) {
@@ -28,10 +26,6 @@ const useAuthStore = create((set, get) => ({
       toast.success("Logged in successfully.");
       return true;
     } catch (error) {
-      toast.error(
-        error?.response?.data?.message ||
-          "Login failed. Please check your credentials.",
-      );
       console.error("Login failed:", error);
       return false;
     } finally {
@@ -42,7 +36,7 @@ const useAuthStore = create((set, get) => ({
   register: async (formData) => {
     set({ loading: true });
     try {
-      const response = await axios.post(`${get().url}/auth/register`, formData);
+      const response = await axiosClient.post(`/auth/register`, formData);
 
       if (response.data.success) {
         toast.success(
@@ -51,9 +45,6 @@ const useAuthStore = create((set, get) => ({
         console.log("Registration successful:", response.data.message);
         return true;
       } else {
-        toast.error(
-          response.data.message || "Registration failed. Please try again.",
-        );
         console.error("Registration failed:", response.data.message);
         return false;
       }
@@ -69,7 +60,7 @@ const useAuthStore = create((set, get) => ({
   requestSendOTP: async (email) => {
     set({ loading: true });
     try {
-      const response = await axios.patch(`${get().url}/auth/request-otp`, {
+      const response = await axiosClient.patch(`/auth/request-otp`, {
         email: email,
       });
       if (response.data.success) {
@@ -77,8 +68,7 @@ const useAuthStore = create((set, get) => ({
       }
       console.log("OTP request send :", response.data.message);
       return true;
-    } catch (error) {
-      toast.error("An error occurred during send OTP.");
+    } catch (error) {      
       console.error("Request OTP send failed:", error);
       return false;
     } finally {
@@ -89,7 +79,7 @@ const useAuthStore = create((set, get) => ({
   verifyOTPAndChangePassword: async (body) => {
     set({ loading: true });
     try {
-      const response = await axios.patch(`${get().url}/auth/verify-otp`, body);
+      const response = await axiosClient.patch(`/auth/verify-otp`, body);
       if (response.data.success) {
         toast.success(response.data.message || "Change password successfully");
       }
@@ -98,10 +88,6 @@ const useAuthStore = create((set, get) => ({
       get().logout();
       return true;
     } catch (error) {
-      toast.error(
-        error?.response?.data?.message ||
-          "An error occurred during password reset.",
-      );
       console.error("Password changed failed:", error);
       return false;
     } finally {
@@ -116,12 +102,7 @@ const useAuthStore = create((set, get) => ({
       if (!token) {
         throw new Error("No token found. User is not authenticated.");
       }
-      const res = await axios.get(`${get().url}/auth/me`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          ...cacheBusterHeaders,
-        },
-      });
+      const res = await axiosClient.get(`/auth/me`);
       set({ user: res.data, isAuthenticated: true });
     } catch (error) {
       console.error("Failed to fetch profile:", error);
