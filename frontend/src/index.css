@@ -12,6 +12,10 @@
   --color-brand-mid: #3b82f6;
   --color-brand-end: #8b5cf6;
 
+  /* Button Accents*/
+  --color-brand-purple: #7336FF;
+  --color-brand-blue: #3269FF;
+
   /* ☀️ LIGHT MODE TOKENS - Clean Premium White look with subtle borders */
   --color-bg-main: #f8fafc;
   --color-bg-surface: #ffffff;

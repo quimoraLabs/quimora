@@ -1,6 +1,6 @@
 // import React from 'react';
 
-const Modal = ({ isOpen, onClose, title, children }) => {
+const ModalWrapper = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) return null;
 
   return (
@@ -37,4 +37,4 @@ const Modal = ({ isOpen, onClose, title, children }) => {
   );
 };
 
-export default Modal;
+export default ModalWrapper;

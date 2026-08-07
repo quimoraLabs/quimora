@@ -6,14 +6,14 @@ import {
   Users,
   CheckCircle,
   BarChart3,
-  Loader2,
   Sparkles,
 } from "lucide-react";
-import StatsOverview from "../../features/instructor/dashboard/StatsOverview";
-import RecentQuizzesTable from "../../features/instructor/dashboard/RecentQuizzesTable";
-import AiGeneratorBanner from "../../features/instructor/dashboard/AiGeneratorBanner";
-import useInstructorDashboard from "../../features/instructor/store/instructorDashboard";
-import LiveActivityFeed from "../../features/instructor/dashboard/LiveActivityFeed";
+import Loader from "../../components/common/Loader";
+import StatsOverview from "../../features/instructor/dashboard/components/StatsOverview";
+import RecentQuizzesTable from "../../features/instructor/dashboard/components/RecentQuizzesTable";
+import AiGeneratorBanner from "../../features/instructor/dashboard/components/AiGeneratorBanner";
+import useInstructorDashboard from "../../features/instructor/dashboard/store/useInstructorDashboard";
+import LiveActivityFeed from "../../features/instructor/dashboard/components/LiveActivityFeed";
 
 const InstructorDashboardPage = () => {
   const { dashboardStats, dashboardLoading, fetchDashboardStats } =
@@ -25,12 +25,7 @@ const InstructorDashboardPage = () => {
 
   if (dashboardLoading && !dashboardStats) {
     return (
-      <div className="min-h-screen bg-main text-main flex flex-col items-center justify-center p-8 transition-colors duration-300">
-        <Loader2 className="w-8 h-8 animate-spin text-accent mb-4" />
-        <p className="text-muted text-sm font-medium">
-          Loading instructor dashboard metrics...
-        </p>
-      </div>
+      <Loader/>
     );
   }
 

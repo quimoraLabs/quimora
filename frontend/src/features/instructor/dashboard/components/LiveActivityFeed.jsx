@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Clock, CheckCircle2 } from "lucide-react";
-import { formatRelativeTime } from "./hook/formatRelativeTime";
+import { formatRelativeTime } from "../utils/formatRelativeTime";
 
 const LiveActivityFeed = ({ liveActivities = [] }) => {
   return (

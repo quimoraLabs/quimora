@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import axiosClient from "../../../api/axiosClient";
+import axiosClient from "../../../../api/axiosClient";
 
 const useInstructorDashboard = create((set) => ({
   dashboardStats: null,
