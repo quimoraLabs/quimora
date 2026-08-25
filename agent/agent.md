@@ -65,14 +65,16 @@
   - Protected Routes, Public Routes, Guest Routes, and Role-based Route segregation.
   - Basic Instructor and Student Dashboard interfaces.
   - Zustand stores for user session and auth persistence.
-- [x] **Instructor Suite (Core & Submissions)**:
+- [x] **Instructor Suite (Core, Analytics & Productivity)**:
   - Dynamic Live Attempt Count (`stats.attempts`) calculated directly from `QuizAttempt` aggregation in `getQuizById`.
   - Question Correct Answer editing & sanitization logic (Student payload sanitized, Instructor receives `isCorrect`).
   - Visual Option List with Correct Answer indicators in Question Manager.
+  - Bulk Question Importer (`BulkImportModal.jsx`): Supports CSV & JSON upload, sample template downloads, live preview validation, and `/bulk` API integration.
   - In-page seamless Quiz Details edit modal in Quiz View (Clean uncluttered UI without redundant buttons).
-  - Quiz Submissions & Leaderboard Tab with ranks, time spent, and scores.
+  - Quiz Submissions & Leaderboard Tab with ranks, time spent, scores, and **"Export CSV"** marks sheet download.
   - Student Answer Sheet Inspection modal with question-by-question response review.
-  - Complete Student Roster & Analytics page (`/instructor/students`) with search, filter, average scores, and attempt counts.
+  - Complete Student Roster & Analytics page (`/instructor/students`) with search, filter, average scores, attempt counts, and **"Export Roster"** CSV download.
+  - Visual Graphical Analytics on Instructor Dashboard (`InstructorAnalyticsChart.jsx`) with 7-Day Submissions Area Chart and Student Score Distribution Bar Chart.
 
 ---
 

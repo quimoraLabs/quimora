@@ -1,9 +1,10 @@
 import { useEffect, useState, useMemo } from "react";
-import { Users, Award, CheckCircle2, Search, Calendar, BookOpen, ArrowUpRight } from "lucide-react";
+import { Users, Award, CheckCircle2, Search, Calendar, BookOpen, ArrowUpRight, Download } from "lucide-react";
 import { motion } from "framer-motion";
 import useInstructorStudents from "../../features/instructor/students/store/useInstructorStudents";
 import StatCard from "../../components/common/StatCard";
 import StatsGrid from "../../components/common/StatsGrid";
+import { exportToCSV } from "../../utils/exportUtils";
 
 export default function InstructorStudentListPage() {
   const { students, studentsLoading, fetchStudents } = useInstructorStudents();
@@ -36,6 +37,20 @@ export default function InstructorStudentListPage() {
     (acc, s) => acc + (s.totalAttempts || 0),
     0
   );
+
+  const handleExportRoster = () => {
+    if (students.length === 0) return;
+    const exportData = students.map((s) => ({
+      StudentName: s.name,
+      Email: s.email,
+      AverageScore: `${s.averageScore}%`,
+      TotalAttempts: s.totalAttempts,
+      QuizzesTaken: Array.isArray(s.quizzesTaken) ? s.quizzesTaken.join("; ") : "",
+      LastActivity: s.lastAttemptDate ? new Date(s.lastAttemptDate).toLocaleDateString() : "N/A",
+    }));
+
+    exportToCSV(exportData, "Instructor_Student_Roster");
+  };
 
   return (
     <main className="min-h-screen bg-main px-4 py-8 text-main sm:px-6 lg:px-8 font-sans">
@@ -95,16 +110,33 @@ export default function InstructorStudentListPage() {
               Enrolled Students ({filteredStudents.length})
             </h3>
 
-            {/* Search */}
-            <div className="relative w-full sm:w-72">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted" />
-              <input
-                type="text"
-                placeholder="Search by student name or email..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-xl border border-main bg-surface pl-9 pr-4 py-2 text-xs text-main placeholder:text-muted outline-none transition focus:border-accent"
-              />
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Search */}
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted" />
+                <input
+                  type="text"
+                  placeholder="Search by student name or email..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full rounded-xl border border-main bg-surface pl-9 pr-4 py-2 text-xs text-main placeholder:text-muted outline-none transition focus:border-accent"
+                />
+              </div>
+
+              {/* Export Button */}
+              <button
+                type="button"
+                disabled={students.length === 0}
+                onClick={handleExportRoster}
+                className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold border transition ${
+                  students.length > 0
+                    ? "border-main bg-elevated text-main hover:border-accent hover:text-accent cursor-pointer shadow-xs"
+                    : "border-main/50 bg-surface/50 text-muted cursor-not-allowed opacity-50"
+                }`}
+              >
+                <Download className="w-3.5 h-3.5" />
+                Export Roster
+              </button>
             </div>
           </div>
 

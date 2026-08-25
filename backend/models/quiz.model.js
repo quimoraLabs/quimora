@@ -42,6 +42,17 @@ const quizSchema = new mongoose.Schema(
       default: 1,
       min: 1,
     },
+    passingScore: {
+      type: Number,
+      default: 50,
+      min: 0,
+      max: 100,
+    },
+    negativeMarking: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     status: {
       type: String,
       enum: ["draft", "published", "archived"],

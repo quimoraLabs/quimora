@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { Award, Users, Clock, Eye, CheckCircle, Search } from "lucide-react";
+import { Award, Users, Clock, Eye, CheckCircle, Search, Download } from "lucide-react";
 import useInstructorStudents from "../../students/store/useInstructorStudents";
 import AttemptReviewModal from "./AttemptReviewModal";
+import { exportToCSV } from "../../../../utils/exportUtils";
 
 export default function QuizSubmissionsTable({ quizId }) {
   const {
@@ -24,6 +25,7 @@ export default function QuizSubmissionsTable({ quizId }) {
   }, [quizId, fetchQuizSubmissions]);
 
   const submissions = quizSubmissions?.submissions || [];
+  const quizTitle = quizSubmissions?.quizTitle || "Quiz";
 
   const filteredSubmissions = submissions.filter(
     (sub) =>
@@ -41,9 +43,24 @@ export default function QuizSubmissionsTable({ quizId }) {
     clearAttemptReview();
   };
 
+  const handleExportCSV = () => {
+    if (submissions.length === 0) return;
+    const exportData = submissions.map((s) => ({
+      Rank: s.rank,
+      StudentName: s.studentName,
+      Email: s.studentEmail,
+      ScorePercentage: `${s.score}%`,
+      CorrectAnswers: `${s.correctAnswersCount}/${s.totalQuestions}`,
+      TimeSpentSeconds: s.timeTaken,
+      SubmittedAt: s.completedAt ? new Date(s.completedAt).toLocaleString() : "N/A",
+    }));
+
+    exportToCSV(exportData, `${quizTitle.replace(/\s+/g, "_")}_Submissions`);
+  };
+
   return (
     <div className="rounded-2xl border border-main bg-surface p-6 shadow-card transition-colors space-y-6">
-      {/* Header & Search */}
+      {/* Header & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-main">
         <div>
           <h3 className="text-lg font-bold text-main font-display flex items-center gap-2">
@@ -55,16 +72,33 @@ export default function QuizSubmissionsTable({ quizId }) {
           </p>
         </div>
 
-        {/* Search */}
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted" />
-          <input
-            type="text"
-            placeholder="Search by student name or email..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl border border-main bg-surface pl-9 pr-4 py-2 text-xs text-main placeholder:text-muted outline-none transition focus:border-accent"
-          />
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Search */}
+          <div className="relative w-full sm:w-60">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted" />
+            <input
+              type="text"
+              placeholder="Search student..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-xl border border-main bg-surface pl-9 pr-4 py-2 text-xs text-main placeholder:text-muted outline-none transition focus:border-accent"
+            />
+          </div>
+
+          {/* Export Button */}
+          <button
+            type="button"
+            disabled={submissions.length === 0}
+            onClick={handleExportCSV}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold border transition ${
+              submissions.length > 0
+                ? "border-main bg-elevated text-main hover:border-accent hover:text-accent cursor-pointer shadow-xs"
+                : "border-main/50 bg-surface/50 text-muted cursor-not-allowed opacity-50"
+            }`}
+          >
+            <Download className="w-3.5 h-3.5" />
+            Export CSV
+          </button>
         </div>
       </div>
 

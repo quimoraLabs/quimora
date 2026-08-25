@@ -138,6 +138,96 @@ export const fetchInstructorDashboardData = async (instructorId) => {
     },
   ]);
 
+  // 5. Aggregate 7-Day Activity Trends
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+  sevenDaysAgo.setHours(0, 0, 0, 0);
+
+  const trendRaw = await QuizAttempt.aggregate([
+    {
+      $lookup: {
+        from: "quizzes",
+        localField: "quizId",
+        foreignField: "_id",
+        as: "quiz",
+      },
+    },
+    { $unwind: "$quiz" },
+    {
+      $match: {
+        "quiz.createdBy": instructorObjectId,
+        status: "completed",
+        createdAt: { $gte: sevenDaysAgo },
+      },
+    },
+    {
+      $group: {
+        _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+        attempts: { $sum: 1 },
+        avgScore: { $avg: "$score" },
+      },
+    },
+    { $sort: { _id: 1 } },
+  ]);
+
+  // Fill in all 7 days even if 0 attempts
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const activityTrends = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().split("T")[0];
+    const found = trendRaw.find((t) => t._id === dateStr);
+
+    activityTrends.push({
+      date: dateStr,
+      day: dayNames[d.getDay()],
+      attempts: found ? found.attempts : 0,
+      avgScore: found ? Math.round(found.avgScore) : 0,
+    });
+  }
+
+  // 6. Aggregate Score Distribution
+  const distributionRaw = await QuizAttempt.aggregate([
+    {
+      $lookup: {
+        from: "quizzes",
+        localField: "quizId",
+        foreignField: "_id",
+        as: "quiz",
+      },
+    },
+    { $unwind: "$quiz" },
+    {
+      $match: {
+        "quiz.createdBy": instructorObjectId,
+        status: "completed",
+      },
+    },
+    {
+      $bucket: {
+        groupBy: "$score",
+        boundaries: [0, 50, 70, 85, 101],
+        default: "other",
+        output: { count: { $sum: 1 } },
+      },
+    },
+  ]);
+
+  const scoreMap = { "0": 0, "50": 0, "70": 0, "85": 0 };
+  distributionRaw.forEach((b) => {
+    if (scoreMap[String(b._id)] !== undefined) {
+      scoreMap[String(b._id)] = b.count;
+    }
+  });
+
+  const scoreDistribution = [
+    { range: "< 50%", count: scoreMap["0"] || 0, label: "Needs Help" },
+    { range: "50-69%", count: scoreMap["50"] || 0, label: "Average" },
+    { range: "70-84%", count: scoreMap["70"] || 0, label: "Good" },
+    { range: "85-100%", count: scoreMap["85"] || 0, label: "Excellent" },
+  ];
+
   return {
     metrics: {
       totalQuizzes,
@@ -145,6 +235,8 @@ export const fetchInstructorDashboardData = async (instructorId) => {
       totalAttempts: aggregateStats.totalAttempts,
       avgScoreRate: aggregateStats.averageScoreRate,
     },
+    activityTrends,
+    scoreDistribution,
     recentQuizzes: recentQuizzes.map((quiz) => ({
       id: quiz._id.toString(),
       title: quiz.title,

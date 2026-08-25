@@ -14,6 +14,7 @@ import RecentQuizzesTable from "../../features/instructor/dashboard/components/R
 import AiGeneratorBanner from "../../features/instructor/dashboard/components/AiGeneratorBanner";
 import useInstructorDashboard from "../../features/instructor/dashboard/store/useInstructorDashboard";
 import LiveActivityFeed from "../../features/instructor/dashboard/components/LiveActivityFeed";
+import InstructorAnalyticsChart from "../../features/instructor/dashboard/components/InstructorAnalyticsChart";
 
 const InstructorDashboardPage = () => {
   const { dashboardStats, dashboardLoading, fetchDashboardStats } =
@@ -38,6 +39,8 @@ const InstructorDashboardPage = () => {
 
   const recentQuizzes = dashboardStats?.recentQuizzes || [];
   const liveActivities = dashboardStats?.liveActivities || [];
+  const activityTrends = dashboardStats?.activityTrends || [];
+  const scoreDistribution = dashboardStats?.scoreDistribution || [];
 
   const stats = [
     {
@@ -86,7 +89,7 @@ const InstructorDashboardPage = () => {
           <motion.button
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
-            className="flex items-center gap-2 px-4 py-2.5 bg-accent text-white text-sm font-semibold rounded-xl shadow-card transition-all"
+            className="flex items-center gap-2 px-4 py-2.5 bg-accent text-white text-sm font-semibold rounded-xl shadow-card transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             Create New Quiz
@@ -95,6 +98,12 @@ const InstructorDashboardPage = () => {
 
         {/* Dynamic Stats Grid */}
         <StatsOverview stats={stats} />
+
+        {/* Visual Graphical Analytics (Recharts) */}
+        <InstructorAnalyticsChart
+          activityTrends={activityTrends}
+          scoreDistribution={scoreDistribution}
+        />
 
         {/* Equal Height Layout Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">

@@ -140,6 +140,36 @@ const useQuestionStore = create((set) => ({
       set({ loading: false });
     }
   },
+
+  // 4. BULK IMPORT QUESTIONS (CSV / JSON)
+  importBulkQuestions: async (quizId, questionsArray) => {
+    set({ loading: true });
+    try {
+      const response = await axiosClient.post(
+        `/quiz/${quizId}/questions/bulk`,
+        { questions: questionsArray }
+      );
+
+      if (response.data?.success) {
+        toast.success(
+          response.data.message ||
+            `${questionsArray.length} questions imported successfully!`
+        );
+
+        await useQuizStore.getState().fetchQuizById?.(quizId);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Error bulk importing questions:", error);
+      toast.error(
+        error.response?.data?.message || "Failed to import bulk questions."
+      );
+      return false;
+    } finally {
+      set({ loading: false });
+    }
+  },
 }));
 
 export default useQuestionStore;

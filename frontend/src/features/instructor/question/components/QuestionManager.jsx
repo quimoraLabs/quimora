@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { Upload, Plus } from "lucide-react";
 import useQuestionStore from "../store/useQuestionStore";
-import QuestionFormModal from "./QuestionForm";
+import QuestionFormModal from "./questionForm";
+import BulkImportModal from "./BulkImportModal";
 
 const initialFormState = {
   questionText: "",
@@ -25,6 +27,7 @@ export default function QuestionManager({ quizId }) {
   } = useQuestionStore();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [form, setForm] = useState(initialFormState);
 
@@ -100,13 +103,25 @@ export default function QuestionManager({ quizId }) {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleOpenAddModal}
-          className="rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:opacity-90 shrink-0 cursor-pointer"
-        >
-          + Add Question
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => setIsImportModalOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-main bg-elevated px-3.5 py-2.5 text-xs font-semibold text-main shadow-xs transition hover:border-accent hover:text-accent cursor-pointer"
+          >
+            <Upload className="w-3.5 h-3.5" />
+            Import (CSV/JSON)
+          </button>
+
+          <button
+            type="button"
+            onClick={handleOpenAddModal}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2.5 text-xs font-semibold text-white shadow-lg transition hover:opacity-90 cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Add Question
+          </button>
+        </div>
       </div>
 
       {loading && (!questions || questions.length === 0) ? (
@@ -187,7 +202,7 @@ export default function QuestionManager({ quizId }) {
         </div>
       )}
 
-      {/* FIXED PROP HERE: passes dynamic boolean instead of hardcoded true */}
+      {/* Question Form Modal */}
       <QuestionFormModal
         isOpen={isModalOpen}
         isEditing={Boolean(editingQuestion)}
@@ -195,6 +210,14 @@ export default function QuestionManager({ quizId }) {
         onSave={handleSaveQuestion}
         form={form}
         setForm={setForm}
+      />
+
+      {/* Bulk Import Modal */}
+      <BulkImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        quizId={quizId}
+        onImportSuccess={() => getQuizQuestions(quizId)}
       />
     </div>
   );
