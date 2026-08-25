@@ -60,17 +60,6 @@ const questionSchema = new mongoose.Schema(
   },
 );
 
-// Hides correct option flag on basic payload transformations
-questionSchema.set("toJSON", {
-  transform: (doc, ret) => {
-    if (ret.options && Array.isArray(ret.options)) {
-      ret.options.forEach((opt) => {
-        delete opt.isCorrect;
-      });
-    }
-    return ret;
-  },
-});
 
 const Question = mongoose.model("Question", questionSchema);
 export default Question;

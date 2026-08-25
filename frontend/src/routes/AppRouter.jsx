@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Route, Routes, Outlet, Navigate } from "react-router-dom";
 import useAuthStore from "../features/auth/store/authStore";
 import { useTheme } from "../utils/useTheme";
+import { getRoleDisplayName } from "../utils/roleMapper";
 
 // Wrappers & Guards
 import ProtectedRoutes from "./ProtectedRoutes";
@@ -49,7 +50,7 @@ const DashboardLayout = ({ darkMode, toggleDarkMode, role }) => {
         <Header
           darkMode={darkMode}
           toggleDarkMode={toggleDarkMode}
-          title={role}
+          title={getRoleDisplayName(role)}
           setSidebarOpen={setIsSidebarOpen}
         />
         <main className="lg:ml-64 flex-1 pt-10">
@@ -125,7 +126,7 @@ export const AppRouter = () => {
             <ProtectedRoutes allowedRoles={["user", "instructor", "admin"]} />
           }
         >
-          <Route path="/profile" element={<Profile />} />
+          <Route path="/:roles/profile" element={<Profile />} />
         </Route>
 
         {AdminRoutes()}

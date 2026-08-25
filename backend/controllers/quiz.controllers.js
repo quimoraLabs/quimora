@@ -1,6 +1,7 @@
 import Quiz from "../models/quiz.model.js";
 import User from "../models/user.model.js";
 import Question from "../models/question.model.js";
+import QuizAttempt from "../models/quizAttempt.model.js";
 import mongoose from "mongoose";
 import {
   assertQuizExists,
@@ -182,6 +183,16 @@ export const getQuizById = async (req, res, next) => {
       "name",
       "email",
     ]);
+
+    // 3. Attach live attempt statistics
+    const totalAttempts = await QuizAttempt.countDocuments({
+      quizId,
+      status: "completed",
+    });
+
+    result.stats = {
+      attempts: totalAttempts,
+    };
 
     res.status(200).json({
       success: true,

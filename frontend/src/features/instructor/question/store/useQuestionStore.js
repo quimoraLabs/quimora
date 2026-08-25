@@ -1,11 +1,11 @@
 import { create } from "zustand";
 import toast from "react-hot-toast";
 import axiosClient from "../../../../api/axiosClient";
-import useQuizStore from "./useQuizStore";
+import useQuizStore from "../../quiz/store/useQuizStore";
 
 const useQuestionStore = create((set) => ({
   loading: false,
-  questions:[],
+  questions: [],
   currentQuestion: null,
 
   // Reset helper
@@ -15,9 +15,7 @@ const useQuestionStore = create((set) => ({
   getQuizQuestions: async (quizId) => {
     set({ loading: true });
     try {
-      const response = await axiosClient.get(
-        `/quiz/${quizId}/questions`,
-      );
+      const response = await axiosClient.get(`/quiz/${quizId}/questions`);
 
       if (response.data?.success) {
         set({ questions: response.data.data });
@@ -26,9 +24,7 @@ const useQuestionStore = create((set) => ({
       return false;
     } catch (error) {
       console.error("Error fetching questions:", error);
-      toast.error(
-        error.response?.data?.message || "no questions found",
-      );
+      toast.error(error.response?.data?.message || "no questions found");
       set({ currentQuestion: null });
       return false;
     } finally {

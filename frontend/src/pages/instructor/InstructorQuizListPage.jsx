@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
-import { Plus } from "lucide-react";
+import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import useQuizStore from "../../features/instructor/quiz/store/useQuizStore"; // Adjust path to store
-import DataTable from "../../components/common/DataTable"; // Adjust path
-import QuizFormModal from "../../features/instructor/quiz/components/QuizForm"; // Adjust path
+import useQuizStore from "../../features/instructor/quiz/store/useQuizStore";
+import DataTable from "../../components/common/DataTable";
+import QuizFormModal from "../../features/instructor/quiz/components/QuizForm";
+import PaginationBar from "../../features/instructor/quiz/components/PaginationBar";
+import QuizHeaderBar from "../../features/instructor/quiz/components/QuizHeaderBar";
 
 const INITIAL_FORM_STATE = {
   title: "",
@@ -29,17 +30,42 @@ export default function InstructorQuizListPage() {
   const [selectedQuiz, setSelectedQuiz] = useState(null);
   const [form, setForm] = useState(INITIAL_FORM_STATE);
 
+  // Search, Filter & Pagination states
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10; // Easily scalable to 20 later
+
   useEffect(() => {
     fetchQuizzesByInstructor();
   }, [fetchQuizzesByInstructor]);
+
+  // Client-side filtering logic
+  const filteredQuizzes = useMemo(() => {
+    if (!Array.isArray(quizzes)) return [];
+    return quizzes.filter((quiz) => {
+      const matchesSearch = quiz.title
+        ?.toLowerCase()
+        .includes(searchQuery.toLowerCase());
+      const matchesStatus =
+        selectedStatus === "all" || quiz.status === selectedStatus;
+      return matchesSearch && matchesStatus;
+    });
+  }, [quizzes, searchQuery, selectedStatus]);
+
+  // Pagination calculation
+  const totalItems = filteredQuizzes.length;
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  const paginatedQuizzes = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredQuizzes.slice(start, start + pageSize);
+  }, [filteredQuizzes, currentPage, pageSize]);
 
   const handleOpenCreateModal = () => {
     setSelectedQuiz(null);
     setForm(INITIAL_FORM_STATE);
     setIsModalOpen(true);
   };
-
-  console.log(quizzes);
 
   const handleEditClick = (quiz) => {
     setSelectedQuiz(quiz);
@@ -82,9 +108,7 @@ export default function InstructorQuizListPage() {
 
     return (
       <>
-        <td className=" text-main text-sm px-2">
-          {quiz.title}
-        </td>
+        <td className=" text-main text-sm px-2">{quiz.title}</td>
 
         <td className="pl-10 text-muted whitespace-nowrap text-left">
           {quiz.timeLimit}
@@ -111,46 +135,42 @@ export default function InstructorQuizListPage() {
 
   return (
     <main className="min-h-screen bg-main px-4 py-8 text-main sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
+      <div className="mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-7 flex flex-col justify-between gap-5 sm:flex-row sm:items-end"
         >
-          <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-accent">
-              Instructor workspace
-            </p>
-            <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">
-              Quizzes
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-              Create, organize, and publish assessments for your learners.
-            </p>
-          </div>
+          <QuizHeaderBar
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            selectedStatus={selectedStatus}
+            setSelectedStatus={setSelectedStatus}
+            onOpenCreateModal={handleOpenCreateModal}
+            totalQuizzes={quizzes.length}
+          />
 
-          <button
-            type="button"
-            onClick={handleOpenCreateModal}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-semibold shadow-lg shadow-brand-mid/10 transition hover:opacity-90"
-          >
-            <Plus size={17} />
-            Create quiz
-          </button>
+          <DataTable
+            headers={headers}
+            data={paginatedQuizzes}
+            renderRow={renderRow}
+            isView={true}
+            isEdit={true}
+            isDelete={true}
+            type="quiz"
+            loading={loading}
+            onDelete={deleteQuiz}
+            onEditClick={handleEditClick}
+          />
+
+          {/* Pagination Component */}
+          <PaginationBar
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={(page) => setCurrentPage(page)}
+          />
         </motion.div>
-
-        <DataTable
-          headers={headers}
-          data={quizzes}
-          renderRow={renderRow}
-          isView={true}
-          isEdit={true}
-          isDelete={true}
-          type="quiz"
-          loading={loading}
-          onDelete={deleteQuiz}
-          onEditClick={handleEditClick}
-        />
 
         <QuizFormModal
           isOpen={isModalOpen}

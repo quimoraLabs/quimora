@@ -96,7 +96,7 @@ const DataTable = ({
                           <button
                             type="button"
                             onClick={() => handleViewAction(item, itemId)}
-                            className="p-1.5 rounded-md hover:bg-main text-muted hover:text-brand-primary transition-colors"
+                            className="rounded-md hover:bg-main text-muted hover:text-blue-600 transition-colors"
                             title="View Details"
                           >
                             <Eye size={18} />
@@ -107,7 +107,7 @@ const DataTable = ({
                           <button
                             type="button"
                             onClick={() => handleEditOpen(item)}
-                            className="p-1.5 rounded-md hover:bg-main text-muted hover:text-brand-primary transition-colors"
+                            className="rounded-md hover:bg-main text-muted hover:text-yellow-500 transition-colors"
                             title="Edit Item"
                           >
                             <Pencil size={18} />
@@ -118,7 +118,7 @@ const DataTable = ({
                           <button
                             type="button"
                             onClick={() => handleDeleteTrigger(itemId)}
-                            className="p-1.5 rounded-md hover:bg-main text-muted hover:text-red-500 transition-colors"
+                            className="rounded-md hover:bg-main text-muted hover:text-red-500 transition-colors"
                             title="Delete Item"
                           >
                             <Trash2 size={18} />
@@ -162,7 +162,7 @@ const DataTable = ({
                                     type="button"
                                     onClick={() => handleEditOpen(item)}
                                     className={`${
-                                      focus ? "bg-main/50" : ""
+                                      focus ? "bg-main/50 text-yellow-500" : "text-yellow-500"
                                     } group flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs text-main`}
                                   >
                                     <Pencil size={14} /> Edit

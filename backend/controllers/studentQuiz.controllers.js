@@ -119,6 +119,8 @@ export const submitQuizAttempt = async (req, res, next) => {
     // 2. Execute Submission Logic via Service Layer
     const result = await submitAttemptSession(attemptId, userId, answers);
 
+    
+
     // 3. Send Success Response
     return res.status(200).json({
       success: true,

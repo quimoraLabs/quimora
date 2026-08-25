@@ -162,6 +162,7 @@ export const getQuizQuestions = async (req, res, next) => {
 
     const totalQuestions = await Question.countDocuments({ quizId });
     const questions = await Question.find({ quizId })
+      .select("+options.isCorrect")
       .skip((page - 1) * limit)
       .limit(limit);
 

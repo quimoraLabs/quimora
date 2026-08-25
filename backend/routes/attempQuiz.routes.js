@@ -7,7 +7,9 @@ import {
   getQuizAttemptDetails,
   getUserDashboardStats,
   getGlobalQuizAnalytics,
-  getInstructorStudents
+  getInstructorStudents,
+  getQuizSubmissionsForInstructor,
+  getAttemptReviewForInstructor,
   //   getAttemptHistory
 } from "../controllers/attemptQuiz.controllers.js";
 import { validateObjectId } from "../middleware/validObjectId.middleware.js";
@@ -28,6 +30,20 @@ router.post(
 router.get("/my-results", authMiddleWare, authorizeRoles("user"), getAllQuizAttemptsForUser);
 router.get("/results/:attemptId", authMiddleWare, authorizeRoles("user"), getQuizAttemptResults);
 router.get("/instructor/students", authMiddleWare, authorizeRoles("instructor"), getInstructorStudents);
+router.get(
+  "/instructor/submissions/:quizId",
+  validateObjectId("quizId"),
+  authMiddleWare,
+  authorizeRoles("instructor", "admin"),
+  getQuizSubmissionsForInstructor
+);
+router.get(
+  "/instructor/review/:attemptId",
+  validateObjectId("attemptId"),
+  authMiddleWare,
+  authorizeRoles("instructor", "admin"),
+  getAttemptReviewForInstructor
+);
 router.get("/analysis", authMiddleWare, authorizeRoles("instructor"), getGlobalQuizAnalytics);
 
 

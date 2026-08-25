@@ -11,7 +11,7 @@ const useQuizStore = create((set, get) => ({
     set({ loading: true });
     try {
       const response = await axiosClient.get(`/quizzes/${id}`);
-      set({ currentQuiz: response.data });
+      set({ currentQuiz: response.data?.data });
     } catch (error) {
       console.error("Error fetching quiz:", error);
       toast.error(error.response?.data?.message || "Failed to fetch quiz.");
