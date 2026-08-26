@@ -1,17 +1,17 @@
-import mongoose from "mongoose";
-import Quiz from "../models/quiz.model.js";
-import Question from "../models/question.model.js";
+// import mongoose from "mongoose";
+// import Quiz from "../models/quiz.model.js";
+// import Question from "../models/question.model.js";
 import QuizAttempt from "../models/quizAttempt.model.js";
 import {
   assertUserExists,
   assertQuizExists,
 } from "../utils/assertion.utils.js";
-import { formatUniversalResponse } from "../utils/universalFormatter.utils.js";
-import { evaluateSnapshotSubmission } from "../utils/grading.utils.js";
-import {
-  calculateDashboardMetrics,
-  getLeaderboardData,
-} from "../utils/dashboard.utils.js";
+// import { formatUniversalResponse } from "../utils/universalFormatter.utils.js";
+// import { evaluateSnapshotSubmission } from "../utils/grading.utils.js";
+// import {
+//   calculateDashboardMetrics,
+//   getLeaderboardData,
+// } from "../utils/dashboard.utils.js";
 import { sanitizeQuestionsForStudent } from "../utils/attempt.utils.js";
 import { createAttemptSession, handleExpiredAttempt, submitAttemptSession, sanitizeAttemptData, checkQuizEligibility } from "../services/quizAttempt.service.js";
 import { fetchStudentDashboardAnalytics, getQuizLeaderboard } from "../services/studentDashboard.service.js";
@@ -22,19 +22,19 @@ import { fetchStudentDashboardAnalytics, getQuizLeaderboard } from "../services/
  * @access  Private (Student)
  */
 export const checkStudentQuizEligibility = async (req, res, next) => {
-    try {
-        const { quizId } = req.params;
-        const userId = req.auth.userId.toString();
+  try {
+    const { quizId } = req.params;
+    const userId = req.auth.userId.toString();
 
-        const eligibility = await checkQuizEligibility(quizId, userId);
+    const eligibility = await checkQuizEligibility(quizId, userId);
 
-        return res.status(200).json({
-            success: true,
-            data: eligibility,
-        });
-    } catch (error) {
-        next(error);
-    }
+    return res.status(200).json({
+      success: true,
+      data: eligibility,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 /**
@@ -50,7 +50,7 @@ export const startQuizAttempt = async (req, res, next) => {
 
     // 1. Fetch & Validate Quiz Availability
     const quiz = await assertQuizExists(quizId);
-    if (!quiz.status === "published" || !quiz.isActive) {
+    if (quiz.status !== "published" || !quiz.isActive) {
       return res.status(400).json({ error: "Quiz is currently unavailable" });
     }
 
@@ -58,24 +58,32 @@ export const startQuizAttempt = async (req, res, next) => {
     let activeAttempt = await QuizAttempt.findOne({ userId, quizId, status: "started" });
     activeAttempt = await handleExpiredAttempt(activeAttempt, quiz.timeLimit);
 
-    // 3. Attempt Allocation Limit Check
-    if (quiz.maxAttempts > 0) {
-      const pastAttempts = await QuizAttempt.countDocuments({ userId, quizId, status: { $in: ["completed", "abandoned"] } });
+    // 3. Attempt Allocation Limit Check (Only for NEW attempts)
+    if (!activeAttempt && quiz.maxAttempts > 0) {
+      const pastAttempts = await QuizAttempt.countDocuments({
+        userId,
+        quizId,
+        status: { $in: ["completed", "abandoned"] }
+      });
       if (pastAttempts >= quiz.maxAttempts) {
-        return res.status(403).json({ error: `Maximum allotment of ${quiz.maxAttempts} attempts reached` });
+        return res.status(403).json({
+          success: false,
+          error: `Maximum allotment of ${quiz.maxAttempts} attempts reached`
+        });
       }
     }
 
-    // 4. Reuse Existing or Create Fresh Attempt
+    // 4. Reuse Existing or Create Fresh Attempt Session
     let attempt = activeAttempt;
-    let rawQuestions;
+    let questionsForResponse;
 
     if (!attempt) {
       const sessionData = await createAttemptSession(userId, quizId);
       attempt = sessionData.attempt;
-      rawQuestions = sessionData.rawQuestions;
+      questionsForResponse = sessionData.rawQuestions;
     } else {
-      rawQuestions = await Question.find({ quizId }).lean();
+      // Use frozen snapshots for active session continuity
+      questionsForResponse = attempt.questionSnapshots;
     }
 
     // 5. Send Clean Secure Payload Response
@@ -90,8 +98,8 @@ export const startQuizAttempt = async (req, res, next) => {
           title: quiz.title,
           description: quiz.description,
           timeLimit: quiz.timeLimit,
-          totalQuestions: rawQuestions.length,
-          questions: sanitizeQuestionsForStudent(rawQuestions),
+          totalQuestions: questionsForResponse.length,
+          questions: sanitizeQuestionsForStudent(questionsForResponse),
         },
       },
     });
@@ -119,7 +127,7 @@ export const submitQuizAttempt = async (req, res, next) => {
     // 2. Execute Submission Logic via Service Layer
     const result = await submitAttemptSession(attemptId, userId, answers);
 
-    
+
 
     // 3. Send Success Response
     return res.status(200).json({
@@ -139,33 +147,33 @@ export const submitQuizAttempt = async (req, res, next) => {
  * @access  Private (Student)
  */
 export const getStudentAttemptDetails = async (req, res, next) => {
-    try {
-        const { attemptId } = req.params;
-        const userId = req.auth.userId.toString();
+  try {
+    const { attemptId } = req.params;
+    const userId = req.auth.userId.toString();
 
-        const attempt = await QuizAttempt.findOne({ _id: attemptId, userId })
-            .populate({
-                path: "quizId",
-                select: "title timeLimit",
-            })
-            .lean();
+    const attempt = await QuizAttempt.findOne({ _id: attemptId, userId })
+      .populate({
+        path: "quizId",
+        select: "title timeLimit tags",
+      })
+      .lean();
 
-        if (!attempt) {
-            return res.status(404).json({
-                error: "Quiz attempt session not found for this user",
-            });
-        }
-
-        // Service call for single object
-        const sanitizedData = sanitizeAttemptData(attempt,true);
-
-        return res.status(200).json({
-            success: true,
-            data: sanitizedData,
-        });
-    } catch (error) {
-        next(error);
+    if (!attempt) {
+      return res.status(404).json({
+        error: "Quiz attempt session not found for this user",
+      });
     }
+
+    // Service call for single object
+    const sanitizedData = sanitizeAttemptData(attempt, true);
+
+    return res.status(200).json({
+      success: true,
+      data: sanitizedData,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 /**
@@ -175,30 +183,30 @@ export const getStudentAttemptDetails = async (req, res, next) => {
  */
 
 export const getStudentAttemptHistory = async (req, res, next) => {
-    try {
-        const userId = req.auth.userId.toString();
+  try {
+    const userId = req.auth.userId.toString();
 
-        const attempts = await QuizAttempt.find({ userId })
-            .sort({ startedAt: -1 })
-            .populate({
-                path: "quizId",
-                select: "title tags",
-            })
-            .lean();
+    const attempts = await QuizAttempt.find({ userId })
+      .sort({ startedAt: -1 })
+      .populate({
+        path: "quizId",
+        select: "title tags",
+      })
+      .lean();
 
-        // Pass false so question snapshots are NOT included in the list view
-        const sanitizedAttempts = attempts.map((attempt) =>
-            sanitizeAttemptData(attempt, false)
-        );
+    // Pass false so question snapshots are NOT included in the list view
+    const sanitizedAttempts = attempts.map((attempt) =>
+      sanitizeAttemptData(attempt, false)
+    );
 
-        return res.status(200).json({
-            success: true,
-            count: sanitizedAttempts.length,
-            data: sanitizedAttempts,
-        });
-    } catch (error) {
-        next(error);
-    }
+    return res.status(200).json({
+      success: true,
+      count: sanitizedAttempts.length,
+      data: sanitizedAttempts,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 /**
@@ -207,35 +215,35 @@ export const getStudentAttemptHistory = async (req, res, next) => {
  * @access  Private (Student)
  */
 export const getStudentAttemptResultSummary = async (req, res, next) => {
-    try {
-        const { attemptId } = req.params;
-        const userId = req.auth.userId.toString();
+  try {
+    const { attemptId } = req.params;
+    const userId = req.auth.userId.toString();
 
-        const attempt = await QuizAttempt.findOne({ _id: attemptId, userId })
-            .select("totalQuestions correctAnswersCount score timeTaken status completedAt")
-            .lean();
+    const attempt = await QuizAttempt.findOne({ _id: attemptId, userId })
+      .select("totalQuestions correctAnswersCount score timeTaken status completedAt")
+      .lean();
 
-        if (!attempt) {
-            return res.status(404).json({
-                error: "Quiz attempt session not found for this user",
-            });
-        }
-
-        return res.status(200).json({
-            success: true,
-            data: {
-                id: attempt._id,
-                totalQuestions: attempt.totalQuestions,
-                correctAnswersCount: attempt.correctAnswersCount,
-                score: attempt.score,
-                timeTakenInSeconds: attempt.timeTaken,
-                status: attempt.status,
-                completedAt: attempt.completedAt,
-            },
-        });
-    } catch (error) {
-        next(error);
+    if (!attempt) {
+      return res.status(404).json({
+        error: "Quiz attempt session not found for this user",
+      });
     }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        id: attempt._id,
+        totalQuestions: attempt.totalQuestions,
+        correctAnswersCount: attempt.correctAnswersCount,
+        score: attempt.score,
+        timeTakenInSeconds: attempt.timeTaken,
+        status: attempt.status,
+        completedAt: attempt.completedAt,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 /**
@@ -244,19 +252,19 @@ export const getStudentAttemptResultSummary = async (req, res, next) => {
  * @access  Private (Student)
  */
 export const getStudentDashboardStats = async (req, res, next) => {
-    try {
-        const userId = req.auth.userId.toString();
+  try {
+    const userId = req.auth.userId.toString();
 
-        // Delegate all heavy aggregation & metric logic to the service
-        const dashboardData = await fetchStudentDashboardAnalytics(userId);
+    // Delegate all heavy aggregation & metric logic to the service
+    const dashboardData = await fetchStudentDashboardAnalytics(userId);
 
-        return res.status(200).json({
-            success: true,
-            data: dashboardData,
-        });
-    } catch (error) {
-        next(error);
-    }
+    return res.status(200).json({
+      success: true,
+      data: dashboardData,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 /**
@@ -265,17 +273,17 @@ export const getStudentDashboardStats = async (req, res, next) => {
  * @access  Private (Student)
  */
 export const getStudentQuizWiseLeaderboard = async (req, res, next) => {
-    try {
-        const { quizId } = req.params;
-        const userId = req.auth.userId.toString();
+  try {
+    const { quizId } = req.params;
+    const userId = req.auth.userId.toString();
 
-        const leaderboardData = await getQuizLeaderboard(quizId, userId, 10);
+    const leaderboardData = await getQuizLeaderboard(quizId, userId, 10);
 
-        return res.status(200).json({
-            success: true,
-            data: leaderboardData,
-        });
-    } catch (error) {
-        next(error);
-    }
+    return res.status(200).json({
+      success: true,
+      data: leaderboardData,
+    });
+  } catch (error) {
+    next(error);
+  }
 };

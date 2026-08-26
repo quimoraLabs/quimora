@@ -121,7 +121,7 @@ export default function InstructorQuizListPage() {
           ) : (
             <button
               type="button"
-              disabled={quiz?.questions.length}
+              disabled={quiz?.questions.length===0}
               onClick={() => changeQuizStatus(quizId, "published")}
               className="inline-flex items-center rounded-lg bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-500 border border-amber-500/20 hover:bg-amber-500/20 transition-colors"
             >

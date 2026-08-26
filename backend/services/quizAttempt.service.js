@@ -102,12 +102,12 @@ export const createAttemptSession = async (userId, quizId) => {
 
 // Helper to process quiz submission, verify time, and calculate score
 export const submitAttemptSession = async (attemptId, userId, userAnswers) => {
-    // 1. Fetch active attempt session
+    // 1. Fetch active attempt session with quiz settings
     const attempt = await QuizAttempt.findOne({
         _id: attemptId,
         userId,
         status: "started",
-    }).populate("quizId", "timeLimit");
+    }).populate("quizId", "title tags timeLimit passingScore negativeMarking");
 
     if (!attempt) {
         const err = new Error("Active quiz session not found or already submitted");
@@ -136,13 +136,33 @@ export const submitAttemptSession = async (attemptId, userId, userAnswers) => {
         throw err;
     }
 
-    // 3. Evaluate score using stored Question Snapshots
-    const { correctAnswersCount, scorePercentage, compiledSnapshotArray } =
-        evaluateSnapshotSubmission(userAnswers, attempt.questionSnapshots);
+    // 3. Evaluate score with negative marking & passing score options
+    const {
+        correctAnswersCount,
+        incorrectAnswersCount,
+        unattemptedCount,
+        marksObtained,
+        totalMarks,
+        scorePercentage,
+        passed,
+        compiledSnapshotArray
+    } = evaluateSnapshotSubmission(
+        userAnswers,
+        attempt.questionSnapshots,
+        {
+            negativeMarking: attempt.quizId?.negativeMarking || 25,
+            passingScore: attempt.quizId?.passingScore || 50
+        }
+    );
 
     // 4. Update Attempt Record in DB
     attempt.answers = compiledSnapshotArray;
     attempt.correctAnswersCount = correctAnswersCount;
+    attempt.incorrectAnswersCount = incorrectAnswersCount; 
+    attempt.unattemptedCount = unattemptedCount;
+    attempt.marksObtained = marksObtained;
+    attempt.totalMarks = totalMarks;
+    attempt.passed = passed;
     attempt.score = scorePercentage;
     attempt.timeTaken = timeTakenInSeconds;
     attempt.status = "completed";
@@ -154,7 +174,12 @@ export const submitAttemptSession = async (attemptId, userId, userAnswers) => {
         attemptId: attempt._id,
         totalQuestions: attempt.totalQuestions,
         correctAnswersCount,
+        incorrectAnswersCount,
+        unattemptedCount,
+        marksObtained,
+        totalMarks,
         scorePercentage,
+        passed,
         timeTakenInSeconds,
         completedAt: attempt.completedAt,
     };
@@ -168,14 +193,20 @@ export const submitAttemptSession = async (attemptId, userId, userAnswers) => {
 export const sanitizeAttemptData = (attempt, includeQuestions = false) => {
     if (!attempt) return null;
 
-    // Default lightweight summary object
+    // Lightweight summary object with evaluation metrics
     const sanitized = {
         _id: attempt._id,
         quizTitle: attempt.quizId?.title || "Quiz",
         tags: Array.isArray(attempt.quizId?.tags) ? attempt.quizId.tags : [],
         totalQuestions: attempt.totalQuestions,
-        correctAnswersCount: attempt.correctAnswersCount,
-        score: attempt.score,
+        correctAnswersCount: attempt.correctAnswersCount || 0,
+        // New calculation metrics added below
+        incorrectAnswersCount: attempt.incorrectAnswersCount || 0,
+        unattemptedCount: attempt.unattemptedCount || 0,
+        marksObtained: attempt.marksObtained || 0,
+        totalMarks: attempt.totalMarks || 0,
+        passed: Boolean(attempt.passed),
+        score: attempt.score || 0,
         status: attempt.status,
         startedAt: attempt.startedAt,
         completedAt: attempt.completedAt,
@@ -193,6 +224,7 @@ export const sanitizeAttemptData = (attempt, includeQuestions = false) => {
                 questionId: snapshot.questionId,
                 questionText: snapshot.questionText,
                 marks: snapshot.marks,
+                selectedOptions: answer?.selectedOptions || [],
                 isCorrect: Boolean(answer?.isCorrect),
             };
         });

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Trophy, Award } from "lucide-react";
+import { Trophy, Award, XCircle } from "lucide-react";
 import useStudentQuizStore from "../store/useStudentQuizStore";
 import { exitFullScreen } from "./enterFullScreen";
 
@@ -22,19 +22,26 @@ export const useExamResult = () => {
     }
   }, [loadPersistedQuizResult, quizResults]);
 
-  const score = quizResults?.correctAnswersCount ?? 0;
+  // Extract all Backend Metrics directly
+  const passed = Boolean(quizResults?.passed);
+  const marksObtained = quizResults?.marksObtained ?? 0;
+  const totalMarks = quizResults?.totalMarks ?? 0;
+  const correctAnswersCount = quizResults?.correctAnswersCount ?? 0;
+  const incorrectAnswersCount = quizResults?.incorrectAnswersCount ?? 0;
+  const unattemptedCount = quizResults?.unattemptedCount ?? 0;
   const totalQuestions = quizResults?.totalQuestions ?? 0;
   const percentage =
-    quizResults?.score !== undefined ? Math.round(quizResults.score) : 0;
+    quizResults?.scorePercentage ??
+    (quizResults?.score !== undefined ? Math.round(quizResults.score) : 0);
 
   const getFeedback = () => {
-    if (percentage >= 80) {
-      return { message: "Exceptional Performance", icon: Award, tone: "high" };
+    if (passed) {
+      if (percentage >= 80) {
+        return { message: "Exceptional Performance", icon: Award, passed: true };
+      }
+      return { message: "Successfully Passed", icon: Trophy, passed: true };
     }
-    if (percentage >= 50) {
-      return { message: "Successfully Passed", icon: Trophy, tone: "mid" };
-    }
-    return { message: "Needs Improvement", icon: Award, tone: "low" };
+    return { message: "Needs Improvement", icon: XCircle, passed: false };
   };
 
   const handleCleanExit = (targetRoute = "/student/quizzes") => {
@@ -45,7 +52,12 @@ export const useExamResult = () => {
   return {
     loading,
     quizResults,
-    score,
+    passed,
+    marksObtained,
+    totalMarks,
+    correctAnswersCount,
+    incorrectAnswersCount,
+    unattemptedCount,
     totalQuestions,
     percentage,
     warningCount: warningCount || 0,

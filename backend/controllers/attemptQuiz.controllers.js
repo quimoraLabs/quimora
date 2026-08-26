@@ -28,7 +28,7 @@ export const startQuizAttempt = async (req, res, next) => {
 
     // 1. Fetch & Validate Quiz Availability
     const quiz = await assertQuizExists(quizId);
-    if (!quiz.status === "published" || !quiz.isActive) {
+    if (quiz?.status.toLocaleLowerCase() !== "published" || !quiz.isActive) {
       return res.status(400).json({ error: "Quiz is currently unavailable" });
     }
 
@@ -36,24 +36,32 @@ export const startQuizAttempt = async (req, res, next) => {
     let activeAttempt = await QuizAttempt.findOne({ userId, quizId, status: "started" });
     activeAttempt = await handleExpiredAttempt(activeAttempt, quiz.timeLimit);
 
-    // 3. Attempt Allocation Limit Check
-    if (quiz.maxAttempts > 0) {
-      const pastAttempts = await QuizAttempt.countDocuments({ userId, quizId, status: { $in: ["completed", "abandoned"] } });
+   // 3. Attempt Allocation Limit Check (Only for NEW attempts)
+    if (!activeAttempt && quiz.maxAttempts > 0) {
+      const pastAttempts = await QuizAttempt.countDocuments({ 
+        userId, 
+        quizId, 
+        status: { $in: ["completed", "abandoned"] } 
+      });
       if (pastAttempts >= quiz.maxAttempts) {
-        return res.status(403).json({ error: `Maximum allotment of ${quiz.maxAttempts} attempts reached` });
+        return res.status(403).json({ 
+          success: false, 
+          error: `Maximum allotment of ${quiz.maxAttempts} attempts reached` 
+        });
       }
     }
 
-    // 4. Reuse Existing or Create Fresh Attempt
+    // 4. Reuse Existing or Create Fresh Attempt Session
     let attempt = activeAttempt;
-    let rawQuestions;
+    let questionsForResponse;
 
     if (!attempt) {
       const sessionData = await createAttemptSession(userId, quizId);
       attempt = sessionData.attempt;
-      rawQuestions = sessionData.rawQuestions;
+      questionsForResponse = sessionData.rawQuestions;
     } else {
-      rawQuestions = await Question.find({ quizId }).lean();
+      // Use frozen snapshots for active session continuity
+      questionsForResponse = attempt.questionSnapshots;
     }
 
     // 5. Send Clean Secure Payload Response
@@ -68,8 +76,8 @@ export const startQuizAttempt = async (req, res, next) => {
           title: quiz.title,
           description: quiz.description,
           timeLimit: quiz.timeLimit,
-          totalQuestions: rawQuestions.length,
-          questions: sanitizeQuestionsForStudent(rawQuestions),
+          totalQuestions: questionsForResponse.length,
+          questions: sanitizeQuestionsForStudent(questionsForResponse),
         },
       },
     });

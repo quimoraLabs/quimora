@@ -10,8 +10,12 @@ const SingleAttemptResultPage = () => {
   const {
     loading,
     quizResults,
-    score,
-    totalQuestions,
+    passed,
+    marksObtained,
+    totalMarks,
+    correctAnswersCount,
+    incorrectAnswersCount,
+    unattemptedCount,
     percentage,
     warningCount,
     feedback,
@@ -49,13 +53,15 @@ const SingleAttemptResultPage = () => {
 
         <div className="p-8 md:p-12 space-y-8">
           <ResultMetrics
-            score={score}
-            totalQuestions={totalQuestions}
+            marksObtained={marksObtained}
+            totalMarks={totalMarks}
             percentage={percentage}
+            passed={passed}
           />
           <ResultSummary
-            score={score}
-            totalQuestions={totalQuestions}
+            correctAnswersCount={correctAnswersCount}
+            incorrectAnswersCount={incorrectAnswersCount}
+            unattemptedCount={unattemptedCount}
             warningCount={warningCount}
           />
           <ResultActions onExit={handleCleanExit} />

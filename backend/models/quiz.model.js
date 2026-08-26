@@ -45,13 +45,14 @@ const quizSchema = new mongoose.Schema(
     passingScore: {
       type: Number,
       default: 50,
-      min: 0,
+      min: 50,
       max: 100,
     },
     negativeMarking: {
       type: Number,
-      default: 0,
-      min: 0,
+      default: 25,
+      min: 20,
+      max: 50,
     },
     status: {
       type: String,

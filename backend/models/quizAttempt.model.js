@@ -97,6 +97,28 @@ const quizAttemptSchema = new mongoose.Schema(
       required: true,
       default: 0,
     },
+    // --- FUTURE ADDITIONS START HERE ---
+    incorrectAnswersCount: {
+      type: Number,
+      default: 0,
+    },
+    unattemptedCount: {
+      type: Number,
+      default: 0,
+    },
+    marksObtained: {
+      type: Number,
+      default: 0, // e.g. 38.75
+    },
+    totalMarks: {
+      type: Number,
+      default: 0, // e.g. 50
+    },
+    passed: {
+      type: Boolean,
+      default: false, // true if percentage >= quiz passingScore
+    },
+    // --- FUTURE ADDITIONS END HERE ---
     score: {
       type: Number,
       required: true,
