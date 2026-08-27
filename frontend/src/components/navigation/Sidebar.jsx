@@ -57,13 +57,7 @@ export default function Sidebar({ isOpen, setIsOpen, role }) {
         path: "/admin",
         name: "Dashboard",
         icon: <LayoutDashboard size={20} />,
-      },
-      { path: "/admin/quizes", name: "Quizzes", icon: <QuoteIcon size={20} /> },
-      {
-        path: "/admin/instructor/users",
-        name: "User Control",
-        icon: <UserCheck size={20} />,
-      },
+      }
     ],
   };
 
