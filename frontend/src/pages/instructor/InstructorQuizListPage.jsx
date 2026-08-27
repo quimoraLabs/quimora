@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import useQuizStore from "../../features/instructor/quiz/store/useQuizStore";
 import DataTable from "../../components/common/DataTable";
 import QuizFormModal from "../../features/instructor/quiz/components/QuizForm";

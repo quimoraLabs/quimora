@@ -44,7 +44,7 @@ const RegisterPage = () => {
   };
 
   return (
-    // Pura page screen fitting aur variable backgrounds ke sath
+    // Full page layout with viewport fitting and variable backgrounds
     <div className="auth-page">
       <motion.div
         initial={{ opacity: 0, y: 20 }}

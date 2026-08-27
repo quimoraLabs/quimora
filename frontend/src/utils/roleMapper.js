@@ -1,5 +1,5 @@
 /**
- * DB Role ko Display Label me convert karta hai
+ * Converts DB Role to UI Display Label
  * @param {string} role - DB Role ('user', 'instructor', 'admin')
  * @returns {string} - UI Label ('Student', 'Instructor', 'Admin')
  */

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import {
   AreaChart,
   Area,
@@ -10,28 +10,46 @@ import {
 } from 'recharts';
 import { CalendarDays } from 'lucide-react';
 
+/**
+ * @desc    New Users Chart Component
+ * @route   Used in AdminDashboardPage
+ * @access  Private (Admin only)
+ * Displays user registration trends for the last 7 days
+ * Shows "No data" message when data is empty (no fake/random data)
+ */
 const NewUsersChart = ({ data = [] }) => {
-  // Use useMemo to prevent unnecessary re-renders
+  // Use real data if provided, otherwise return empty array
+  // No fake/random data generation
   const chartData = useMemo(() => {
     if (data && data.length > 0) {
       return data;
     }
-    
-    // Generate sample data only once
-    const sampleData = [];
-    const today = new Date();
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      sampleData.push({
-        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        count: Math.floor(Math.random() * 10) + 1,
-      });
-    }
-    return sampleData;
-  }, [data]); // Only re-run if data changes
+    // Return empty array - no fake random data
+    return [];
+  }, [data]);
 
   const totalNewUsers = chartData.reduce((sum, item) => sum + item.count, 0);
+
+  // Show "No Data" placeholder when chart data is empty
+  if (chartData.length === 0) {
+    return (
+      <div className="bg-surface rounded-2xl shadow-card border border-main p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-semibold text-main">New Users (Last 7 Days)</h3>
+            <p className="text-sm text-muted">No data available yet</p>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted bg-elevated px-3 py-1.5 rounded-full border border-main">
+            <CalendarDays className="w-4 h-4" />
+            Last 7 days
+          </div>
+        </div>
+        <div className="h-64 w-full flex items-center justify-center text-muted">
+          <p>No user registration data available</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-surface rounded-2xl shadow-card border border-main p-6">

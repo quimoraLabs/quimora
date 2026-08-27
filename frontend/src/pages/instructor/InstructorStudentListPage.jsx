@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { Users, Award, CheckCircle2, Search, Calendar, BookOpen, ArrowUpRight, Download } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import useInstructorStudents from "../../features/instructor/students/store/useInstructorStudents";
 import StatCard from "../../components/common/StatCard";
 import StatsGrid from "../../components/common/StatsGrid";

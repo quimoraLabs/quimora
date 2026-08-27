@@ -1,7 +1,7 @@
 export function formatRelativeTime(timestamp) {
   const testDate = new Date(timestamp);
   const now = new Date();
-  const diffInSeconds = Math.floor((testDate - now) / 1000); // negative number standard format ke liye
+  const diffInSeconds = Math.floor((testDate - now) / 1000); // Standard format calculation using difference in seconds
 
   const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
 

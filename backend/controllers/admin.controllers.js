@@ -1,8 +1,13 @@
-// backend/controllers/admin.controllers.js
 import User from "../models/user.model.js";
 import Quiz from "../models/quiz.model.js";
 import QuizAttempt from "../models/quizAttempt.model.js";
 
+/**
+ * @desc    Get admin dashboard statistics
+ * @route   GET /api/v1/admin/stats
+ * @access  Private (Admin only)
+ * @returns { success, stats: { users, studentsOverview, instructorsOverview } }
+ */
 export const getAdminStats = async (req, res, next) => {
   try {
     // 1. User Stats
@@ -19,12 +24,12 @@ export const getAdminStats = async (req, res, next) => {
       if (r._id) roles[r._id] = r.count;
     });
 
-    // 2. Quiz Stats (status field: draft / published / archived)
+    // 2. Quiz Stats
     const totalQuizzes = await Quiz.countDocuments();
     const publishedQuizzes = await Quiz.countDocuments({ status: "published" });
     const draftQuizzes = await Quiz.countDocuments({ status: "draft" });
 
-    // 3. Attempt Stats (status field: started / completed / abandoned, passed: Boolean)
+    // 3. Attempt Stats
     const totalAttempts = await QuizAttempt.countDocuments();
     const completedAttempts = await QuizAttempt.countDocuments({ status: "completed" });
     const passedAttempts = await QuizAttempt.countDocuments({

@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import Loader from "../../components/common/Loader";
 import { useExamResult } from "../../features/student/exam/hooks/useExamResult";
 import { ResultHeader } from "../../features/student/exam/components/ResultHeader";

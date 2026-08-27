@@ -7,14 +7,64 @@ import AdminUserViewModal from '../../features/admin/components/AdminUserViewMod
 import NewUsersChart from '../../features/admin/components/NewUserChart';
 
 const AdminDashboardPage = () => {
-  const { stats, users, loading, fetchStats, fetchUsers, toggleUserActive, deleteUser } = useAdminStore();
+  const { stats, users, loading, error, fetchStats, fetchUsers, toggleUserActive, deleteUser } = useAdminStore();
   const [selectedUser, setSelectedUser] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
+  // Fetch data on component mount only
   useEffect(() => {
     fetchStats();
     fetchUsers();
-  }, []); // Empty dependency array — runs only once
+  }, []);
+
+  /**
+  * Transform raw users data into chart-compatible format
+  * Groups users by date and counts them for last 7 days
+  */
+  const getChartData = useMemo(() => {
+    if (!users || users.length === 0) {
+      return [];
+    }
+
+    // Get last 7 days
+    const today = new Date();
+    const last7Days = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      // Format as 'MMM DD' (e.g., 'Aug 20')
+      const formattedDate = date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric'
+      });
+      last7Days.push({
+        date: formattedDate,
+        // Store actual Date object for comparison
+        dateObj: date,
+        count: 0
+      });
+    }
+
+    // Count users created on each day
+    users.forEach((user) => {
+      if (user.createdAt) {
+        const userDate = new Date(user.createdAt);
+        // Check if user was created in last 7 days
+        const daysDiff = Math.floor((today - userDate) / (1000 * 60 * 60 * 24));
+
+        if (daysDiff >= 0 && daysDiff <= 6) {
+          // Find matching day in last7Days array
+          const dayIndex = 6 - daysDiff; // Reverse order (today is index 6)
+          if (last7Days[dayIndex]) {
+            last7Days[dayIndex].count += 1;
+          }
+        }
+      }
+    });
+
+    // Remove dateObj before returning
+    return last7Days.map(({ date, count }) => ({ date, count }));
+  }, [users]);
 
   const handleViewUser = useCallback((user) => {
     setSelectedUser(user);
@@ -48,6 +98,22 @@ const AdminDashboardPage = () => {
           </span>
         </div>
       </div>
+      {error && (
+        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-400 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-lg">⚠️</span>
+            <p className="font-medium">{error}</p>
+          </div>
+          <button
+            onClick={clearError}
+            className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+            aria-label="Dismiss error"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
@@ -59,7 +125,7 @@ const AdminDashboardPage = () => {
       {/* Chart + Quick Stats Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <NewUsersChart data={[]} /> {/* Pass empty array to use sample data */}
+          <NewUsersChart data={getChartData} />
         </div>
         <div className="bg-surface rounded-2xl shadow-card border border-main p-6 flex flex-col justify-center">
           <h3 className="text-lg font-semibold text-main mb-4">Quick Stats</h3>

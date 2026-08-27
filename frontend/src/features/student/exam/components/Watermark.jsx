@@ -1,17 +1,17 @@
 import { useEffect, useState } from 'react';
 
 export const Watermark = () => {
-  // Screen size ke hisab se dynamic array length taaki pure screen par uniform distribution ho
+  // Dynamically calculate array length based on viewport size for uniform coverage
   const [gridCount, setGridCount] = useState(40);
 
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
       const height = window.innerHeight;
-      // Ek rough estimation taaki grid puri tarah se fill ho jaye
+      // Rough estimate to sufficiently populate the grid
       const cols = Math.ceil(width / 250);
       const rows = Math.ceil(height / 120);
-      setGridCount(cols * rows * 2); // Rotate hone ke baad bacha hua area cover karne ke liye *2
+      setGridCount(cols * rows * 2); // Double grid size to cover empty corners after rotation
     };
 
     handleResize();
@@ -24,11 +24,11 @@ export const Watermark = () => {
       <div
         className="absolute inset-[-20%] grid gap-x-16 gap-y-24 items-center justify-items-center"
         style={{
-          // Pure grid ko ek sath rotate aur scale kar rahe hain
+          // Rotate and scale the entire grid uniformly
           transform: `rotate(-15deg) scale(${getComputedStyle(document.documentElement).getPropertyValue('--watermark-scale') || 1.1})`,
           gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
           color: 'var(--color-text-muted, #94a3b8)',
-          // Agar tailwind opacity variable kaam na kare toh fallback 0.03 (3%) rakha hai
+          // Fallback opacity to 0.03 (3%) if CSS variable is undefined
           opacity: 'var(--watermark-opacity, 0.03)', 
         }}
       >

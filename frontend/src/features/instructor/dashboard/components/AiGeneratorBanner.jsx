@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { Sparkles, Zap, Loader2, X } from "lucide-react";
 
 const AiGeneratorBanner = ({ onQuizGenerated }) => {

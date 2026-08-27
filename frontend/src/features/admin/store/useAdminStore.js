@@ -28,7 +28,7 @@ export const useAdminStore = create((set, get) => ({
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       // console.log(response.data);
-      set({ users: response.data, loading: false });
+      set({ users: response.data.users, loading: false });
     } catch (error) {
       set({ error: error.response?.data?.message || 'Failed to fetch users', loading: false });
     }
