@@ -74,6 +74,12 @@ export const loginUser = async (req, res, next) => {
         .status(400)
         .json({ success: false, message: "Invalid credentials" });
     }
+    if (user.active === false) {
+      return res.status(403).json({
+        success: false,
+        message: "Your account is deactivated. Please contact administrator.",
+      });
+    }
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res
@@ -96,6 +102,12 @@ export const getMe = async (req, res, next) => {
       return res
         .status(404)
         .json({ success: false, message: "User not found" });
+    }
+    if (user.active === false) {
+      return res.status(403).json({
+        success: false,
+        message: "Your account is deactivated. Please contact administrator.",
+      });
     }
     res.json(user);
   } catch (err) {

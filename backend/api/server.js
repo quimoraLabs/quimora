@@ -11,6 +11,7 @@ import { errorHandler } from "../middleware/error.middleware.js";
 import questionRoutes from "../routes/question.routes.js";
 import { validateObjectId } from "../middleware/validObjectId.middleware.js";
 import instructorDashboardRoutes from "../routes/instructorDashboard.routes.js"
+import adminRoutes from "../routes/admin.routes.js"
 
 const app = express();
 if (config.nodeENV !== "production") {
@@ -38,6 +39,7 @@ apiRouter.use("/auth", authRoutes);
 apiRouter.use("/users", userRoutes);
 apiRouter.use("/quizzes", quizRoutes);
 apiRouter.use("/student", studentQuizRoutes);
+apiRouter.use("/admin", adminRoutes);
 apiRouter.use(
   "/quiz/:quizId/questions",
   validateObjectId("quizId"),

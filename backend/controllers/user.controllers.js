@@ -78,46 +78,24 @@ export const deleteUser = async (req, res, next) => {
   }
 };
 
-export const deactivateUser = async (req, res, next) => {
+
+export const toggleUserActiveStatus = async (req, res, next) => {
   try {
     const { userId } = req.params;
+    const user = await User.findById(userId);
 
-    const user = await User.findOneAndUpdate(
-      { _id: userId },
-      { $set: { active: false } },
-      {returnDocument: 'after' },
-    );
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
 
-    if (!user)
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
+    user.active = !user.active;
+    await user.save();
 
-    res
-      .status(200)
-      .json({ success: true, message: "User deactivated successfully" });
-  } catch (err) {
-    next(err);
-  }
-};
-
-export const activateUser = async (req, res, next) => {
-  try {
-    const { userId } = req.params;
-    const user = await User.findOneAndUpdate(
-      { _id: userId },
-      { $set: { active: true } },
-      { returnDocument: 'after' },
-    );
-
-    if (!user)
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
-
-    res
-      .status(200)
-      .json({ success: true, message: "User activated successfully" });
+    res.status(200).json({
+      success: true,
+      message: `User ${user.active ? "activated" : "deactivated"} successfully`,
+      active: user.active,
+    });
   } catch (err) {
     next(err);
   }
@@ -126,7 +104,7 @@ export const activateUser = async (req, res, next) => {
 export const upadteAvatar = async (req, res, next) => {
   try {
     // Here we need only avatar field
-    const user = await checkUser(req.params.userId,"avatar");
+    const user = await checkUser(req.params.userId, "avatar");
 
     if (!req.file) {
       return res.status(400).json({ message: "Please upload an image" });
