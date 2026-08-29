@@ -70,8 +70,13 @@ const useStudentQuizStore = create((set, get) => ({
   },
 
   clearQuizSession: () => {
+    const { attemptId } = get();
     localStorage.removeItem("lastAttemptId");
     localStorage.removeItem("lastQuizResults");
+    localStorage.removeItem("activeExamSession");
+    if (attemptId) {
+      localStorage.removeItem(`quiz_answers_${attemptId}`);
+    }
     set({
       attemptQuiz: null,
       attemptId: null,
@@ -85,7 +90,7 @@ const useStudentQuizStore = create((set, get) => ({
     });
   },
 
-  //   1 Start quiz attempt
+  // 1. Start or Resume Quiz Attempt with accurate timer calculation & answer restoration
   startAttempt: async (quizId, navigate) => {
     if (!quizId) {
       toast.error("Quiz ID is required to start an attempt.");
@@ -93,24 +98,59 @@ const useStudentQuizStore = create((set, get) => ({
     }
     set({ loading: true });
     try {
-      const response = await axiosClient.post(`/student/quiz/start`,{ quizId });
+      const response = await axiosClient.post(`/student/quiz/start`, { quizId });
       if (response.data.success) {
-        const { attemptId, quiz } = response.data.data;
+        const { attemptId, quiz, startedAt, answers: backendAnswers } = response.data.data;
+
+        // Calculate actual remaining time based on server startedAt timestamp
+        const startedAtMs = startedAt ? new Date(startedAt).getTime() : Date.now();
+        const elapsedSeconds = Math.floor((Date.now() - startedAtMs) / 1000);
+        const totalLimitSeconds = quiz.timeLimit ? quiz.timeLimit * 60 : 600;
+        const remainingSeconds = Math.max(0, totalLimitSeconds - elapsedSeconds);
+
+        // Restore initial answers: Check localStorage first, fallback to backend answers
+        let initialAnswers = {};
+        const cachedAnswersStr = localStorage.getItem(`quiz_answers_${attemptId}`);
+        if (cachedAnswersStr) {
+          try {
+            initialAnswers = JSON.parse(cachedAnswersStr);
+          } catch (e) {
+            console.error("Failed to parse cached answers:", e);
+          }
+        }
+
+        // Fallback to backend draft answers if local cache was empty
+        if (Object.keys(initialAnswers).length === 0 && Array.isArray(backendAnswers)) {
+          backendAnswers.forEach((ans) => {
+            if (ans.questionId && Array.isArray(ans.selectedOptions) && ans.selectedOptions.length > 0) {
+              initialAnswers[ans.questionId] = ans.selectedOptions.join(",");
+            }
+          });
+        }
 
         set({
           attemptId: attemptId,
           lastAttemptId: attemptId,
           attemptQuiz: quiz,
           currentIndex: 0,
-          timer: quiz.timeLimit ? quiz.timeLimit * 60 : 600,
-          answers: {},
+          timer: remainingSeconds,
+          answers: initialAnswers,
           warningCount: 0,
           isFinished: false,
           quizResults: null,
         });
 
-        localStorage.setItem("lastAttemptId", attemptId); // Persist attempt ID
-        navigate("/student/quiz/start"); // Navigate to the quiz questions page
+        // Persist session info to localStorage
+        localStorage.setItem("lastAttemptId", attemptId);
+        localStorage.setItem(
+          "activeExamSession",
+          JSON.stringify({ attemptId, quizId, startedAt })
+        );
+        localStorage.setItem(`quiz_answers_${attemptId}`, JSON.stringify(initialAnswers));
+
+        if (navigate) {
+          navigate("/student/quiz/start");
+        }
       }
     } catch (error) {
       console.error("Error starting quiz attempt:", error);
@@ -120,9 +160,31 @@ const useStudentQuizStore = create((set, get) => ({
     }
   },
 
-  // 2. Select Option Handler (Save against questionId)
+  // Sync draft answers to backend
+  saveDraft: async () => {
+    const { attemptId, answers } = get();
+    if (!attemptId) return;
+
+    const formattedAnswers = Object.entries(answers).map(
+      ([questionId, selectedOptions]) => ({
+        questionId,
+        selectedOptions: selectedOptions ? selectedOptions.split(",") : [],
+      })
+    );
+
+    try {
+      await axiosClient.patch('/student/quiz/save-draft', {
+        attemptId,
+        answers: formattedAnswers,
+      });
+    } catch (err) {
+      console.error("Background save draft failed:", err);
+    }
+  },
+
+  // 2. Select Option Handler (Save to state, localStorage & backend draft)
   selectOption: (questionId, selectedOptions) => {
-    const { attemptQuiz } = get();
+    const { attemptQuiz, attemptId } = get();
     const question = attemptQuiz?.questions.find((q) => q._id === questionId);
 
     if (!question) {
@@ -137,29 +199,36 @@ const useStudentQuizStore = create((set, get) => ({
         const index = Number(selectedIndex);
         return question.options[index]?._id;
       })
-      .filter(Boolean); // Filter out any undefined IDs if index is invalid
+      .filter(Boolean);
 
-    set((state) => ({
-      answers: {
-        ...state.answers,
-        // Store the comma-separated string of actual option _id's
-        [questionId]: optionIds.join(","),
-      },
-    }));
+    const newAnswers = {
+      ...get().answers,
+      [questionId]: optionIds.join(","),
+    };
+
+    set({ answers: newAnswers });
+
+    // Save to localStorage immediately
+    if (attemptId) {
+      localStorage.setItem(`quiz_answers_${attemptId}`, JSON.stringify(newAnswers));
+    }
+
+    // Auto-sync draft to backend
+    get().saveDraft();
   },
 
   // ⏱️ 3. Live Clock Engine (Ticks every second)
   tickTimer: (navigate) => {
-    set((state) => {
-      if (state.timer > 0) {
-        return { timer: state.timer - 1 };
-      } else {
-        // Timer expired, handle accordingly
-        toast.error("Time's up! Your quiz will be submitted automatically.");
-        get().submitAttempt(navigate); // Auto-submit on timer expiration
-        return { timer: 0 };
-      }
-    });
+    const { timer, isFinished } = get();
+    if (isFinished) return;
+
+    if (timer > 1) {
+      set({ timer: timer - 1 });
+    } else {
+      toast.error("Time's up! Your quiz will be submitted automatically.");
+      set({ timer: 0 });
+      get().submitAttempt(navigate);
+    }
   },
 
   // 4 anti-cheat warning incrementer
@@ -218,17 +287,19 @@ const useStudentQuizStore = create((set, get) => ({
         { attemptId, answers: formattedAnswers });
       if (response.data.success) {
         toast.success("Quiz submitted successfully!");
+        localStorage.removeItem("activeExamSession");
+        localStorage.removeItem(`quiz_answers_${attemptId}`);
         set({
-          quizResults: response.data.data, // 👈 Access via .data.data
+          quizResults: response.data.data,
           isFinished: true,
           loading: false,
         });
-        localStorage.setItem("lastAttemptId", attemptId); // Persist attempt ID
+        localStorage.setItem("lastAttemptId", attemptId);
         localStorage.setItem(
           "lastQuizResults",
           JSON.stringify(response.data.data),
-        ); // Persist quiz results
-        navigate("/student/quiz/results", { replace: true }); // Navigate to the quiz results page
+        );
+        navigate("/student/quiz/results", { replace: true });
         return true;
       }
       return false;

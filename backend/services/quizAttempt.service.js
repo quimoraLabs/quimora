@@ -150,8 +150,9 @@ export const submitAttemptSession = async (attemptId, userId, userAnswers) => {
         userAnswers,
         attempt.questionSnapshots,
         {
-            negativeMarking: attempt.quizId?.negativeMarking || 25,
-            passingScore: attempt.quizId?.passingScore || 50
+            negativeMarking: attempt.quizId?.negativeMarking ?? 25,
+            negativeMarkingPercentage: attempt.quizId?.negativeMarking ?? 25,
+            passingScore: attempt.quizId?.passingScore ?? 50
         }
     );
 
@@ -183,6 +184,37 @@ export const submitAttemptSession = async (attemptId, userId, userAnswers) => {
         timeTakenInSeconds,
         completedAt: attempt.completedAt,
     };
+};
+
+/**
+ * Saves draft answers for an active session without completing it
+ */
+export const saveDraftSession = async (attemptId, userId, userAnswers) => {
+    const attempt = await QuizAttempt.findOne({
+        _id: attemptId,
+        userId,
+        status: "started",
+    });
+
+    if (!attempt) {
+        const err = new Error("Active quiz session not found or already submitted");
+        err.statusCode = 404;
+        throw err;
+    }
+
+    if (Array.isArray(userAnswers)) {
+        attempt.answers = userAnswers.map((ans) => ({
+            questionId: ans.questionId,
+            selectedOptions: Array.isArray(ans.selectedOptions)
+                ? ans.selectedOptions
+                : [ans.selectedOptions].filter(Boolean),
+            isCorrect: false,
+            timeSpent: ans.timeSpent || 0,
+        }));
+        await attempt.save();
+    }
+
+    return { success: true, savedAnswersCount: attempt.answers.length };
 };
 
 /**

@@ -1,6 +1,7 @@
 import express from "express";
 import {
     startQuizAttempt,
+    saveQuizDraft,
     submitQuizAttempt,
     getStudentAttemptDetails,
     getStudentAttemptHistory,
@@ -19,6 +20,7 @@ const router = express.Router();
 // eligibility,start and end Quiz Endpoint
 router.get("/quiz/:quizId/eligibility", authMiddleWare, authorizeRoles("user"), checkStudentQuizEligibility);
 router.post("/quiz/start",authMiddleWare,authorizeRoles("user"), startQuizAttempt);
+router.patch("/quiz/save-draft", authMiddleWare, authorizeRoles("user"), saveQuizDraft);
 router.post("/quiz/submit",authMiddleWare,authorizeRoles("user"), submitQuizAttempt);
 
 // Student Dashboard Endpoint

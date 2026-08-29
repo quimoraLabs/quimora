@@ -1,7 +1,5 @@
 import { create } from 'zustand';
-import axios from 'axios';
-
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000/api/v1';
+import axiosClient from '../../../api/axiosClient';
 
 export const useAdminStore = create((set, get) => ({
   stats: null,
@@ -9,12 +7,12 @@ export const useAdminStore = create((set, get) => ({
   loading: false,
   error: null,
 
+  clearError: () => set({ error: null }),
+
   fetchStats: async () => {
     set({ loading: true });
     try {
-      const response = await axios.get(`${API_BASE}/admin/stats`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+      const response = await axiosClient.get('/admin/stats');
       set({ stats: response.data.stats, loading: false });
     } catch (error) {
       set({ error: error.response?.data?.message || 'Failed to fetch stats', loading: false });
@@ -24,27 +22,38 @@ export const useAdminStore = create((set, get) => ({
   fetchUsers: async () => {
     set({ loading: true });
     try {
-      const response = await axios.get(`${API_BASE}/users`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      // console.log(response.data);
-      set({ users: response.data.users, loading: false });
+      const response = await axiosClient.get('/users');
+      set({ users: response.data.users || [], loading: false });
     } catch (error) {
       set({ error: error.response?.data?.message || 'Failed to fetch users', loading: false });
     }
   },
 
+  createUser: async (userData) => {
+    set({ loading: true, error: null });
+    try {
+      const response = await axiosClient.post('/auth/admin/create-user', userData);
+      // Refresh user list and stats
+      await get().fetchUsers();
+      await get().fetchStats();
+      set({ loading: false });
+      return response.data;
+    } catch (error) {
+      const msg = error.response?.data?.message || 'Failed to create user';
+      set({ error: msg, loading: false });
+      throw new Error(msg);
+    }
+  },
+
   toggleUserActive: async (userId, currentStatus) => {
     try {
-      const response = await axios.patch(
-        `${API_BASE}/users/${userId}/active`,
-        { active: !currentStatus },
-        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
-      );
+      await axiosClient.patch(`/users/${userId}/active`, { active: !currentStatus });
       // Update local state
       set((state) => ({
         users: state.users.map((user) =>
-          user.id === userId ? { ...user, active: !currentStatus } : user
+          (user._id === userId || user.id === userId)
+            ? { ...user, active: !currentStatus }
+            : user
         )
       }));
       // Refresh stats
@@ -55,13 +64,10 @@ export const useAdminStore = create((set, get) => ({
   },
 
   deleteUser: async (userId) => {
-    if (!window.confirm('Are you sure you want to delete this user?')) return;
     try {
-      await axios.delete(`${API_BASE}/users/${userId}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+      await axiosClient.delete(`/users/${userId}`);
       set((state) => ({
-        users: state.users.filter((user) => user.id !== userId)
+        users: state.users.filter((user) => user._id !== userId && user.id !== userId)
       }));
       get().fetchStats();
     } catch (error) {

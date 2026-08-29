@@ -54,16 +54,15 @@ export const createBulkQuestions = async (req, res, next) => {
     const { questions } = req.body;
     const userId = req.auth?.userId;
 
-    // Bug fix #4: Add limit
+    if (!Array.isArray(questions) || questions.length === 0) {
+      return res.status(400).json({ success: false, message: "Missing or empty questions array payload." });
+    }
+
     if (questions.length > 500) {
       return res.status(400).json({
         success: false,
         message: "Maximum 500 questions allowed per request"
       });
-    }
-
-    if (!Array.isArray(questions) || questions.length === 0) {
-      return res.status(400).json({ success: false, message: "Missing or empty questions array payload." });
     }
 
     const quiz = await assertQuizExists(quizId);

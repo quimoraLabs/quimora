@@ -13,7 +13,7 @@ import {
 //   getLeaderboardData,
 // } from "../utils/dashboard.utils.js";
 import { sanitizeQuestionsForStudent } from "../utils/attempt.utils.js";
-import { createAttemptSession, handleExpiredAttempt, submitAttemptSession, sanitizeAttemptData, checkQuizEligibility } from "../services/quizAttempt.service.js";
+import { createAttemptSession, handleExpiredAttempt, submitAttemptSession, saveDraftSession, sanitizeAttemptData, checkQuizEligibility } from "../services/quizAttempt.service.js";
 import { fetchStudentDashboardAnalytics, getQuizLeaderboard } from "../services/studentDashboard.service.js";
 
 /**
@@ -86,6 +86,12 @@ export const startQuizAttempt = async (req, res, next) => {
       questionsForResponse = attempt.questionSnapshots;
     }
 
+    // Format saved draft answers if any
+    const savedAnswersMap = (attempt.answers || []).map((ans) => ({
+      questionId: ans.questionId,
+      selectedOptions: ans.selectedOptions,
+    }));
+
     // 5. Send Clean Secure Payload Response
     return res.status(200).json({
       success: true,
@@ -93,6 +99,7 @@ export const startQuizAttempt = async (req, res, next) => {
       data: {
         attemptId: attempt._id,
         startedAt: attempt.startedAt,
+        answers: savedAnswersMap,
         quiz: {
           _id: quiz._id,
           title: quiz.title,
@@ -102,6 +109,31 @@ export const startQuizAttempt = async (req, res, next) => {
           questions: sanitizeQuestionsForStudent(questionsForResponse),
         },
       },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Save draft answers for active quiz session
+ * @route   PATCH /api/v1/student/quiz/save-draft
+ * @access  Private (Student)
+ */
+export const saveQuizDraft = async (req, res, next) => {
+  try {
+    const { attemptId, answers } = req.body;
+    const userId = req.auth.userId.toString();
+
+    if (!attemptId || !Array.isArray(answers)) {
+      return res.status(400).json({ error: "Invalid draft submission request payload" });
+    }
+
+    const result = await saveDraftSession(attemptId, userId, answers);
+    return res.status(200).json({
+      success: true,
+      message: "Draft saved successfully",
+      data: result,
     });
   } catch (error) {
     next(error);

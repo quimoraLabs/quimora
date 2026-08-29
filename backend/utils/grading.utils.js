@@ -3,9 +3,9 @@ export const evaluateSnapshotSubmission = (
     masterSnapshots,
     quizConfig = {}
 ) => {
-    // Hardcoded defaults for testing mode
+    // Defaults for evaluation
     const passingScore = quizConfig.passingScore ?? 50;
-    const negativeMarkingPercentage = quizConfig.negativeMarkingPercentage ?? 25;
+    const negativeMarkingPercentage = quizConfig.negativeMarkingPercentage ?? quizConfig.negativeMarking ?? 25;
 
     const userAnswersMap = new Map();
     userAnswers.forEach((ans) => {

@@ -1,15 +1,19 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAdminStore } from '../../features/admin/store/useAdminStore';
 import StatCard from "../../components/common/StatCard";
-import { Users, UserCheck, BookOpen, GraduationCap } from 'lucide-react';
+import { Users, UserCheck, BookOpen, GraduationCap, UserPlus } from 'lucide-react';
 import AdminUserTable from '../../features/admin/components/AdminUserTable';
 import AdminUserViewModal from '../../features/admin/components/AdminUserViewModal';
+import CreateUserModal from '../../features/admin/components/CreateUserModal';
+import { ConfirmationModal } from '../../components/common/ConfirmModal';
 import NewUsersChart from '../../features/admin/components/NewUserChart';
 
 const AdminDashboardPage = () => {
-  const { stats, users, loading, error, fetchStats, fetchUsers, toggleUserActive, deleteUser } = useAdminStore();
+  const { stats, users, loading, error, clearError, fetchStats, fetchUsers, toggleUserActive, deleteUser } = useAdminStore();
   const [selectedUser, setSelectedUser] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
 
   // Fetch data on component mount only
   useEffect(() => {
@@ -32,14 +36,12 @@ const AdminDashboardPage = () => {
     for (let i = 6; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
-      // Format as 'MMM DD' (e.g., 'Aug 20')
       const formattedDate = date.toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric'
       });
       last7Days.push({
         date: formattedDate,
-        // Store actual Date object for comparison
         dateObj: date,
         count: 0
       });
@@ -49,12 +51,10 @@ const AdminDashboardPage = () => {
     users.forEach((user) => {
       if (user.createdAt) {
         const userDate = new Date(user.createdAt);
-        // Check if user was created in last 7 days
         const daysDiff = Math.floor((today - userDate) / (1000 * 60 * 60 * 24));
 
         if (daysDiff >= 0 && daysDiff <= 6) {
-          // Find matching day in last7Days array
-          const dayIndex = 6 - daysDiff; // Reverse order (today is index 6)
+          const dayIndex = 6 - daysDiff;
           if (last7Days[dayIndex]) {
             last7Days[dayIndex].count += 1;
           }
@@ -62,7 +62,6 @@ const AdminDashboardPage = () => {
       }
     });
 
-    // Remove dateObj before returning
     return last7Days.map(({ date, count }) => ({ date, count }));
   }, [users]);
 
@@ -75,6 +74,19 @@ const AdminDashboardPage = () => {
     setIsViewModalOpen(false);
     setSelectedUser(null);
   }, []);
+
+  const handleDeleteClick = useCallback((userId) => {
+    const targetUser = users.find(u => (u._id === userId || u.id === userId));
+    setUserToDelete(targetUser || { id: userId, name: 'this user' });
+  }, [users]);
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (userToDelete) {
+      const id = userToDelete._id || userToDelete.id;
+      await deleteUser(id);
+      setUserToDelete(null);
+    }
+  }, [userToDelete, deleteUser]);
 
   // Memoize stats data to prevent unnecessary re-renders
   const statsData = useMemo(() => [
@@ -93,11 +105,19 @@ const AdminDashboardPage = () => {
           <p className="text-muted text-sm mt-1">Manage users, quizzes, and monitor platform activity</p>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs text-muted bg-surface px-3 py-1.5 rounded-full border border-main shadow-card">
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-brand-mid hover:bg-brand-primary text-white font-semibold text-sm rounded-xl shadow-md transition-all"
+          >
+            <UserPlus className="w-4 h-4" />
+            Create User
+          </button>
+          <span className="text-xs text-muted bg-surface px-3 py-2 rounded-xl border border-main shadow-card hidden sm:inline-block">
             Last updated: {new Date().toLocaleDateString()}
           </span>
         </div>
       </div>
+
       {error && (
         <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-400 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -113,7 +133,6 @@ const AdminDashboardPage = () => {
           </button>
         </div>
       )}
-
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
@@ -155,7 +174,7 @@ const AdminDashboardPage = () => {
         users={users || []}
         loading={loading}
         onToggleActive={toggleUserActive}
-        onDelete={deleteUser}
+        onDelete={handleDeleteClick}
         onViewDetails={handleViewUser}
       />
 
@@ -164,6 +183,23 @@ const AdminDashboardPage = () => {
         isOpen={isViewModalOpen}
         onClose={handleCloseModal}
         user={selectedUser}
+      />
+
+      {/* Create User Modal */}
+      <CreateUserModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+      />
+
+      {/* Delete User Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={Boolean(userToDelete)}
+        onClose={() => setUserToDelete(null)}
+        onConfirm={handleConfirmDelete}
+        title={`Delete user account for "${userToDelete?.name || 'this user'}"?`}
+        confirmLabel="Delete Account"
+        cancelLabel="Cancel"
+        variant="danger"
       />
     </div>
   );

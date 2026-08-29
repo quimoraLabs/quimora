@@ -56,7 +56,7 @@ function StudentDashboardPage() {
     {
       label: "Total Tests Taken",
       value: dashboardStats?.totalTestsTaken ?? 0,
-      change: "+2 this week",
+      change: dashboardStats?.currentRank ? `Global Rank #${dashboardStats.currentRank}` : "Completed tests",
       icon: Trophy,
       gradient: "from-blue-500 to-indigo-600",
       iconColor: "text-blue-600 dark:text-blue-400",
@@ -65,8 +65,8 @@ function StudentDashboardPage() {
     },
     {
       label: "Average Score",
-      value: dashboardStats?.averageScore ?? 0,
-      change: "+5.2% from last month",
+      value: `${dashboardStats?.averageScore ?? 0}%`,
+      change: "Overall test average",
       icon: CheckCircle2,
       gradient: "from-green-500 to-emerald-600",
       iconColor: "text-green-600 dark:text-green-400",
@@ -75,8 +75,8 @@ function StudentDashboardPage() {
     },
     {
       label: "Best Score",
-      value: dashboardStats?.maxScore ?? 0,
-      change: "New record! 🎉",
+      value: `${dashboardStats?.maxScore ?? 0}%`,
+      change: "Highest score achieved",
       icon: TrendingUp,
       gradient: "from-purple-500 to-violet-600",
       iconColor: "text-purple-600 dark:text-purple-400",
@@ -85,13 +85,13 @@ function StudentDashboardPage() {
     },
     {
       label: "Lowest Score",
-      value: dashboardStats?.minScore ?? 0,
-      change: "-3.2% from best",
-      icon: Clock,
+      value: `${dashboardStats?.minScore ?? 0}%`,
+      change: "Lowest score recorded",
+      icon: Target,
       gradient: "from-orange-500 to-amber-600",
       iconColor: "text-orange-600 dark:text-orange-400",
       bgColorClass: "bg-orange-50 dark:bg-orange-900/20",
-      changeType: "negative",
+      changeType: "neutral",
     },
   ];
 
