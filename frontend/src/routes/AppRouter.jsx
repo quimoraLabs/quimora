@@ -17,7 +17,7 @@ import { Header } from "../components/navigation/Header";
 
 // Clean Route Imports (No Naming Conflicts!)
 import { GuestRoutes } from "./guestRoutes";
-import { WebsiteRoutes } from "./websiteRoutes";
+import { WebsiteRoutes } from "./WebsiteRoutes";
 import { StudentRoutes, StudentQuizRoutes } from "./studentRoutes";
 import { InstructorRoutes } from "./instructorRoutes";
 import { AdminRoutes } from "./adminRoutes";
