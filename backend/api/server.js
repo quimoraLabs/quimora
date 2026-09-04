@@ -23,7 +23,7 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
   "https://hoppscotch.io",
-  process.env.FRONTEND_URL,
+  "https://quimora-rho.vercel.app"
 ].filter(Boolean);
 
 const corsOptions = {
@@ -35,15 +35,18 @@ const corsOptions = {
       origin.endsWith(".onrender.com") ||
       origin.endsWith(".vercel.app")
     ) {
-      return callback(null, true);
+      return callback(null, origin);
     }
-    return callback(null, true);
+    return callback(null, origin);
   },
   credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "Cache-Control", "Pragma", "Expires", "X-Requested-With"],
   optionsSuccessStatus: 200,
 };
 
 app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 app.use(morgan("tiny"));
 app.use(express.json());
 
