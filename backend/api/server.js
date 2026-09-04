@@ -19,11 +19,27 @@ if (config.nodeENV !== "production") {
   console.log("Development Mode: ETags disabled (Status 200 forced)");
 }
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "https://hoppscotch.io",
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
 const corsOptions = {
-  origin:
-    process.env.NODE_ENV === "production"
-      ? "https://quimorabackend.vercel.app"
-      : ["http://localhost:5173","https://hoppscotch.io"],
+  origin: (origin, callback) => {
+    // Allow requests with no origin (e.g. Postman, mobile, curl)
+    if (!origin) return callback(null, true);
+    if (
+      allowedOrigins.includes(origin) ||
+      origin.endsWith(".onrender.com") ||
+      origin.endsWith(".vercel.app")
+    ) {
+      return callback(null, true);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
   optionsSuccessStatus: 200,
 };
 
