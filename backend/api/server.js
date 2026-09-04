@@ -19,14 +19,26 @@ if (config.nodeENV !== "production") {
   console.log("Development Mode: ETags disabled (Status 200 forced)");
 }
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "https://hoppscotch.io",
+  "https://quimora-rho.vercel.app",
+];
+
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  if (origin) {
+  const isAllowed =
+    !origin ||
+    allowedOrigins.includes(origin) ||
+    origin.endsWith(".vercel.app") ||
+    origin.endsWith(".onrender.com");
+
+  if (isAllowed && origin) {
     res.setHeader("Access-Control-Allow-Origin", origin);
-  } else {
-    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
   }
-  res.setHeader("Access-Control-Allow-Credentials", "true");
+
   res.setHeader(
     "Access-Control-Allow-Methods",
     "GET, POST, PUT, PATCH, DELETE, OPTIONS"
