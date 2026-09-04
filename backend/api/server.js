@@ -28,16 +28,8 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow requests with no origin (e.g. Postman, mobile, curl)
-    if (!origin) return callback(null, true);
-    if (
-      allowedOrigins.includes(origin) ||
-      origin.endsWith(".onrender.com") ||
-      origin.endsWith(".vercel.app")
-    ) {
-      return callback(null, origin);
-    }
-    return callback(null, origin);
+    // Reflect request origin for CORS credentials support
+    return callback(null, origin || true);
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
