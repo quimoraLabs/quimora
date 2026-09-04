@@ -1,18 +1,65 @@
-# React + Vite
+# 🎨 Quimora Frontend — Web Application
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The frontend client for **Quimora**, built with React 19, Vite, Tailwind CSS v4, and Zustand.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🚀 Tech Stack & Libraries
 
-## React Compiler
+- **Framework**: [React 19](https://react.dev/)
+- **Build Tool**: [Vite 8](https://vitejs.dev/)
+- **Styling**: [Tailwind CSS v4](https://tailwindcss.com/)
+- **State Management**: [Zustand 5](https://github.com/pmndrs/zustand)
+- **Routing**: [React Router 7/8](https://reactrouter.com/)
+- **Icons & Animations**: [Lucide React](https://lucide.dev/) & [Motion (Framer Motion)](https://motion.dev/)
+- **Charts**: [Recharts](https://recharts.org/)
+- **Notifications**: [React Hot Toast](https://react-hot-toast.com/)
+- **HTTP Client**: Axios with centralized interceptors (`axiosClient`)
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+---
 
-Note: This will impact Vite dev & build performances.
+## 📂 Project Structure
 
-## Expanding the ESLint configuration
+```
+frontend/src/
+├── api/            # Axios instance, baseURL & auth token interceptor
+├── assets/         # Static images, logos, and vector assets
+├── components/     # Global reusable UI (modals, buttons, banners, inputs)
+├── features/       # Modular feature folders (admin, auth, quiz, student, instructor)
+│   ├── admin/      # Admin store, tables, stats cards, chart components
+│   ├── auth/       # Login, register, OTP verification forms & stores
+│   ├── student/    # Quiz player, result breakdown screen
+│   └── quiz/       # Quiz creation, question builder
+├── layouts/        # Layout wrappers (Navbar, Sidebar, Footer, Role Guards)
+├── pages/          # Top-level page views & routes
+├── routes/         # React Router index & role authorization guards
+├── store/          # Global Zustand stores (useAuthStore, useQuizStore, etc.)
+└── utils/          # Formatting helpers & validation functions
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+## ⚙️ Local Development Setup
+
+1. Make sure backend API server is running on `http://localhost:5000/api/v1`.
+2. Copy environment file:
+   ```bash
+   cp .env.example .env
+   ```
+3. Install dependencies:
+   ```bash
+   npm install
+   ```
+4. Start development server:
+   ```bash
+   npm run dev
+   ```
+
+---
+
+## 🔑 Key Scripts
+
+- `npm run dev`: Start Vite development server with HMR.
+- `npm run build`: Build production assets into `dist/`.
+- `npm run lint`: Run ESLint checks.
+- `npm run preview`: Locally preview production build.
