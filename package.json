@@ -10,7 +10,10 @@
     "install:backend": "npm --prefix backend install",
     "install:frontend": "npm --prefix frontend install",
     "install:all": "npm install && npm run install:backend && npm run install:frontend",
-    "build:frontend": "npm --prefix frontend run build"
+    "build": "npm run install:all && npm run build:frontend",
+    "build:backend": "npm run install:backend",
+    "build:frontend": "npm --prefix frontend run build",
+    "start": "npm --prefix backend start"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
