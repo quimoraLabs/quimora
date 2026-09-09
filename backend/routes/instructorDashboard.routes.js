@@ -34,4 +34,13 @@ router.get(
   getAttemptReviewForInstructor
 );
 
+// Endpoint for generating questions using Groq AI
+import { generateAIQuestions } from "../controllers/aiQuestion.controllers.js";
+router.post(
+  "/ai/generate-questions",
+  authMiddleware,
+  authorizeRoles("instructor", "admin"),
+  generateAIQuestions
+);
+
 export default router;

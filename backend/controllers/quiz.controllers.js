@@ -292,24 +292,26 @@ export const deleteQuiz = async (req, res, next) => {
   try {
     const { quizId } = req.params;
     const userId = req.auth.userId.toString();
+    const role = req.auth.role;
 
     // 1. Existence Check
     const quiz = await assertQuizExists(quizId);
 
-    // 2. Authorization Check (Only creator can delete)
-    if (quiz.createdBy.toString() !== userId) {
+    // 2. Authorization Check (Creator or Admin can delete)
+    if (quiz.createdBy.toString() !== userId && role !== "admin") {
       return res.status(403).json({ error: "Unauthorized access to delete this quiz" });
     }
 
     // 3. Delete the Quiz
     await quiz.deleteOne();
 
-    // 4. CASCADING DELETE: Remove all linked questions to prevent database junk
+    // 4. CASCADING DELETE: Remove all linked questions and attempts to prevent database junk
     await Question.deleteMany({ quizId });
+    await QuizAttempt.deleteMany({ quizId });
 
     res.status(200).json({
       success: true,
-      message: "Quiz and its associated questions deleted successfully",
+      message: "Quiz and its associated questions and attempts deleted successfully",
     });
   } catch (error) {
     next(error);

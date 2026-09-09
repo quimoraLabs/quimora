@@ -170,6 +170,33 @@ const useQuestionStore = create((set) => ({
       set({ loading: false });
     }
   },
+
+  // 5. GENERATE AI QUESTIONS (GROQ)
+  generateAIQuestions: async ({ topic, count, difficulty, additionalContext }) => {
+    set({ loading: true });
+    try {
+      const response = await axiosClient.post("/instructor/ai/generate-questions", {
+        topic,
+        count,
+        difficulty,
+        additionalContext,
+      });
+
+      if (response.data?.success) {
+        toast.success(response.data.message || "AI questions generated!");
+        return response.data.data;
+      }
+      return null;
+    } catch (error) {
+      console.error("Error generating AI questions:", error);
+      toast.error(
+        error.response?.data?.message || "Failed to generate AI questions."
+      );
+      return null;
+    } finally {
+      set({ loading: false });
+    }
+  },
 }));
 
 export default useQuestionStore;

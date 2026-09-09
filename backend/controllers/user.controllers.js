@@ -1,4 +1,7 @@
 import User from "../models/user.model.js";
+import Quiz from "../models/quiz.model.js";
+import Question from "../models/question.model.js";
+import QuizAttempt from "../models/quizAttempt.model.js";
 import imagekit, { deleteMedia } from "../utils/imagekit.utils.js";
 import { assertUserExists as checkUser } from "../utils/assertion.utils.js";
 
@@ -47,6 +50,13 @@ export const getUserById = async (req, res, next) => {
 export const updateUser = async (req, res, next) => {
   try {
     const { userId } = req.params;
+    const currentUserId = req.auth?.userId?.toString();
+    const currentUserRole = req.auth?.role;
+
+    if (currentUserRole !== "admin" && currentUserId !== userId) {
+      return res.status(403).json({ success: false, message: "Unauthorized access to update this user profile" });
+    }
+
     const data = req.body;
     // Here we only check user exists or not
     const user = await checkUser(userId, "false");
@@ -86,7 +96,7 @@ export const updateUser = async (req, res, next) => {
 export const deleteUser = async (req, res, next) => {
   try {
     const { userId } = req.params;
-    const currentUserId = req.auth.userId;
+    const currentUserId = req.auth?.userId?.toString();
 
     // SELF-PROTECTION: Admin cannot delete own account
     if (userId === currentUserId) {
@@ -115,6 +125,18 @@ export const deleteUser = async (req, res, next) => {
       }
     }
 
+    // Cascade deletion: attempts by user
+    await QuizAttempt.deleteMany({ userId });
+
+    // Cascade deletion: quizzes created by instructor user
+    const instructorQuizzes = await Quiz.find({ createdBy: userId }).select("_id");
+    if (instructorQuizzes.length > 0) {
+      const quizIds = instructorQuizzes.map((q) => q._id);
+      await Question.deleteMany({ quizId: { $in: quizIds } });
+      await QuizAttempt.deleteMany({ quizId: { $in: quizIds } });
+      await Quiz.deleteMany({ createdBy: userId });
+    }
+
     await User.findByIdAndDelete(userId);
 
     if (user.avatar && user.avatar.fileId) {
@@ -140,7 +162,7 @@ export const deleteUser = async (req, res, next) => {
 export const toggleUserActiveStatus = async (req, res, next) => {
   try {
     const { userId } = req.params;
-    const currentUserId = req.auth.userId;
+    const currentUserId = req.auth?.userId?.toString();
 
     // SELF-PROTECTION: Admin cannot deactivate own account
     if (userId === currentUserId) {
@@ -191,8 +213,16 @@ export const toggleUserActiveStatus = async (req, res, next) => {
  */
 export const upadteAvatar = async (req, res, next) => {
   try {
+    const { userId } = req.params;
+    const currentUserId = req.auth?.userId?.toString();
+    const currentUserRole = req.auth?.role;
+
+    if (currentUserRole !== "admin" && currentUserId !== userId) {
+      return res.status(403).json({ success: false, message: "Unauthorized access to update this avatar" });
+    }
+
     // Here we need only avatar field
-    const user = await checkUser(req.params.userId, "avatar");
+    const user = await checkUser(userId, "avatar");
 
     if (!req.file) {
       return res.status(400).json({ message: "Please upload an image" });

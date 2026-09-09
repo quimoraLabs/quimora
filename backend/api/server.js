@@ -39,8 +39,10 @@ const allowedOrigins = [
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   
-  // Debug log - helps find issues
-  console.log(`🌐 ${req.method} ${req.url} - Origin: ${origin || 'No Origin'}`);
+  // Debug log - helps find issues in development
+  if (config.nodeENV === "development") {
+    console.log(`🌐 ${req.method} ${req.url} - Origin: ${origin || 'No Origin'}`);
+  }
   
   const isAllowed =
     !origin ||

@@ -8,7 +8,7 @@ const router = express.Router({ mergeParams: true });
 
 router.post('/', validateObjectId('quizId'), authMiddleware, authorizeRoles("instructor"), createQuestion);
 router.post('/bulk', validateObjectId('quizId'), authMiddleware, authorizeRoles("instructor"), createBulkQuestions);
-router.get("/", authMiddleware, getQuizQuestions)
+router.get("/", authMiddleware, authorizeRoles("instructor", "admin"), getQuizQuestions);
 router.delete('/', authMiddleware, authorizeRoles("instructor"), deleteMultipleQuestions);
 router.get('/:questionId', validateObjectId('questionId'), authMiddleware, getQuestionById);
 router.patch('/:questionId', validateObjectId('questionId'), authMiddleware, authorizeRoles("instructor"), updateQuestion);

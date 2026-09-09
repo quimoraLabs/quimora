@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { Upload, Plus } from "lucide-react";
+import { Upload, Plus, Sparkles } from "lucide-react";
 import useQuestionStore from "../store/useQuestionStore";
 import QuestionFormModal from "./questionForm";
 import BulkImportModal from "./BulkImportModal";
+import AIGenerateModal from "./AIGenerateModal";
 
 const initialFormState = {
   questionText: "",
@@ -28,6 +29,7 @@ export default function QuestionManager({ quizId }) {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isAIModalOpen, setIsAIModalOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [form, setForm] = useState(initialFormState);
 
@@ -103,7 +105,16 @@ export default function QuestionManager({ quizId }) {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setIsAIModalOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-purple-500/30 bg-purple-500/10 px-3.5 py-2.5 text-xs font-semibold text-purple-400 shadow-xs transition hover:bg-purple-500/20 hover:border-purple-500/50 cursor-pointer"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            Generate with AI
+          </button>
+
           <button
             type="button"
             onClick={() => setIsImportModalOpen(true)}
@@ -216,6 +227,14 @@ export default function QuestionManager({ quizId }) {
       <BulkImportModal
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
+        quizId={quizId}
+        onImportSuccess={() => getQuizQuestions(quizId)}
+      />
+
+      {/* AI Question Generator Modal */}
+      <AIGenerateModal
+        isOpen={isAIModalOpen}
+        onClose={() => setIsAIModalOpen(false)}
         quizId={quizId}
         onImportSuccess={() => getQuizQuestions(quizId)}
       />

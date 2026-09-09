@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import useAuthStore from '../../auth/store/authStore';
 import { motion } from 'motion/react';
 import { 
   Search, 
@@ -23,6 +24,9 @@ const AdminUserTable = ({
   onViewDetails,
   searchPlaceholder = "Search users by name, email, or username..."
 }) => {
+  const currentUser = useAuthStore((state) => state.user);
+  const currentUserId = currentUser?._id || currentUser?.id;
+  
   // Local state for search, filter, pagination
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
@@ -141,7 +145,9 @@ const AdminUserTable = ({
                 </td>
               </tr>
             ) : (
-              paginatedUsers.map((user, index) => (
+              paginatedUsers.map((user, index) => {
+                const isSelf = Boolean(currentUserId && ((user._id || user.id) === currentUserId));
+                return (
                 <motion.tr
                   key={user.id || user._id}
                   initial={{ opacity: 0, y: 5 }}
@@ -188,13 +194,16 @@ const AdminUserTable = ({
                         {user.active !== false ? 'Active' : 'Deactivated'}
                       </span>
                       <button
-                        onClick={() => onToggleActive(user.id || user._id, user.active !== false)}
+                        onClick={() => !isSelf && onToggleActive(user.id || user._id, user.active !== false)}
+                        disabled={isSelf}
                         className={`p-1.5 rounded-lg transition-colors ${
-                          user.active !== false
+                          isSelf
+                            ? 'opacity-40 cursor-not-allowed text-muted'
+                            : user.active !== false
                             ? 'hover:bg-red-50 text-muted hover:text-red-600 dark:hover:bg-red-900/20'
                             : 'hover:bg-green-50 text-muted hover:text-green-600 dark:hover:bg-green-900/20'
                         }`}
-                        title={user.active !== false ? 'Deactivate user' : 'Activate user'}
+                        title={isSelf ? "You cannot deactivate your own account" : (user.active !== false ? 'Deactivate user' : 'Activate user')}
                       >
                         {user.active !== false ? (
                           <UserX className="w-4 h-4" />
@@ -217,9 +226,14 @@ const AdminUserTable = ({
                         <Eye className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => onDelete(user.id || user._id)}
-                        className="p-1.5 rounded-lg hover:bg-elevated text-muted hover:text-red-600 transition-colors"
-                        title="Delete user"
+                        onClick={() => !isSelf && onDelete(user.id || user._id)}
+                        disabled={isSelf}
+                        className={`p-1.5 rounded-lg transition-colors ${
+                          isSelf
+                            ? 'opacity-40 cursor-not-allowed text-muted'
+                            : 'hover:bg-elevated text-muted hover:text-red-600'
+                        }`}
+                        title={isSelf ? "You cannot delete your own account" : "Delete user"}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -250,11 +264,14 @@ const AdminUserTable = ({
                           <MenuItem>
                             {({ focus }) => (
                               <button
-                                onClick={() => onToggleActive(user.id || user._id, user.active !== false)}
+                                onClick={() => !isSelf && onToggleActive(user.id || user._id, user.active !== false)}
+                                disabled={isSelf}
                                 className={`${
                                   focus ? 'bg-elevated' : ''
                                 } group flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs ${
-                                  user.active !== false ? 'text-red-600' : 'text-green-600'
+                                  isSelf
+                                    ? 'opacity-40 cursor-not-allowed text-muted'
+                                    : user.active !== false ? 'text-red-600' : 'text-green-600'
                                 }`}
                               >
                                 {user.active !== false ? (
@@ -268,10 +285,13 @@ const AdminUserTable = ({
                           <MenuItem>
                             {({ focus }) => (
                               <button
-                                onClick={() => onDelete(user.id || user._id)}
+                                onClick={() => !isSelf && onDelete(user.id || user._id)}
+                                disabled={isSelf}
                                 className={`${
                                   focus ? 'bg-elevated' : ''
-                                } group flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs text-red-600`}
+                                } group flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs ${
+                                  isSelf ? 'opacity-40 cursor-not-allowed text-muted' : 'text-red-600'
+                                }`}
                               >
                                 <Trash2 className="w-4 h-4" /> Delete
                               </button>
@@ -282,7 +302,8 @@ const AdminUserTable = ({
                     </div>
                   </td>
                 </motion.tr>
-              ))
+              );
+              })
             )}
           </tbody>
         </table>

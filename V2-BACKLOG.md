@@ -50,8 +50,7 @@ Is file ko project root mein rakh do (`quimora/V2-BACKLOG.md`). Jab bhi koi naya
 
 ## 🔐 Security / Tech Debt
 
-- [ ] **Remove debug `console.log` in `user.model.js`**
-  Two leftover `console.log` calls inside Mongoose pre-hooks (`deleteOne`, `findOneAndUpdate`) log full update payloads — remove before any real production deploy, since payloads can contain sensitive fields.
+- [x] **Remove debug `console.log` in `user.model.js`** (Verified: pre-hooks in user.model.js clean, no debug logs remaining)
 
 - [ ] **Password History System (README roadmap item)**
   Prevent credential reuse on password reset — store hash history, check against it in `verifyOTP`/reset flow.

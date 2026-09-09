@@ -152,12 +152,17 @@ export const getQuestionById = async (req, res, next) => {
 export const getQuizQuestions = async (req, res, next) => {
   try {
     const { quizId } = req.params;
+    const userId = req.auth?.userId?.toString();
+    const role = req.auth?.role;
     let { page = 1, limit = 10 } = req.query;
 
     page = parseInt(page, 10);
     limit = parseInt(limit, 10);
 
-    await assertQuizExists(quizId, "false");
+    const quiz = await assertQuizExists(quizId);
+    if (role !== "admin" && quiz.createdBy.toString() !== userId) {
+      return res.status(403).json({ success: false, message: "Unauthorized access to quiz questions." });
+    }
 
     const totalQuestions = await Question.countDocuments({ quizId });
     const questions = await Question.find({ quizId })
