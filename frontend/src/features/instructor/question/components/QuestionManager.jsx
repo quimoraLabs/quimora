@@ -4,6 +4,7 @@ import useQuestionStore from "../store/useQuestionStore";
 import QuestionFormModal from "./questionForm";
 import BulkImportModal from "./BulkImportModal";
 import AIGenerateModal from "./AIGenerateModal";
+import { ConfirmationModal } from "../../../../components/common/ConfirmModal";
 
 const initialFormState = {
   questionText: "",
@@ -31,6 +32,7 @@ export default function QuestionManager({ quizId }) {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
+  const [deletingQuestionId, setDeletingQuestionId] = useState(null);
   const [form, setForm] = useState(initialFormState);
 
   // Helper to ensure 4 option objects
@@ -83,11 +85,14 @@ export default function QuestionManager({ quizId }) {
     }
   };
 
-  const handleDeleteQuestion = async (questionId) => {
-    if (!window.confirm("Are you sure you want to delete this question?"))
-      return;
+  const handleDeleteTrigger = (questionId) => {
+    setDeletingQuestionId(questionId);
+  };
 
-    const success = await deleteQuestion(quizId, questionId);
+  const handleConfirmDelete = async () => {
+    if (!deletingQuestionId) return;
+    const success = await deleteQuestion(quizId, deletingQuestionId);
+    setDeletingQuestionId(null);
     if (success) {
       getQuizQuestions(quizId);
     }
@@ -171,7 +176,7 @@ export default function QuestionManager({ quizId }) {
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleDeleteQuestion(q._id)}
+                    onClick={() => handleDeleteTrigger(q._id)}
                     className="rounded-xl border border-red-500/30 bg-surface px-3.5 py-1.5 text-xs font-semibold text-red-500 hover:bg-red-500/10 transition cursor-pointer"
                   >
                     Delete
@@ -237,6 +242,16 @@ export default function QuestionManager({ quizId }) {
         onClose={() => setIsAIModalOpen(false)}
         quizId={quizId}
         onImportSuccess={() => getQuizQuestions(quizId)}
+      />
+
+      {/* Confirmation Modal for Deleting Question */}
+      <ConfirmationModal
+        isOpen={Boolean(deletingQuestionId)}
+        onClose={() => setDeletingQuestionId(null)}
+        onConfirm={handleConfirmDelete}
+        title="Are you sure you want to delete this question?"
+        confirmLabel="Delete Question"
+        variant="danger"
       />
     </div>
   );

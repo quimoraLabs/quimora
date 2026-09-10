@@ -1,10 +1,13 @@
 import { useEffect, useState, useMemo } from "react";
 import { motion } from "motion/react";
+import { useNavigate } from "react-router-dom";
 import useQuizStore from "../../features/instructor/quiz/store/useQuizStore";
 import DataTable from "../../components/common/DataTable";
 import QuizFormModal from "../../features/instructor/quiz/components/QuizForm";
 import PaginationBar from "../../features/instructor/quiz/components/PaginationBar";
 import QuizHeaderBar from "../../features/instructor/quiz/components/QuizHeaderBar";
+import PostQuizCreateModal from "../../features/instructor/quiz/components/PostQuizCreateModal";
+import AIGenerateModal from "../../features/instructor/question/components/AIGenerateModal";
 
 const INITIAL_FORM_STATE = {
   title: "",
@@ -16,6 +19,7 @@ const INITIAL_FORM_STATE = {
 };
 
 export default function InstructorQuizListPage() {
+  const navigate = useNavigate();
   const {
     quizzes,
     loading,
@@ -29,6 +33,11 @@ export default function InstructorQuizListPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedQuiz, setSelectedQuiz] = useState(null);
   const [form, setForm] = useState(INITIAL_FORM_STATE);
+
+  // Post-quiz creation AI prompt state
+  const [newlyCreatedQuiz, setNewlyCreatedQuiz] = useState(null);
+  const [isPostCreateOpen, setIsPostCreateOpen] = useState(false);
+  const [isAIQuestionsModalOpen, setIsAIQuestionsModalOpen] = useState(false);
 
   // Search, Filter & Pagination states
   const [searchQuery, setSearchQuery] = useState("");
@@ -82,25 +91,34 @@ export default function InstructorQuizListPage() {
 
   // Handles both Creation & Update, ensuring modal closes cleanly
   const handleSaveQuiz = async (formData) => {
-    let success;
+    let result;
     if (selectedQuiz) {
       const quizId = selectedQuiz._id || selectedQuiz.id;
-      success = await updateQuiz(quizId, formData);
+      result = await updateQuiz(quizId, formData);
+      if (result) {
+        setIsModalOpen(false);
+        setForm(INITIAL_FORM_STATE);
+        setSelectedQuiz(null);
+      }
     } else {
-      success = await createQuiz(formData);
-    }
-
-    if (success) {
-      setIsModalOpen(false);
-      setForm(INITIAL_FORM_STATE);
-      setSelectedQuiz(null);
+      result = await createQuiz(formData);
+      if (result) {
+        setIsModalOpen(false);
+        setForm(INITIAL_FORM_STATE);
+        setSelectedQuiz(null);
+        const quizId = result._id || result.id;
+        if (quizId) {
+          setNewlyCreatedQuiz({ id: quizId, title: formData.title || "New Quiz" });
+          setIsPostCreateOpen(true);
+        }
+      }
     }
   };
 
   const headers = [
-    <span className="w-2/5 inline-block">Title</span>,
-    <span className="w-1/5 inline-block">Duration (Min)</span>,
-    <span className="w-1/5 inline-block">Status</span>,
+    <span key="title" className="w-2/5 inline-block">Title</span>,
+    <span key="duration" className="w-1/5 inline-block">Duration (Min)</span>,
+    <span key="status" className="w-1/5 inline-block">Status</span>,
   ];
 
   const renderRow = (quiz) => {
@@ -121,7 +139,7 @@ export default function InstructorQuizListPage() {
           ) : (
             <button
               type="button"
-              disabled={quiz?.questions.length===0}
+              disabled={quiz?.questions?.length === 0}
               onClick={() => changeQuizStatus(quizId, "published")}
               className="inline-flex items-center rounded-lg bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-500 border border-amber-500/20 hover:bg-amber-500/20 transition-colors"
             >
@@ -183,6 +201,39 @@ export default function InstructorQuizListPage() {
           }}
           onSave={handleSaveQuiz}
         />
+
+        {/* Post-Quiz Creation Question Prompt Modal */}
+        <PostQuizCreateModal
+          isOpen={isPostCreateOpen}
+          quizTitle={newlyCreatedQuiz?.title || "New Quiz"}
+          onConfirmAI={() => {
+            setIsPostCreateOpen(false);
+            setIsAIQuestionsModalOpen(true);
+          }}
+          onSkipManual={() => {
+            setIsPostCreateOpen(false);
+            if (newlyCreatedQuiz?.id) {
+              navigate(`/instructor/quizzes/${newlyCreatedQuiz.id}`);
+            }
+          }}
+        />
+
+        {/* AI Question Generator Modal */}
+        {newlyCreatedQuiz?.id && (
+          <AIGenerateModal
+            isOpen={isAIQuestionsModalOpen}
+            onClose={() => {
+              setIsAIQuestionsModalOpen(false);
+              navigate(`/instructor/quizzes/${newlyCreatedQuiz.id}`);
+            }}
+            quizId={newlyCreatedQuiz.id}
+            initialTopic={newlyCreatedQuiz.title}
+            onImportSuccess={() => {
+              setIsAIQuestionsModalOpen(false);
+              navigate(`/instructor/quizzes/${newlyCreatedQuiz.id}`);
+            }}
+          />
+        )}
       </div>
     </main>
   );

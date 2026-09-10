@@ -1,5 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
+import { useNavigate } from "react-router-dom";
 import {
   Plus,
   BookOpen,
@@ -13,16 +14,53 @@ import StatsOverview from "../../features/instructor/dashboard/components/StatsO
 import RecentQuizzesTable from "../../features/instructor/dashboard/components/RecentQuizzesTable";
 import AiGeneratorBanner from "../../features/instructor/dashboard/components/AiGeneratorBanner";
 import useInstructorDashboard from "../../features/instructor/dashboard/store/useInstructorDashboard";
+import useQuizStore from "../../features/instructor/quiz/store/useQuizStore";
+import PostQuizCreateModal from "../../features/instructor/quiz/components/PostQuizCreateModal";
+import AIGenerateModal from "../../features/instructor/question/components/AIGenerateModal";
+import QuizFormModal from "../../features/instructor/quiz/components/QuizForm";
 import LiveActivityFeed from "../../features/instructor/dashboard/components/LiveActivityFeed";
 import InstructorAnalyticsChart from "../../features/instructor/dashboard/components/InstructorAnalyticsChart";
 
+const INITIAL_FORM_STATE = {
+  title: "",
+  description: "",
+  timeLimit: 20,
+  maxAttempts: 1,
+  startDate: "",
+  endDate: "",
+};
+
 const InstructorDashboardPage = () => {
+  const navigate = useNavigate();
   const { dashboardStats, dashboardLoading, fetchDashboardStats } =
     useInstructorDashboard();
+  const { createQuiz } = useQuizStore();
+
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [form, setForm] = useState(INITIAL_FORM_STATE);
+
+  // Post-quiz creation AI prompt state
+  const [newlyCreatedQuiz, setNewlyCreatedQuiz] = useState(null);
+  const [isPostCreateOpen, setIsPostCreateOpen] = useState(false);
+  const [isAIQuestionsModalOpen, setIsAIQuestionsModalOpen] = useState(false);
 
   useEffect(() => {
     fetchDashboardStats();
   }, [fetchDashboardStats]);
+
+  const handleSaveQuiz = async (formData) => {
+    const createdQuiz = await createQuiz(formData);
+    if (createdQuiz) {
+      setIsCreateModalOpen(false);
+      setForm(INITIAL_FORM_STATE);
+      fetchDashboardStats();
+      const quizId = createdQuiz._id || createdQuiz.id;
+      if (quizId) {
+        setNewlyCreatedQuiz({ id: quizId, title: formData.title || "New Quiz" });
+        setIsPostCreateOpen(true);
+      }
+    }
+  };
 
   if (dashboardLoading && !dashboardStats) {
     return (
@@ -89,6 +127,7 @@ const InstructorDashboardPage = () => {
           <motion.button
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
+            onClick={() => setIsCreateModalOpen(true)}
             className="flex items-center gap-2 px-4 py-2.5 bg-accent text-white text-sm font-semibold rounded-xl shadow-card transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
@@ -144,6 +183,49 @@ const InstructorDashboardPage = () => {
             />
           </div>
         </div>
+
+        {/* Create Quiz Modal */}
+        <QuizFormModal
+          isOpen={isCreateModalOpen}
+          quiz={null}
+          onClose={() => setIsCreateModalOpen(false)}
+          onSave={handleSaveQuiz}
+          form={form}
+          setForm={setForm}
+        />
+
+        {/* Post-Quiz Creation Question Prompt Modal */}
+        <PostQuizCreateModal
+          isOpen={isPostCreateOpen}
+          quizTitle={newlyCreatedQuiz?.title || "New Quiz"}
+          onConfirmAI={() => {
+            setIsPostCreateOpen(false);
+            setIsAIQuestionsModalOpen(true);
+          }}
+          onSkipManual={() => {
+            setIsPostCreateOpen(false);
+            if (newlyCreatedQuiz?.id) {
+              navigate(`/instructor/quizzes/${newlyCreatedQuiz.id}`);
+            }
+          }}
+        />
+
+        {/* AI Question Generator Modal for Newly Created Quiz */}
+        {newlyCreatedQuiz?.id && (
+          <AIGenerateModal
+            isOpen={isAIQuestionsModalOpen}
+            onClose={() => {
+              setIsAIQuestionsModalOpen(false);
+              navigate(`/instructor/quizzes/${newlyCreatedQuiz.id}`);
+            }}
+            quizId={newlyCreatedQuiz.id}
+            initialTopic={newlyCreatedQuiz.title}
+            onImportSuccess={() => {
+              setIsAIQuestionsModalOpen(false);
+              navigate(`/instructor/quizzes/${newlyCreatedQuiz.id}`);
+            }}
+          />
+        )}
       </div>
     </div>
   );

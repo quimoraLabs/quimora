@@ -5,6 +5,7 @@ import {
   getQuizSubmissionsForInstructor,
   getAttemptReviewForInstructor,
 } from "../controllers/attemptQuiz.controllers.js";
+import { generateAIQuestions, generateAIDescription } from "../controllers/aiQuestion.controllers.js";
 import authMiddleware, { authorizeRoles } from "../middleware/auth.middleware.js";
 import { validateObjectId } from "../middleware/validObjectId.middleware.js";
 
@@ -35,12 +36,19 @@ router.get(
 );
 
 // Endpoint for generating questions using Groq AI
-import { generateAIQuestions } from "../controllers/aiQuestion.controllers.js";
 router.post(
   "/ai/generate-questions",
   authMiddleware,
   authorizeRoles("instructor", "admin"),
   generateAIQuestions
+);
+
+// Endpoint for generating quiz description using Groq AI
+router.post(
+  "/ai/generate-description",
+  authMiddleware,
+  authorizeRoles("instructor", "admin"),
+  generateAIDescription
 );
 
 export default router;

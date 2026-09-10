@@ -197,6 +197,24 @@ const useQuestionStore = create((set) => ({
       set({ loading: false });
     }
   },
+
+  // 6. GENERATE AI QUIZ DESCRIPTION
+  generateAIDescription: async (title) => {
+    try {
+      const response = await axiosClient.post("/instructor/ai/generate-description", { title });
+      if (response.data?.success) {
+        toast.success("AI description generated!");
+        return response.data.data;
+      }
+      return null;
+    } catch (error) {
+      console.error("Error generating AI description:", error);
+      toast.error(
+        error.response?.data?.message || "Failed to generate AI description."
+      );
+      return null;
+    }
+  },
 }));
 
 export default useQuestionStore;

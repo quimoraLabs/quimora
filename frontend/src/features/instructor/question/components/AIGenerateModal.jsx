@@ -1,18 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sparkles, Loader2, Trash2, CheckCircle2, AlertCircle, X, Plus } from "lucide-react";
 import useQuestionStore from "../store/useQuestionStore";
 
-export default function AIGenerateModal({ isOpen, onClose, quizId, onImportSuccess }) {
+export default function AIGenerateModal({ isOpen, onClose, quizId, initialTopic = "", onImportSuccess }) {
   const { generateAIQuestions, importBulkQuestions } = useQuestionStore();
 
-  const [topic, setTopic] = useState("");
+  const [topic, setTopic] = useState(initialTopic);
   const [count, setCount] = useState(5);
-  const [difficulty, setDifficulty] = useState("medium");
+  const [difficulty, setDifficulty] = useState("mixed");
   const [additionalContext, setAdditionalContext] = useState("");
-  
+
   const [isGenerating, setIsGenerating] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [generatedQuestions, setGeneratedQuestions] = useState(null);
+
+  useEffect(() => {
+    if (isOpen && initialTopic) {
+      setTopic(initialTopic);
+    }
+  }, [isOpen, initialTopic]);
 
   if (!isOpen) return null;
 
@@ -102,6 +108,66 @@ export default function AIGenerateModal({ isOpen, onClose, quizId, onImportSucce
                 />
               </div>
 
+              {/* Sample Prompt Suggestions */}
+              <div>
+                <label className="block text-[11px] font-semibold text-purple-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" /> Sample Prompt Suggestions (Click to fill)
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    {
+                      label: "⚛️ React Hooks",
+                      t: "React Hooks & State Management",
+                      d: "medium",
+                      c: "Focus on useEffect edge cases, useState batching, and custom hooks.",
+                    },
+                    {
+                      label: "⚡ JS Async/Await",
+                      t: "JavaScript Promises & Async/Await",
+                      d: "medium",
+                      c: "Include event loop, microtasks, Promise.all, and error handling.",
+                    },
+                    {
+                      label: "🐍 Python OOP",
+                      t: "Python Data Structures & OOP",
+                      d: "easy",
+                      c: "Cover lists, dictionaries, class inheritance, and magic methods.",
+                    },
+                    {
+                      label: "🗄️ SQL & Indexing",
+                      t: "Database Queries & SQL Indexing",
+                      d: "hard",
+                      c: "Focus on complex JOINs, B-Tree indexes, and transaction isolation.",
+                    },
+                    {
+                      label: "🔐 Web Security",
+                      t: "Web Security & JWT Authentication",
+                      d: "medium",
+                      c: "Include XSS, CSRF, CORS, password hashing, and token refresh.",
+                    },
+                    {
+                      label: "🌐 Node.js REST API",
+                      t: "Node.js & Express REST API Design",
+                      d: "medium",
+                      c: "Cover middleware execution order, HTTP status codes, and error handlers.",
+                    },
+                  ].map((preset, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => {
+                        setTopic(preset.t);
+                        setDifficulty(preset.d);
+                        setAdditionalContext(preset.c);
+                      }}
+                      className="px-2.5 py-1.5 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 hover:border-purple-500/40 text-purple-300 text-xs rounded-lg transition-all cursor-pointer text-left"
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Question Count */}
                 <div>
@@ -126,19 +192,24 @@ export default function AIGenerateModal({ isOpen, onClose, quizId, onImportSucce
                   <label className="block text-xs font-semibold text-main uppercase tracking-wider mb-2">
                     Target Difficulty
                   </label>
-                  <div className="flex gap-2">
-                    {["easy", "medium", "hard"].map((diff) => (
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {[
+                      { id: "mixed", label: "🔀 Mixed" },
+                      { id: "easy", label: "🟢 Easy" },
+                      { id: "medium", label: "🟡 Medium" },
+                      { id: "hard", label: "🔴 Hard" },
+                    ].map((diff) => (
                       <button
-                        key={diff}
+                        key={diff.id}
                         type="button"
-                        onClick={() => setDifficulty(diff)}
-                        className={`flex-1 py-2 rounded-xl text-xs font-semibold capitalize border transition-all cursor-pointer ${
-                          difficulty === diff
+                        onClick={() => setDifficulty(diff.id)}
+                        className={`py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                          difficulty === diff.id
                             ? "bg-purple-600 text-white border-purple-500 shadow-sm"
                             : "bg-main text-muted border-main hover:text-main"
                         }`}
                       >
-                        {diff}
+                        {diff.label}
                       </button>
                     ))}
                   </div>

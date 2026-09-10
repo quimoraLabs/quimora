@@ -39,7 +39,7 @@ const useQuizStore = create((set, get) => ({
       const response = await axiosClient.post("/quizzes", quizData);
       if (response.data?.success) toast.success("Quiz created successfully!");
       await get().fetchQuizzesByInstructor();
-      return true;
+      return response.data?.data || response.data?.quiz || true;
     } catch (error) {
       console.error("Error creating quiz:", error);
       toast.error(error.response?.data?.message || "Failed to create quiz.");
