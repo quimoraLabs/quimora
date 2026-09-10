@@ -2,10 +2,14 @@ import dotenv from "dotenv";
 
 dotenv.config({ quiet: true });
 
+if (!process.env.JWT_SECRET) {
+  throw new Error("FATAL ERROR: JWT_SECRET environment variable is missing.");
+}
+
 export default {
   port: process.env.PORT || 5000,
   mongoURI: process.env.MONGO_URI,
-  jwtSecret: process.env.JWT_SECRET || "your_jwt_secret",
+  jwtSecret: process.env.JWT_SECRET,
   emailPass: process.env.EMAIL_PASS,
   emailUser: process.env.EMAIL_USER,
   imagekitPublic: process.env.IMAGEKIT_PUBLIC_KEY,

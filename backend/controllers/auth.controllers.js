@@ -121,7 +121,10 @@ export const forgetPasswordRequest = async (req, res, next) => {
     const user = await User.findOne({ email }).select("+otp.code");
 
     if (!user) {
-      return res.status(404).json({ success: false, message: "Invalid email" });
+      return res.status(200).json({
+        success: true,
+        message: "If this email is registered, an OTP has been sent.",
+      });
     }
 
     const otpCode = crypto.randomInt(100000, 1000000).toString();
@@ -137,7 +140,7 @@ export const forgetPasswordRequest = async (req, res, next) => {
     await user.save();
     res
       .status(200)
-      .json({ success: true, message: "Otp request send successfully" });
+      .json({ success: true, message: "If this email is registered, an OTP has been sent." });
   } catch (error) {
     next(error);
   }

@@ -47,10 +47,7 @@ app.use((req, res, next) => {
   const isAllowed =
     !origin ||
     allowedOrigins.includes(origin) ||
-    origin.endsWith(".vercel.app") ||
-    origin.endsWith(".onrender.com") ||
-    origin.includes("hoppscotch.io") ||
-    origin.includes("localhost");
+    (config.nodeENV === "development" && (origin.includes("localhost") || origin.includes("127.0.0.1")));
 
   if (isAllowed && origin) {
     res.setHeader("Access-Control-Allow-Origin", origin);

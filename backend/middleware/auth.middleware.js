@@ -39,8 +39,7 @@ const authMiddleware = async (req, res, next) => {
     if (err.name === "JsonWebTokenError") {
       return res.status(401).json({ message: "Malformed token" });
     }
-    next(err);
-    return res.status(401).json({ message: "Invalid token" });
+    return next(err);
   }
 };
 

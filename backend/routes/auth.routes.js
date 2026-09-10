@@ -17,7 +17,18 @@ const otpLimiter = rateLimit({
   max: 5, // Limit each IP to 5 requests per window
   message: {
     success: false,
-    message: "let's try again after 15 minutes",
+    message: "Too many OTP requests. Please try again after 15 minutes.",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Limit each IP to 10 login requests per window
+  message: {
+    success: false,
+    message: "Too many login attempts. Please try again after 15 minutes.",
   },
   standardHeaders: true,
   legacyHeaders: false,
@@ -32,9 +43,9 @@ router.post(
   authorizeRoles("admin"),
   createUserByAdmin,
 );
-router.post("/login", loginUser);
+router.post("/login", loginLimiter, loginUser);
 router.get("/me", authMiddleware, getMe);
 router.patch("/request-otp", otpLimiter, forgetPasswordRequest);
-router.patch("/verify-otp", verifyOTP);
+router.patch("/verify-otp", otpLimiter, verifyOTP);
 
 export default router;
