@@ -20,13 +20,17 @@ const useAuthStore = create((set, get) => ({
       }
 
       localStorage.setItem("token", token);
-      set({ token, isAuthenticated: true });
+      set({ token });
 
-      await get().getProfile();
+      // Fetch profile BEFORE marking isAuthenticated: true to ensure user & role are populated
+      const profileRes = await axiosClient.get(`/auth/me`);
+      set({ user: profileRes.data, isAuthenticated: true });
+
       toast.success("Logged in successfully.");
       return true;
     } catch (error) {
       console.error("Login failed:", error);
+      get().logout();
       return false;
     } finally {
       set({ loading: false });
