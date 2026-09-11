@@ -188,6 +188,10 @@ export const getStudentAttemptDetails = async (req, res, next) => {
         path: "quizId",
         select: "title timeLimit tags",
       })
+      .populate({
+        path: "userId",
+        select: "name username email",
+      })
       .lean();
 
     if (!attempt) {

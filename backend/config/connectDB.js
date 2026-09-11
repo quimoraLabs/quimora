@@ -3,9 +3,9 @@ import config from "./config.js";
 
 const connectDB = async () => {
   try {
-    const isTest = config.nodeENV === "test";
+    const isTest = process.env.NODE_ENV === "test" || config.nodeENV === "test";
     let targetURI = isTest
-      ? config.mongoURITest || (config.mongoURI ? `${config.mongoURI}_test` : "mongodb://localhost:27017/quimora_test")
+      ? process.env.MONGO_URI_TEST || config.mongoURITest || "mongodb://localhost:27017/quimora_test"
       : config.mongoURI;
 
     const conn = await mongoose.connect(targetURI);

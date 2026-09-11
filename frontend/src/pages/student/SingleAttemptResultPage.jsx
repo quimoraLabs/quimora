@@ -64,7 +64,10 @@ const SingleAttemptResultPage = () => {
             unattemptedCount={unattemptedCount}
             warningCount={warningCount}
           />
-          <ResultActions onExit={handleCleanExit} />
+          <ResultActions 
+            onExit={handleCleanExit} 
+            attemptId={quizResults?.attemptId || quizResults?._id || quizResults?.id} 
+          />
         </div>
       </motion.div>
     </div>

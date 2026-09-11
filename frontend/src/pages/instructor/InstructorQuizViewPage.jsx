@@ -30,7 +30,7 @@ const INITIAL_FORM_STATE = {
 export default function InstructorQuizViewPage() {
   const { quizId } = useParams();
   const navigate = useNavigate();
-  const { questions, getQuizQuestions } = useQuestionStore();
+  const { questions, pagination, getQuizQuestions } = useQuestionStore();
   const { currentQuiz, fetchQuizById, updateQuiz, loading } = useQuizStore();
 
   const [activeTab, setActiveTab] = useState("questions"); // "questions" | "submissions"
@@ -79,6 +79,9 @@ export default function InstructorQuizViewPage() {
     endDate,
     maxAttempts,
   } = currentQuiz;
+
+  const totalQuestionsCount =
+    pagination?.totalItems || currentQuiz?.questions?.length || questions?.length || 0;
 
   const handleOpenEdit = () => {
     setEditForm({
@@ -150,7 +153,7 @@ export default function InstructorQuizViewPage() {
         <StatCard
           icon={HelpCircle}
           title="Total Questions"
-          value={questions.length}
+          value={totalQuestionsCount}
           change="Available in test"
           changeType="neutral"
           gradient="from-cyan-500 to-blue-600"
@@ -192,7 +195,13 @@ export default function InstructorQuizViewPage() {
           <span>
             Start:{" "}
             <strong className="text-main font-semibold">
-              {startDate ? new Date(startDate).toLocaleDateString() : "Always Active"}
+              {startDate
+                ? new Date(startDate).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                  })
+                : "Always Active"}
             </strong>
           </span>
         </div>
@@ -201,7 +210,13 @@ export default function InstructorQuizViewPage() {
           <span>
             End:{" "}
             <strong className="text-main font-semibold">
-              {endDate ? new Date(endDate).toLocaleDateString() : "No Expiry"}
+              {endDate
+                ? new Date(endDate).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                  })
+                : "No Expiry"}
             </strong>
           </span>
         </div>
@@ -218,7 +233,7 @@ export default function InstructorQuizViewPage() {
           }`}
         >
           <BookOpen className="w-4 h-4" />
-          Questions Management ({questions.length})
+          Questions Management ({totalQuestionsCount})
         </button>
 
         <button

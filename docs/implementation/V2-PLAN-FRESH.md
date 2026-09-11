@@ -64,6 +64,11 @@ achha-hai-agar-time-mile, **P3** = bada feature, alag planning session chahiye.
 
 ## P1 — Student Side
 
+- [ ] **Student Single Quiz Full Report (Quick Summary + New Tab Printable PDF View)**
+  Result screen aur attempt history pe Quick Report summary (marks, passed/failed, correct/incorrect count)
+  dikhayein. "Full Report (PDF)" click karne par naye tab me `/student/attempts/:attemptId/report` kholein
+  jisme question-by-question breakdown, student ka selected option ("kaun sa option usne mara hai"),
+  aur right/wrong status dikhe + "@media print" print/download PDF button ho.
 - [ ] **Leaderboard / Rank per Quiz**
   Attempt data already stored hai (`quizAttempt.model.js`) — top scorers ki simple ranked list
   dikhana bada engagement booster hoga, aur backend-side extra kaam kam hai.

@@ -73,13 +73,21 @@ export default function QuizHistoryPage() {
               </span>
             </td>
             <td className="p-4 text-right">
-              <button
-                onClick={() => openReport(attempt)}
-                className="inline-flex items-center gap-1 text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors bg-blue-500/10 px-3 py-1.5 rounded-lg border border-blue-500/20"
-              >
-                View Report
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              </button>
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  onClick={() => openReport(attempt)}
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors bg-blue-500/10 px-3 py-1.5 rounded-lg border border-blue-500/20"
+                >
+                  Quick Report
+                </button>
+                <button
+                  onClick={() => window.open(`/student/attempts/${attempt._id || attempt.id}/report`, "_blank")}
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20"
+                >
+                  Full Report (PDF)
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </td>
           </tr>
         );

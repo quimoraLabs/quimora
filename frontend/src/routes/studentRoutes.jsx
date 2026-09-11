@@ -6,6 +6,7 @@ import StudentResult from "../pages/student/QuizHistoryPage";
 import ExamInstructionsPage from "../pages/student/ExamInstructionsPage";
 import TakeExamPage from "../pages/student/TakeExamPage";
 import SingleAttemptResultPage from "../pages/student/SingleAttemptResultPage";
+import StudentFullReportPage from "../pages/student/StudentFullReportPage";
 
 
 export const StudentRoutes = () => (
@@ -28,6 +29,10 @@ export const StudentQuizRoutes = () => (
       <Route
         path="/student/quiz/results"
         element={<SingleAttemptResultPage />}
+      />
+      <Route
+        path="/student/attempts/:attemptId/report"
+        element={<StudentFullReportPage />}
       />
     </Route>
   </>

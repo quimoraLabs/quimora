@@ -1,5 +1,8 @@
+process.env.NODE_ENV = "test";
+process.env.PORT = "5001";
+process.env.JWT_SECRET = "test_jwt_secret_123456789";
+
 import mongoose from "mongoose";
-import app from "../api/server.js";
 import User from "../models/user.model.js";
 import Quiz from "../models/quiz.model.js";
 import Question from "../models/question.model.js";
@@ -23,10 +26,10 @@ async function runTests() {
   console.log("🧪 RUNNING FULL QUIMORA ENDPOINT VALIDATION SUITE");
   console.log("==================================================");
 
-  process.env.NODE_ENV = "test";
-  process.env.PORT = "5001";
-  process.env.JWT_SECRET = "test_jwt_secret_123456789";
+  const { default: connectDB } = await import("../config/connectDB.js");
+  const { default: app } = await import("../api/server.js");
 
+  await connectDB();
   server = app.listen(5001);
   console.log("📡 Test Server listening on http://localhost:5001");
 

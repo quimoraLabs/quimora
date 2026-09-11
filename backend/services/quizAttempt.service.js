@@ -228,6 +228,7 @@ export const sanitizeAttemptData = (attempt, includeQuestions = false) => {
     // Lightweight summary object with evaluation metrics
     const sanitized = {
         _id: attempt._id,
+        studentName: attempt.userId?.name || attempt.userId?.username || "Student",
         quizTitle: attempt.quizId?.title || "Quiz",
         tags: Array.isArray(attempt.quizId?.tags) ? attempt.quizId.tags : [],
         totalQuestions: attempt.totalQuestions,
@@ -256,6 +257,10 @@ export const sanitizeAttemptData = (attempt, includeQuestions = false) => {
                 questionId: snapshot.questionId,
                 questionText: snapshot.questionText,
                 marks: snapshot.marks,
+                options: (snapshot.options || []).map((opt) => ({
+                    _id: opt._id,
+                    optionText: opt.optionText || opt.text,
+                })),
                 selectedOptions: answer?.selectedOptions || [],
                 isCorrect: Boolean(answer?.isCorrect),
             };

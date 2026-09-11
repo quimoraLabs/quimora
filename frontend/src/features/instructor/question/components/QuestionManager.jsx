@@ -5,6 +5,7 @@ import QuestionFormModal from "./questionForm";
 import BulkImportModal from "./BulkImportModal";
 import AIGenerateModal from "./AIGenerateModal";
 import { ConfirmationModal } from "../../../../components/common/ConfirmModal";
+import PaginationBar from "../../quiz/components/PaginationBar";
 
 const initialFormState = {
   questionText: "",
@@ -21,6 +22,7 @@ const initialFormState = {
 export default function QuestionManager({ quizId }) {
   const {
     questions,
+    pagination,
     loading,
     getQuizQuestions,
     createQuestion,
@@ -34,6 +36,8 @@ export default function QuestionManager({ quizId }) {
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [deletingQuestionId, setDeletingQuestionId] = useState(null);
   const [form, setForm] = useState(initialFormState);
+  const [currentPage, setCurrentPage] = useState(1);
+  const limit = 10;
 
   // Helper to ensure 4 option objects
   const normalizeOptions = (opts = []) =>
@@ -44,9 +48,9 @@ export default function QuestionManager({ quizId }) {
 
   useEffect(() => {
     if (quizId) {
-      getQuizQuestions(quizId);
+      getQuizQuestions(quizId, currentPage, limit);
     }
-  }, [quizId]); // Omit getQuizQuestions to prevent infinite re-render loop
+  }, [quizId, currentPage, limit]);
 
   const handleOpenAddModal = () => {
     setEditingQuestion(null);
@@ -81,7 +85,7 @@ export default function QuestionManager({ quizId }) {
 
     if (success) {
       handleCloseModal();
-      getQuizQuestions(quizId);
+      getQuizQuestions(quizId, currentPage, limit);
     }
   };
 
@@ -94,7 +98,7 @@ export default function QuestionManager({ quizId }) {
     const success = await deleteQuestion(quizId, deletingQuestionId);
     setDeletingQuestionId(null);
     if (success) {
-      getQuizQuestions(quizId);
+      getQuizQuestions(quizId, currentPage, limit);
     }
   };
 
@@ -103,7 +107,7 @@ export default function QuestionManager({ quizId }) {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-4 border-b border-main mb-6">
         <div>
           <h3 className="text-lg font-bold text-main font-display">
-            Questions ({questions?.length || 0})
+            Questions ({pagination?.totalItems || questions?.length || 0})
           </h3>
           <p className="text-xs text-muted">
             Manage, edit, and create questions for this quiz.
@@ -158,7 +162,7 @@ export default function QuestionManager({ quizId }) {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-accent/10 text-accent border border-accent/20">
-                    Q{idx + 1}
+                    Q{(currentPage - 1) * limit + idx + 1}
                   </span>
                   <span className="text-xs font-semibold uppercase text-muted">
                     {q.difficulty} • {q.marks}{" "}
@@ -215,6 +219,17 @@ export default function QuestionManager({ quizId }) {
               )}
             </div>
           ))}
+
+          {/* Pagination Bar for Questions */}
+          {pagination && pagination.totalPages > 1 && (
+            <PaginationBar
+              currentPage={pagination.currentPage || currentPage}
+              totalPages={pagination.totalPages || 1}
+              totalItems={pagination.totalItems || questions.length}
+              pageSize={limit}
+              onPageChange={(page) => setCurrentPage(page)}
+            />
+          )}
         </div>
       )}
 
@@ -233,7 +248,7 @@ export default function QuestionManager({ quizId }) {
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
         quizId={quizId}
-        onImportSuccess={() => getQuizQuestions(quizId)}
+        onImportSuccess={() => getQuizQuestions(quizId, currentPage, limit)}
       />
 
       {/* AI Question Generator Modal */}
@@ -241,7 +256,7 @@ export default function QuestionManager({ quizId }) {
         isOpen={isAIModalOpen}
         onClose={() => setIsAIModalOpen(false)}
         quizId={quizId}
-        onImportSuccess={() => getQuizQuestions(quizId)}
+        onImportSuccess={() => getQuizQuestions(quizId, currentPage, limit)}
       />
 
       {/* Confirmation Modal for Deleting Question */}

@@ -6,19 +6,30 @@ import useQuizStore from "../../quiz/store/useQuizStore";
 const useQuestionStore = create((set) => ({
   loading: false,
   questions: [],
+  pagination: { totalItems: 0, totalPages: 1, currentPage: 1, limit: 10 },
   currentQuestion: null,
 
   // Reset helper
   clearCurrentQuestion: () => set({ currentQuestion: null }),
 
-  // FETCH QUESTION BY ID
-  getQuizQuestions: async (quizId) => {
+  // FETCH QUESTION BY ID WITH PAGINATION
+  getQuizQuestions: async (quizId, page = 1, limit = 10) => {
     set({ loading: true });
     try {
-      const response = await axiosClient.get(`/quiz/${quizId}/questions`);
+      const response = await axiosClient.get(`/quiz/${quizId}/questions`, {
+        params: { page, limit },
+      });
 
       if (response.data?.success) {
-        set({ questions: response.data.data });
+        set({
+          questions: response.data.data,
+          pagination: response.data.pagination || {
+            totalItems: response.data.data?.length || 0,
+            totalPages: 1,
+            currentPage: page,
+            limit,
+          },
+        });
         return true;
       }
       return false;

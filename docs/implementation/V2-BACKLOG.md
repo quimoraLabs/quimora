@@ -28,6 +28,10 @@ This file maintains the active backlog for Quimora V2 additions, upcoming featur
 
 ## 📊 Analytics & Reporting
 
+- [ ] **Student Single Quiz Full Report (Printable & New Tab PDF View)**
+  - Quick summary report on result screen + Detailed Full Report opening in a new browser tab (`/student/attempts/:attemptId/report`).
+  - Question-by-question breakdown displaying the student's selected option, correctness indicators (Correct/Wrong/Skipped), score, time spent, and printable `@media print` layout.
+
 - [ ] **Advanced Student Performance Export**
   - Export student attempt metrics, question breakdown, and score distributions as CSV / PDF.
 

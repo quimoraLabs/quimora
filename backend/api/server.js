@@ -165,13 +165,15 @@ app.use(errorHandler);
 // ============================================================
 // 9️⃣ START SERVER
 // ============================================================
-const PORT = config.port || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server is running on port ${PORT}`);
-  console.log(`🌍 Environment: ${config.nodeENV}`);
-  console.log(`📡 API Prefix: ${config.apiPrefix}`);
-  console.log(`🔗 Allowed Origins: ${allowedOrigins.join(", ")}`);
-  connectDB();
-});
+const PORT = config.port || 5000;
+if (process.env.NODE_ENV !== "test") {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server is running on port ${PORT}`);
+    console.log(`🌍 Environment: ${config.nodeENV}`);
+    console.log(`📡 API Prefix: ${config.apiPrefix}`);
+    console.log(`🔗 Allowed Origins: ${allowedOrigins.join(", ")}`);
+    connectDB();
+  });
+}
 
 export default app;
