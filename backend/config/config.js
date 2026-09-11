@@ -9,6 +9,7 @@ if (!process.env.JWT_SECRET) {
 export default {
   port: process.env.PORT || 5000,
   mongoURI: process.env.MONGO_URI,
+  mongoURITest: process.env.MONGO_URI_TEST,
   jwtSecret: process.env.JWT_SECRET,
   emailPass: process.env.EMAIL_PASS,
   emailUser: process.env.EMAIL_USER,

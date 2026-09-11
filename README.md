@@ -76,9 +76,9 @@ quimora/
 │   └── index.html
 │
 ├── 📁 agent/                  # AI coding assistant guidelines (agent.md)
-├── 📄 Admin-v1-plan.md        # Admin panel V1 progress tracker
-├── 📄 before-v2-plan.md       # Pre-launch checklist & critical bug logs
-├── 📄 V2-BACKLOG.md           # Future roadmap & enhancement tracker
+├── 📁 docs/                   # Organized project documentation & logs
+│   ├── 📁 bugs/               # Security audit recheck reports (v1_bug_recheck.md, round2.md)
+│   └── 📁 implementation/     # Plans, deployment guide, V2 backlog & completion report
 ├── 📄 package.json            # Root workspace scripts & concurrent runner
 └── 📄 README.md               # Main project documentation
 ```
