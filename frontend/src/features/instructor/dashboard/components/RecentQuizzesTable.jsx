@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -9,12 +11,30 @@ import {
   Trash2,
   Lock,
 } from "lucide-react";
+import { ConfirmationModal } from "../../../../components/common/ConfirmModal";
 
 const RecentQuizzesTable = ({
   quizzes = [],
   onViewQuiz = () => {},
   onDeleteQuiz = () => {},
 }) => {
+  const navigate = useNavigate();
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedQuizId, setSelectedQuizId] = useState(null);
+
+  const handleDeleteTrigger = (id) => {
+    setSelectedQuizId(id);
+    setDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (selectedQuizId) {
+      await onDeleteQuiz(selectedQuizId);
+    }
+    setDeleteModalOpen(false);
+    setSelectedQuizId(null);
+  };
+
   return (
     <div className="lg:col-span-2 bg-surface border border-main rounded-2xl p-6 shadow-card transition-colors duration-300">
       <div className="flex justify-between items-center mb-6">
@@ -28,7 +48,8 @@ const RecentQuizzesTable = ({
         </div>
         <motion.button
           whileHover={{ x: 2 }}
-          className="text-xs text-accent hover:opacity-80 font-semibold flex items-center gap-1 group transition-colors px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20"
+          onClick={() => navigate("/instructor/quizzes")}
+          className="text-xs text-accent hover:opacity-80 font-semibold flex items-center gap-1 group transition-colors px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 cursor-pointer"
         >
           View All
           <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
@@ -165,7 +186,7 @@ const RecentQuizzesTable = ({
                             {/* Delete Action */}
                             <MenuItem>
                               <button
-                                onClick={() => onDeleteQuiz(quizId)}
+                                onClick={() => handleDeleteTrigger(quizId)}
                                 className="w-full flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-red-500/80 data-focus:bg-red-500/10 data-focus:text-red-500 transition-colors"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -183,6 +204,20 @@ const RecentQuizzesTable = ({
           </tbody>
         </table>
       </div>
+
+      {deleteModalOpen && (
+        <ConfirmationModal
+          isOpen={deleteModalOpen}
+          onClose={() => {
+            setDeleteModalOpen(false);
+            setSelectedQuizId(null);
+          }}
+          onConfirm={handleConfirmDelete}
+          title="Are you sure you want to delete this quiz?"
+          variant="danger"
+          confirmLabel="Delete Quiz"
+        />
+      )}
     </div>
   );
 };

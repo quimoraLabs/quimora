@@ -34,7 +34,7 @@ const InstructorDashboardPage = () => {
   const navigate = useNavigate();
   const { dashboardStats, dashboardLoading, fetchDashboardStats } =
     useInstructorDashboard();
-  const { createQuiz } = useQuizStore();
+  const { createQuiz, deleteQuiz } = useQuizStore();
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [form, setForm] = useState(INITIAL_FORM_STATE);
@@ -43,6 +43,17 @@ const InstructorDashboardPage = () => {
   const [newlyCreatedQuiz, setNewlyCreatedQuiz] = useState(null);
   const [isPostCreateOpen, setIsPostCreateOpen] = useState(false);
   const [isAIQuestionsModalOpen, setIsAIQuestionsModalOpen] = useState(false);
+
+  const handleViewQuiz = (quizId) => {
+    if (quizId) navigate(`/instructor/quizzes/${quizId}`);
+  };
+
+  const handleDeleteQuiz = async (quizId) => {
+    if (quizId) {
+      await deleteQuiz(quizId);
+      fetchDashboardStats();
+    }
+  };
 
   useEffect(() => {
     fetchDashboardStats();
@@ -146,7 +157,11 @@ const InstructorDashboardPage = () => {
 
         {/* Equal Height Layout Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-          <RecentQuizzesTable quizzes={recentQuizzes} />
+          <RecentQuizzesTable
+            quizzes={recentQuizzes}
+            onViewQuiz={handleViewQuiz}
+            onDeleteQuiz={handleDeleteQuiz}
+          />
           <LiveActivityFeed liveActivities={liveActivities} />
         </div>
 

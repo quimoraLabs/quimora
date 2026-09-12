@@ -1,21 +1,18 @@
+import { Link } from "react-router-dom";
 import { RefreshCcw, Home, FileText } from "lucide-react";
 
 export const ResultActions = ({ onExit, attemptId }) => {
-  const handleOpenReport = () => {
-    if (attemptId) {
-      window.open(`/student/attempts/${attemptId}/report`, "_blank");
-    }
-  };
-
   return (
     <div className="flex flex-col gap-3 pt-4">
       {attemptId && (
-        <button
-          onClick={handleOpenReport}
-          className="w-full bg-accent/10 hover:bg-accent/20 text-accent border border-accent/30 py-3.5 px-6 rounded-2xl flex items-center justify-center gap-2 transition-all font-bold"
+        <Link
+          to={`/student/attempts/${attemptId}/report`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full bg-accent/10 hover:bg-accent/20 text-accent border border-accent/30 py-3.5 px-6 rounded-2xl flex items-center justify-center gap-2 transition-all font-bold text-center"
         >
           <FileText className="w-5 h-5" /> View / Download Full Report (PDF)
-        </button>
+        </Link>
       )}
 
       <div className="flex flex-col sm:flex-row gap-3">
