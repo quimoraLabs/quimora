@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ArrowUpRight, Calendar, Clock } from "lucide-react";
 import ResultModal from "../../features/student/quiz/ResultModal";
 import useStudentQuizStore from "../../features/student/exam/store/useStudentQuizStore";
@@ -7,6 +7,7 @@ import Loader from "../../components/common/Loader";
 import { formatDate } from "../../utils/formatDate";
 
 export default function QuizHistoryPage() {
+  const navigate = useNavigate();
   const { studentAllResults } = useStudentQuizStore();
 
   useEffect(() => {
@@ -81,15 +82,13 @@ export default function QuizHistoryPage() {
                 >
                   Quick Report
                 </button>
-                <Link
-                  to={`/student/attempts/${attempt._id || attempt.id}/report`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20"
+                <button
+                  onClick={() => navigate(`/student/attempts/${attempt._id || attempt.id}/report`)}
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20 cursor-pointer"
                 >
                   Full Report (PDF)
                   <ArrowUpRight className="w-3.5 h-3.5" />
-                </Link>
+                </button>
               </div>
             </td>
           </tr>
