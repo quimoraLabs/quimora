@@ -60,6 +60,13 @@ const StudentFullReportPage = () => {
   const percentage = report.score || 0;
   const questions = report.questions || [];
 
+  const handleCloseOrBack = () => {
+    window.close();
+    setTimeout(() => {
+      navigate("/student/my-attempts");
+    }, 100);
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900 p-3 sm:p-6 font-sans text-xs print:p-0 print:bg-white print:text-black">
       
@@ -88,8 +95,8 @@ const StudentFullReportPage = () => {
       {/* Top Action Header */}
       <div className="max-w-6xl mx-auto mb-4 flex items-center justify-between print-hidden">
         <button
-          onClick={() => window.close() || navigate("/student/quizzes")}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-gray-200 text-gray-800 border border-gray-300 rounded-md text-xs font-bold transition-all shadow-sm"
+          onClick={handleCloseOrBack}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-gray-200 text-gray-800 border border-gray-300 rounded-md text-xs font-bold transition-all shadow-sm cursor-pointer"
         >
           <ArrowLeft className="w-3.5 h-3.5" /> Back / Close Tab
         </button>
