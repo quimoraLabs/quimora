@@ -31,6 +31,10 @@ export default function QuizHistoryPage() {
     setSelectedAttempt(null);
   };
 
+  const handleFullReportClick = (attemptId) => {
+    navigate(`/student/attempts/${attemptId}/report`);
+  }
+
   const attemptsTableRows =
     Array.isArray(quizResults) && quizResults.length > 0 ? (
       quizResults.map((attempt, index) => {
@@ -83,7 +87,7 @@ export default function QuizHistoryPage() {
                   Quick Report
                 </button>
                 <button
-                  onClick={() => navigate(`/student/attempts/${attempt._id || attempt.id}/report`)}
+                  onClick={() => handleFullReportClick(attempt._id || attempt.id)}
                   className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20 cursor-pointer"
                 >
                   Full Report (PDF)
