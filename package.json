@@ -10,18 +10,15 @@
     "install:backend": "npm --prefix backend install",
     "install:frontend": "npm --prefix frontend install",
     "install:all": "npm install && npm run install:backend && npm run install:frontend",
-    "build": "npm run install:all && npm run build:frontend",
+    "build": "npm --prefix frontend run build",
     "build:backend": "npm run install:backend",
     "build:frontend": "npm --prefix frontend run build",
     "start": "npm --prefix backend start",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui",
-    "test:e2e:headed": "playwright test --headed",
-    "test:e2e:report": "playwright show-report",
-    "test:e2e:codegen": "node scripts/codegen.js"
+    "test": "npm --prefix backend run test && npm --prefix frontend run test",
+    "test:backend": "npm --prefix backend run test",
+    "test:frontend": "npm --prefix frontend run test"
   },
   "devDependencies": {
-    "@playwright/test": "^1.63.0",
     "@types/node": "^22.20.2",
     "concurrently": "^9.1.2"
   }

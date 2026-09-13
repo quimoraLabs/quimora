@@ -10,7 +10,9 @@ export const errorHandler = (err, req, res, next) => {
   error.message = err.message;
 
   // Log full stack diagnostic trace in terminal for developmental debugging
-  console.error("DEBUG ERROR ❌:", err.stack || err.message);
+  if (process.env.NODE_ENV !== "test") {
+    console.error("DEBUG ERROR ❌:", err.stack || err.message);
+  }
 
   // 2. Intercept Mongoose Invalid ObjectId Structure (CastError)
   if (err.name === "CastError") {

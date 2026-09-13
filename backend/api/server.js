@@ -111,7 +111,9 @@ app.use(cors(corsOptions));
 // ============================================================
 // 4️⃣ MIDDLEWARE
 // ============================================================
-app.use(morgan("tiny"));
+if (process.env.NODE_ENV !== "test") {
+  app.use(morgan("tiny"));
+}
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
