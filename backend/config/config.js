@@ -13,9 +13,9 @@ export default {
   jwtSecret: process.env.JWT_SECRET,
   emailPass: process.env.EMAIL_PASS,
   emailUser: process.env.EMAIL_USER,
-  imagekitPublic: process.env.IMAGEKIT_PUBLIC_KEY,
-  imagekitPrivate: process.env.IMAGEKIT_PRIVATE_KEY,
-  imagekitEndpoint: process.env.IMAGEKIT_URL_ENDPOINT,
+  imagekitPublic: process.env.IMAGEKIT_PUBLIC_KEY || "dummy_public_key",
+  imagekitPrivate: process.env.IMAGEKIT_PRIVATE_KEY || "dummy_private_key",
+  imagekitEndpoint: process.env.IMAGEKIT_URL_ENDPOINT || "https://ik.imagekit.io/dummy",
   nodeENV: process.env.NODE_ENV,
   groqApiKey: process.env.GROQ_API_KEY,
   apiPrefix: process.env.API_PREFIX || "/api/v1"

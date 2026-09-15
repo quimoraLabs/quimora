@@ -3,9 +3,9 @@ import config from '../config/config.js';
 
 
 const imagekit = new ImageKit({
-  publicKey: config.imagekitPublic,
-  privateKey: config.imagekitPrivate,
-  urlEndpoint: config.imagekitEndpoint,
+  publicKey: config.imagekitPublic || 'dummy_public_key',
+  privateKey: config.imagekitPrivate || 'dummy_private_key',
+  urlEndpoint: config.imagekitEndpoint || 'https://ik.imagekit.io/dummy',
 });
 
 export default imagekit;

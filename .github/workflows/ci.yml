@@ -33,6 +33,9 @@ jobs:
         env:
           MONGO_URI: mongodb://localhost:27017/quimora_test
           JWT_SECRET: ci_test_secret_key
+          IMAGEKIT_PUBLIC_KEY: dummy_public_key
+          IMAGEKIT_PRIVATE_KEY: dummy_private_key
+          IMAGEKIT_URL_ENDPOINT: https://ik.imagekit.io/dummy
         run: npm --prefix backend run test
 
       - name: Verify Frontend Production Build
