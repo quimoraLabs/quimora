@@ -54,68 +54,69 @@
 
 ---
 
-## 2. 📖 ADHA ADHURA KISSA (CURRENT STATE & PROGRESS TRACKER)
+## 2. 📖 ADHA ADHURA KISSA (GROUND TRUTH CODEBASE STATUS)
 
-### ✅ What is Completed (Finished & Stable)
-- [x] **Project Structure**: Monorepo split with dedicated `backend/` and `frontend/` folders.
-- [x] **Authentication System**:
+### ✅ What is Completed (Finished, Built & Stable)
+- [x] **Monorepo & Foundation**: Monorepo split with dedicated `backend/` and `frontend/` folders.
+- [x] **Authentication & Role Authorization**:
   - Registration with password hashing (Bcrypt).
-  - Login with JWT generation and token issuance.
+  - Login with JWT generation and Bearer token headers.
   - Role verification middleware (`admin`, `instructor`, `user`/`student`).
   - Forgot Password flow via secure **Email OTP** (Nodemailer, 6-digit code, 10-min expiration).
 - [x] **Core Database Models**:
-  - `User`: Roles, credentials, profile metadata, reset token fields.
-  - `Quiz`: Title, description, duration, passing score, instructor reference, categories, published status.
-  - `Question`: Question text, options array, correct answer, marks, explanations.
-  - `QuizAttempt`: Student ID, Quiz ID, responses, score, time taken, pass/fail status.
-- [x] **Frontend Foundation**:
-  - Vite + React 19 setup with Tailwind CSS v4 styling.
-  - Protected Routes, Public Routes, Guest Routes, and Role-based Route segregation.
-  - Basic Instructor and Student Dashboard interfaces.
-  - Zustand stores for user session and auth persistence.
-- [x] **Instructor Suite (Core, Analytics & Productivity)**:
-  - Dynamic Live Attempt Count (`stats.attempts`) calculated directly from `QuizAttempt` aggregation in `getQuizById`.
-  - Question Correct Answer editing & sanitization logic (Student payload sanitized, Instructor receives `isCorrect`).
-  - Visual Option List with Correct Answer indicators in Question Manager.
-  - Bulk Question Importer (`BulkImportModal.jsx`): Supports CSV & JSON upload, sample template downloads, live preview validation, and `/bulk` API integration.
-  - In-page seamless Quiz Details edit modal in Quiz View (Clean uncluttered UI without redundant buttons).
-  - Quiz Submissions & Leaderboard Tab with ranks, time spent, scores, and **"Export CSV"** marks sheet download.
-  - Student Answer Sheet Inspection modal with question-by-question response review.
-  - Complete Student Roster & Analytics page (`/instructor/students`) with search, filter, average scores, attempt counts, and **"Export Roster"** CSV download.
-  - Visual Graphical Analytics on Instructor Dashboard (`InstructorAnalyticsChart.jsx`) with 7-Day Submissions Area Chart and Student Score Distribution Bar Chart.
+  - `User`, `Quiz`, `Question`, `QuizAttempt` schemas fully wired with Mongoose.
+- [x] **Frontend Architecture & Theme System**:
+  - Vite 8 + React 19 setup with Tailwind CSS v4 styling.
+  - Dark/Light mode theme system (`useTheme.js` hook + 18 responsive component files).
+  - Protected Routes, Public Routes, Guest Routes, and RBAC layout guards.
+  - Zustand global state stores (`authStore.js`, `useStudentQuizStore.js`, `useAdminStore.js`).
+- [x] **Anti-Cheating & Proctoring Safeguards Suite**:
+  - `useExamProctoring.js` hook + `FullscreenLockOverlay.jsx` modal overlay.
+  - Strict fullscreen lock enforcement (blocks progress if student exits fullscreen).
+  - Tab-switch tracking (`visibilitychange` API) with dynamic warning count increment.
+  - Copy-paste blocking, context menu disabled, and devtools shortcut warning alerts.
 - [x] **Server-Validated Timed Quiz Engine (V2 P0)**:
-  - Real-time client & server timestamp validation (`startedAt`, `remainingTimeSeconds`).
-  - 15-second server grace buffer (`handleExpiredAttempt`) before auto-abandoning expired attempts.
-  - Student pre-quiz eligibility check endpoint (`GET /api/v1/student/quiz/:quizId/eligibility`).
-  - 28 automated integration test cases passing cleanly in Vitest (`npm run test`).
-- [x] **Admin Control Panel (V2 P1)**:
-  - Full system metrics (total users, active quizzes, platform pass rates).
-  - User role elevation (`user` ↔ `instructor` ↔ `admin`) with last-admin safeguards and account suspension toggle.
+  - Real-time client & server timestamp calculation (`startedAt`, `remainingTimeSeconds`).
+  - 15-second server grace buffer (`handleExpiredAttempt`) before auto-marking attempts as `'abandoned'`.
+  - Student pre-quiz eligibility check endpoint (`GET /api/v1/student/quiz/:quizId/eligibility`) verifying max attempt limits and active sessions.
+- [x] **Leaderboard & Student Analytics Engine**:
+  - Backend aggregation service (`studentDashboard.service.js`) for per-quiz and global rankings.
+  - Frontend ranking list components (`LeaderboardItem.jsx`) and student history tracking.
+- [x] **Groq AI Integration Suite**:
+  - AI Question generator (`POST /api/v1/instructor/ai/generate-questions`) powered by Groq SDK.
+  - AI Quiz Description generator (`POST /api/v1/instructor/ai/generate-description`).
+- [x] **Instructor Suite (Core, Analytics & CSV Tooling)**:
+  - Dynamic live attempt counts calculated via `QuizAttempt` aggregations.
+  - Correct answer option sanitization (student payload sanitized, instructor receives `isCorrect`).
+  - Bulk Question Importer (`BulkImportModal.jsx`): CSV & JSON template import with live validation preview.
+  - Student Submissions inspection, answer sheet review, and **"Export CSV"** marks sheet download.
+  - Student Roster page (`/instructor/students`) with search, filter, and CSV export.
+  - Visual Graphical Analytics on Instructor Dashboard (`InstructorAnalyticsChart.jsx`) with 7-Day area charts and bar charts.
+- [x] **Admin Control Suite (V2 P1)**:
+  - Platform overview metrics (total users, active quizzes, overall pass rates).
+  - User role elevation (`user` ↔ `instructor` ↔ `admin`) with last-admin protection safeguards.
+  - User account suspension toggle (`PATCH /api/v1/users/:userId/active`).
 - [x] **Media & Image Uploads (V2 P1)**:
-  - Question diagram attachments & User avatar uploads via ImageKit SDK (`/quimora/questions` & `/quimora/profile`).
-- [x] **Analytics & Visualizations (V2 P2)**:
-  - Recharts integration in Instructor and Student dashboards for score distributions and historical trend lines.
-- [x] **UI Polish & Mobile Responsiveness (V2 P2)**:
-  - Responsive quiz-taking interface for mobile devices with diagram image attachments.
-  - Polished dark/light theme consistency across all sub-dashboards.
+  - Question diagram attachments & User profile avatar uploads via ImageKit SDK (`/quimora/questions` & `/quimora/profile`).
+- [x] **Automated Test Suite**:
+  - 28 Vitest integration test cases across 4 modules (`01_authentication`, `02_student_role`, `03_instructor_role`, `04_admin_role`).
+  - Frontend Vitest suite executed cleanly (`npm run test`).
 
 ---
 
-### ⚠️ What is In Progress / Priority Scope (V3 Next Milestone)
+### ⚠️ What is In Progress / Next Up (V3 Scope)
+- [ ] **1-Click Quiz Clone / Duplication**: Instructor 1-click clone action (duplicating quiz schema + question array with modified title).
 - [ ] **Question Bank Library**: Tagged shared question pool reusable across multiple quizzes.
 - [ ] **Adaptive Difficulty Engine**: Real-time adjustment of question difficulty based on student accuracy.
-- [ ] **Automated Certificate Generation**: PDF completion certificates issued upon achieving passing score.
+- [ ] **Automated Certificate Generation**: PDF completion certificates issued upon achieving passing score with QR verification.
 
 ---
 
-### ❌ What is Pending (Not Started Yet)
-- [ ] Redis caching for high-traffic quiz lookups and leaderboard queries.
-- [ ] Live Leaderboard with socket/polling updates.
-- [ ] Certificate generation engine (PDF download upon passing).
-- [ ] Anti-cheating telemetry (tab-switch tracking, fullscreen enforcement, blur count).
-- [ ] Unit & integration test suites (Jest/Supertest for backend, Vitest for frontend).
-- [ ] Docker containerization (`Dockerfile` and `docker-compose.yml`).
-- [ ] CI/CD pipeline (GitHub Actions for linting, testing, and deployment).
+### ❌ What is Genuinely Pending Infrastructure & Polish
+- [ ] **Security Hardening**: `helmet()` middleware application on Express `server.js`.
+- [ ] **Docker & CI/CD**: `Dockerfile`, `docker-compose.yml`, and GitHub Actions deployment workflows (`.github/workflows/`).
+- [ ] **Database Index Optimization**: Full audit of Mongoose schema indexes for high-concurrency read queries.
+- [ ] **Redis Caching**: Redis layer for leaderboard queries and read-heavy quiz payloads.
 
 ---
 
