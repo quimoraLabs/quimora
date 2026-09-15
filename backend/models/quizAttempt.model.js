@@ -137,12 +137,16 @@ const quizAttemptSchema = new mongoose.Schema(
     status: {
       type: String,
       required: true,
-      enum: ["started", "completed", "abandoned"],
-      default: "started",
+      enum: ["in-progress", "started", "completed", "abandoned"],
+      default: "in-progress",
     },
     startedAt: {
       type: Date,
       default: Date.now,
+    },
+    expiresAt: {
+      type: Date,
+      default: null,
     },
     completedAt: {
       type: Date,

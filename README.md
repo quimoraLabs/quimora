@@ -212,13 +212,27 @@ The application will be accessible at:
 
 ---
 
-## 🗺️ Roadmap & Future Enhancements
+## 📚 Documentation System (8-Layer Architecture)
 
-- [ ] **Question Diagrams**: Support image attachments on questions via ImageKit.
-- [ ] **Quiz Cloning**: 1-click quiz duplicate feature for instructors.
-- [ ] **Content Moderation**: Flagged quiz review interface for admins.
-- [ ] **Granular Role Elevation**: Change user role directly from Admin panel.
-- [ ] **Learning Modules**: Course chapters and lessons alongside standalone quizzes.
+Quimora uses a standardized **8-Layer Documentation Framework** located in `docs/`:
+
+| Layer | Specification Document | Description |
+| :--- | :--- | :--- |
+| **Layer 0** | [PRODUCT_SPEC.md](file:///d:/quimora/docs/PRODUCT_SPEC.md) | Product vision, user personas, and version boundaries (V1–V4). |
+| **Layer 1** | [ARCHITECTURE.md](file:///d:/quimora/docs/ARCHITECTURE.md) | High-level system design, monorepo stack, and Groq AI pipeline. |
+| **Layer 2** | [API_REFERENCE.md](file:///d:/quimora/docs/API_REFERENCE.md) | Authoritative API contracts, endpoints, request schemas, and error codes. |
+| **Layer 3** | [DATA_MODEL.md](file:///d:/quimora/docs/DATA_MODEL.md) | Mongoose schemas (`User`, `Quiz`, `Question`, `QuizAttempt`) & indexing. |
+| **Layer 4** | [MASTER_ROADMAP.md](file:///d:/quimora/docs/MASTER_ROADMAP.md) | **Single Source of Truth Roadmap** for V1 Shipped, V2 Active, V3/V4 Scope. |
+| **Layer 5** | [DECISIONS.md](file:///d:/quimora/docs/DECISIONS.md) | Immutable business logic (Grading, negative marking, attempt limits). |
+| **Layer 6** | [TEST_STRATEGY.md](file:///d:/quimora/docs/TEST_STRATEGY.md) | Automated backend Vitest coverage breakdown & Definition of Done. |
+| **Layer 7** | [AI_DELEGATION_GUIDE.md](file:///d:/quimora/docs/AI_DELEGATION_GUIDE.md) | Standard Operating Procedure (SOP) for working with AI coding assistants. |
+
+---
+
+## 🗺️ Master Roadmap
+
+All active features, shipped baseline tasks, and upcoming milestones are tracked in **[docs/MASTER_ROADMAP.md](file:///d:/quimora/docs/MASTER_ROADMAP.md)**.
+
 
 ---
 

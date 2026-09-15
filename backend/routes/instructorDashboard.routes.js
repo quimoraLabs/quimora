@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { getInstructorDashboard } from "../controllers/instructorDashboard.controllers.js";
 import {
+  getInstructorDashboard,
   getInstructorStudents,
   getQuizSubmissionsForInstructor,
   getAttemptReviewForInstructor,
-} from "../controllers/attemptQuiz.controllers.js";
+} from "../controllers/instructorDashboard.controllers.js";
 import { generateAIQuestions, generateAIDescription } from "../controllers/aiQuestion.controllers.js";
 import authMiddleware, { authorizeRoles } from "../middleware/auth.middleware.js";
 import { validateObjectId } from "../middleware/validObjectId.middleware.js";

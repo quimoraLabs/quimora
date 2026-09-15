@@ -92,6 +92,9 @@ export const startQuizAttempt = async (req, res, next) => {
       selectedOptions: ans.selectedOptions,
     }));
 
+    const elapsedSeconds = Math.floor((Date.now() - new Date(attempt.startedAt).getTime()) / 1000);
+    const remainingTimeSeconds = quiz.timeLimit ? Math.max(0, (quiz.timeLimit * 60) - elapsedSeconds) : null;
+
     // 5. Send Clean Secure Payload Response
     return res.status(200).json({
       success: true,
@@ -99,6 +102,7 @@ export const startQuizAttempt = async (req, res, next) => {
       data: {
         attemptId: attempt._id,
         startedAt: attempt.startedAt,
+        remainingTimeSeconds,
         answers: savedAnswersMap,
         quiz: {
           _id: quiz._id,

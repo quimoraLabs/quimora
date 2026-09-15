@@ -1,5 +1,13 @@
 # 🧠 QUIMORA — AI AGENT & DEVELOPER MASTER BLUEPRINT
 > **Single Source of Truth** for current progress, technical debt, future roadmap, and strict engineering standards to elevate Quimora to a production-grade enterprise platform.
+>
+> 📌 **Documentation Framework (docs/):**
+> - 🗺️ **Master Roadmap**: [`docs/MASTER_ROADMAP.md`](file:///d:/quimora/docs/MASTER_ROADMAP.md)
+> - 📐 **System Architecture**: [`docs/ARCHITECTURE.md`](file:///d:/quimora/docs/ARCHITECTURE.md)
+> - 🔌 **API Reference**: [`docs/API_REFERENCE.md`](file:///d:/quimora/docs/API_REFERENCE.md)
+> - 🗄️ **Data Models**: [`docs/DATA_MODEL.md`](file:///d:/quimora/docs/DATA_MODEL.md)
+> - ⚖️ **Business Decisions**: [`docs/DECISIONS.md`](file:///d:/quimora/docs/DECISIONS.md)
+> - 🤖 **AI Delegation SOP**: [`docs/AI_DELEGATION_GUIDE.md`](file:///d:/quimora/docs/AI_DELEGATION_GUIDE.md)
 
 ---
 
