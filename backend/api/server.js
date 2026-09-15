@@ -13,6 +13,7 @@ import questionRoutes from "../routes/question.routes.js";
 import { validateObjectId } from "../middleware/validObjectId.middleware.js";
 import instructorDashboardRoutes from "../routes/instructorDashboard.routes.js";
 import adminRoutes from "../routes/admin.routes.js";
+import { redisCache } from "../config/redis.js";
 
 const app = express();
 
@@ -140,16 +141,22 @@ apiRouter.use("/instructor", instructorDashboardRoutes);
 app.use(config.apiPrefix, apiRouter);
 
 // ============================================================
-// 6️⃣ HEALTH CHECK
+// 6️⃣ HEALTH CHECK ENDPOINTS
 // ============================================================
-app.get("/", (req, res) => {
-  res.json({
+const healthHandler = (req, res) => {
+  res.status(200).json({
     status: "ok",
-    message: "Server works fine",
-    environment: config.nodeENV,
+    message: "Quimora Server is healthy and operational",
+    uptimeSeconds: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
+    environment: config.nodeENV,
+    redis: redisCache.isConnected() ? "connected" : "fallback_mode",
   });
-});
+};
+
+app.get("/", healthHandler);
+app.get("/health", healthHandler);
+apiRouter.get("/health", healthHandler);
 
 // ============================================================
 // 7️⃣ 404 Handler

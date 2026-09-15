@@ -10,6 +10,9 @@ export default defineConfig({
     tailwindcss(),
     babel({ presets: [reactCompilerPreset()] })
   ],
+  esbuild: {
+    drop: ['console', 'debugger'],
+  },
   build: {
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
