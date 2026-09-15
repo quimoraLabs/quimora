@@ -96,16 +96,19 @@
   - Platform overview metrics (total users, active quizzes, overall pass rates).
   - User role elevation (`user` ↔ `instructor` ↔ `admin`) with last-admin protection safeguards.
   - User account suspension toggle (`PATCH /api/v1/users/:userId/active`).
-- [x] **Media & Image Uploads (V2 P1)**:
-  - Question diagram attachments & User profile avatar uploads via ImageKit SDK (`/quimora/questions` & `/quimora/profile`).
+- [x] **1-Click Quiz Clone / Duplication**:
+  - Endpoint `POST /api/v1/quizzes/:quizId/clone` duplicating quiz schema + all associated question documents with `(Copy)` naming.
+- [x] **Security Hardening**:
+  - `helmet()` middleware mounted on Express `server.js` securing HTTP headers.
+- [x] **Docker & CI/CD Pipeline**:
+  - Production `Dockerfile`, `docker-compose.yml`, and GitHub Actions workflow (`.github/workflows/ci.yml`).
 - [x] **Automated Test Suite**:
-  - 28 Vitest integration test cases across 4 modules (`01_authentication`, `02_student_role`, `03_instructor_role`, `04_admin_role`).
+  - 29 Vitest integration test cases across 4 modules (`01_authentication`, `02_student_role`, `03_instructor_role`, `04_admin_role`).
   - Frontend Vitest suite executed cleanly (`npm run test`).
 
 ---
 
 ### ⚠️ What is In Progress / Next Up (V3 Scope)
-- [ ] **1-Click Quiz Clone / Duplication**: Instructor 1-click clone action (duplicating quiz schema + question array with modified title).
 - [ ] **Question Bank Library**: Tagged shared question pool reusable across multiple quizzes.
 - [ ] **Adaptive Difficulty Engine**: Real-time adjustment of question difficulty based on student accuracy.
 - [ ] **Automated Certificate Generation**: PDF completion certificates issued upon achieving passing score with QR verification.
@@ -113,8 +116,6 @@
 ---
 
 ### ❌ What is Genuinely Pending Infrastructure & Polish
-- [ ] **Security Hardening**: `helmet()` middleware application on Express `server.js`.
-- [ ] **Docker & CI/CD**: `Dockerfile`, `docker-compose.yml`, and GitHub Actions deployment workflows (`.github/workflows/`).
 - [ ] **Database Index Optimization**: Full audit of Mongoose schema indexes for high-concurrency read queries.
 - [ ] **Redis Caching**: Redis layer for leaderboard queries and read-heavy quiz payloads.
 

@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
+import helmet from "helmet";
 import connectDB from "../config/connectDB.js";
 import config from "../config/config.js";
 import authRoutes from "../routes/auth.routes.js";
@@ -109,8 +110,9 @@ app.use(cors(corsOptions));
 */
 
 // ============================================================
-// 4️⃣ MIDDLEWARE
+// 4️⃣ MIDDLEWARE & SECURITY HEADERS
 // ============================================================
+app.use(helmet({ contentSecurityPolicy: false }));
 if (process.env.NODE_ENV !== "test") {
   app.use(morgan("tiny"));
 }

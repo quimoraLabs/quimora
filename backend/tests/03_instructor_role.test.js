@@ -1,13 +1,25 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import request from 'supertest';
 import app from '../api/server.js';
+import Quiz from '../models/quiz.model.js';
 import { createTestUsersAndTokens } from './helpers/seedAuth.js';
 
 describe('👨‍🏫 Module 3: Instructor Role, Quiz CRUD & Groq AI Generator APIs', () => {
   let authData;
+  let testQuiz;
 
   beforeAll(async () => {
     authData = await createTestUsersAndTokens();
+    testQuiz = await Quiz.create({
+      title: `Instructor Seed Quiz ${Date.now()}`,
+      description: 'Test description for clone test',
+      createdBy: authData.instructor.user._id,
+      timeLimit: 30,
+      passingScore: 50,
+      maxAttempts: 3,
+      status: 'published',
+      isActive: true,
+    });
   });
 
   it('1. GET /api/v1/instructor/dashboard - returns instructor analytics payload', async () => {
@@ -84,4 +96,14 @@ describe('👨‍🏫 Module 3: Instructor Role, Quiz CRUD & Groq AI Generator A
       .set('Authorization', `Bearer ${authData.instructor.token}`);
     expect([400, 404]).toContain(res.statusCode);
   });
+
+  it('9. POST /api/v1/quizzes/:quizId/clone - duplicates existing quiz and questions', async () => {
+    const res = await request(app)
+      .post(`/api/v1/quizzes/${testQuiz._id}/clone`)
+      .set('Authorization', `Bearer ${authData.instructor.token}`);
+    expect(res.statusCode).toBe(201);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.quiz.title).toContain('(Copy)');
+  });
 });
+

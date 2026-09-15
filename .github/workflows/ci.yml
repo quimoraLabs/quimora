@@ -1,0 +1,39 @@
+name: Quimora CI Workflow
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+
+    services:
+      mongodb:
+        image: mongo:7.0
+        ports:
+          - 27017:27017
+
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js v20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Root & Workspace Dependencies
+        run: npm run install:all
+
+      - name: Run Backend Integration Test Suite
+        env:
+          MONGO_URI: mongodb://localhost:27017/quimora_test
+          JWT_SECRET: ci_test_secret_key
+        run: npm --prefix backend run test
+
+      - name: Verify Frontend Production Build
+        run: npm --prefix frontend run build

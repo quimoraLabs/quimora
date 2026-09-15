@@ -47,6 +47,7 @@
 | `GET` | `/api/v1/quizzes/instructor` | Instructor, Admin | Fetch quizzes created by the logged-in instructor. |
 | `GET` | `/api/v1/quizzes/:id` | Private | Fetch detailed quiz info and questions. |
 | `PUT` | `/api/v1/quizzes/:id` | Creator, Admin | Update quiz title, description, timeLimit, passingScore. |
+| `POST` | `/api/v1/quizzes/:quizId/clone` | Instructor, Admin | 1-Click clone quiz and duplicate all associated questions. |
 | `DELETE` | `/api/v1/quizzes/:id` | Creator, Admin | Delete a quiz and dependent questions. |
 
 ---

@@ -6,6 +6,7 @@ import {
   updateQuiz,
   changeQuizStatus,
   toggleQuizActiveStatus,
+  cloneQuiz,
   deleteQuiz,
   getQuizzes,
   getAvailableQuizzesForStudents,
@@ -18,6 +19,7 @@ import { validateObjectId } from "../middleware/validObjectId.middleware.js";
 const router = express.Router();
 
 router.post("/", authMiddleware, authorizeRoles("instructor"), createQuiz);
+router.post("/:quizId/clone", validateObjectId("quizId"), authMiddleware, authorizeRoles("instructor", "admin"), cloneQuiz);
 router.get("/", authMiddleware, getQuizzes);
 router.get("/instructor", authMiddleware,authorizeRoles("instructor"), getQuizzesByInstructor);
 router.get("/student", authMiddleware, getAvailableQuizzesForStudents);

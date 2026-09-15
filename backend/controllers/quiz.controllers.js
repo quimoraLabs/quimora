@@ -392,3 +392,65 @@ export const toggleQuizActiveStatus = async (req, res, next) => {
     next(error);
   }
 };
+
+// 1-Click Quiz Clone / Duplication
+export const cloneQuiz = async (req, res, next) => {
+  try {
+    const quizId = req.params.quizId || req.params.id;
+    const userId = req.auth.userId.toString();
+
+    // 1. Assert source quiz exists
+    const sourceQuiz = await assertQuizExists(quizId);
+
+    // 2. Authorization check (creator or admin)
+    if (sourceQuiz.createdBy.toString() !== userId && req.auth.role !== "admin") {
+      return res.status(403).json({ success: false, message: "Unauthorized to clone this quiz" });
+    }
+
+    // 3. Create cloned quiz title
+    let clonedTitle = `${sourceQuiz.title} (Copy)`;
+    let isDuplicate = await isDuplicateQuiz(clonedTitle, userId);
+    if (isDuplicate) {
+      clonedTitle = `${sourceQuiz.title} (Copy ${Date.now().toString().slice(-4)})`;
+    }
+
+    // 4. Save new quiz document
+    const clonedQuiz = new Quiz({
+      title: clonedTitle,
+      description: sourceQuiz.description,
+      timeLimit: sourceQuiz.timeLimit,
+      passingScore: sourceQuiz.passingScore,
+      maxAttempts: sourceQuiz.maxAttempts,
+      status: "draft",
+      isActive: true,
+      createdBy: userId,
+      tags: sourceQuiz.tags || [],
+    });
+    await clonedQuiz.save();
+
+    // 5. Duplicate all associated questions
+    const sourceQuestions = await Question.find({ quizId: sourceQuiz._id }).lean();
+    if (sourceQuestions.length > 0) {
+      const clonedQuestions = sourceQuestions.map((q) => {
+        const { _id, createdAt, updatedAt, quizId, ...rest } = q;
+        return {
+          ...rest,
+          quizId: clonedQuiz._id,
+        };
+      });
+      await Question.insertMany(clonedQuestions);
+    }
+
+    res.status(201).json({
+      success: true,
+      message: "Quiz duplicated successfully",
+      data: {
+        quiz: clonedQuiz,
+        clonedQuestionsCount: sourceQuestions.length,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
