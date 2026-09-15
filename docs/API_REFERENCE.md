@@ -6,6 +6,24 @@
 
 ---
 
+## 0. Health & System Monitoring (`/health` & `/api/v1/health`)
+
+### `GET /health` & `GET /api/v1/health`
+* **Access:** Public (Load Balancer & Monitoring Agents)
+* **Success Response (200 OK):**
+  ```json
+  {
+    "status": "ok",
+    "message": "Quimora Server is healthy and operational",
+    "uptimeSeconds": 1420,
+    "timestamp": "2026-09-15T19:54:00.000Z",
+    "environment": "development",
+    "redis": "connected"
+  }
+  ```
+
+---
+
 ## 1. Authentication Endpoints (`/api/v1/auth`)
 
 ### `POST /api/v1/auth/register`
