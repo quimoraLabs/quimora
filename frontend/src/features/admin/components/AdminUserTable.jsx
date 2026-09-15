@@ -20,6 +20,7 @@ const AdminUserTable = ({
   users = [],
   loading = false,
   onToggleActive,
+  onRoleChange,
   onDelete,
   onViewDetails,
   searchPlaceholder = "Search users by name, email, or username..."
@@ -175,11 +176,23 @@ const AdminUserTable = ({
                     {user.email}
                   </td>
 
-                  {/* Role Badge */}
+                  {/* Role */}
                   <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getRoleBadgeClass(user.role)}`}>
-                      {user.role || 'user'}
-                    </span>
+                    {isSelf ? (
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getRoleBadgeClass(user.role)}`}>
+                        {user.role || 'user'}
+                      </span>
+                    ) : (
+                      <select
+                        value={user.role || 'user'}
+                        onChange={(e) => onRoleChange?.(user._id || user.id, e.target.value)}
+                        className={`px-2 py-1 rounded-lg text-xs font-semibold cursor-pointer border border-main bg-surface text-main focus:outline-none focus:ring-2 focus:ring-brand-mid/50 transition-all ${getRoleBadgeClass(user.role)}`}
+                      >
+                        <option value="user">Student</option>
+                        <option value="instructor">Instructor</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    )}
                   </td>
 
                   {/* Status Badge + Toggle */}

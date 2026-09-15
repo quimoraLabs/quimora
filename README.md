@@ -24,6 +24,7 @@
 
 ### 📝 Quiz & Grading Engine
 - **Flexible Scoring System**: Configurable passing percentage and question-level marks.
+- **Server-Validated Timed Engine (V2 P0)**: Real-time server-side timestamp validation (`remainingTimeSeconds`), 15-second grace buffer, and student pre-quiz eligibility checks.
 - **Negative Marking Penalty**: Granular negative marking per quiz attempt submission.
 - **Real-Time Attempt Evaluation**: Automated calculation of score, total marks, percentage, passed/failed status, and time taken.
 - **Bulk Question Management**: API endpoints for single or bulk question creation.

@@ -256,3 +256,71 @@ export const upadteAvatar = async (req, res, next) => {
     next(error);
   }
 };
+
+/**
+ * @desc    Change user role (Role Elevation / Demotion)
+ * @route   PATCH /api/v1/users/:userId/role
+ * @access  Private (Admin only)
+ * @param   {string} userId - User ID from URL params
+ * @body    { role } - Target role ('user' | 'instructor' | 'admin')
+ * @throws  400 - Invalid role / Cannot demote own account / Cannot demote last admin
+ */
+export const changeUserRole = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const { role } = req.body;
+    const currentUserId = req.auth?.userId?.toString();
+
+    if (!role || !["user", "instructor", "admin"].includes(role.toLowerCase())) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid role specified. Allowed roles: 'user', 'instructor', 'admin'",
+      });
+    }
+
+    const targetRole = role.toLowerCase();
+
+    // SELF-DEMOTION PROTECTION: Admin cannot demote own account
+    if (userId === currentUserId && targetRole !== "admin") {
+      return res.status(400).json({
+        success: false,
+        message: "You cannot demote your own admin account",
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // LAST-ADMIN PROTECTION: Cannot demote the last admin
+    if (user.role === "admin" && targetRole !== "admin") {
+      const adminCount = await User.countDocuments({ role: "admin" });
+      if (adminCount <= 1) {
+        return res.status(400).json({
+          success: false,
+          message: "Cannot demote the last admin in the system",
+        });
+      }
+    }
+
+    user.role = targetRole;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: `User role changed to ${targetRole} successfully`,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};

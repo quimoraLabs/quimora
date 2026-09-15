@@ -55,6 +55,26 @@ const useUserStore = create((set) => ({
       set({ loading: false });
     }
   },
+
+  uploadAvatar: async (id, file) => {
+    set({ loading: true });
+    try {
+      const formData = new FormData();
+      formData.append("avatar", file);
+
+      const response = await axiosClient.patch(`/users/${id}/avatar`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      toast.success("Avatar updated successfully!");
+      return response.data;
+    } catch (error) {
+      console.error("Error uploading avatar:", error);
+      toast.error(error.response?.data?.message || "Failed to upload avatar.");
+      throw error;
+    } finally {
+      set({ loading: false });
+    }
+  },
 }));
 
 export default useUserStore;

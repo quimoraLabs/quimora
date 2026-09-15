@@ -261,9 +261,20 @@ export default function TakeExamPage() {
             </div>
 
             {/* Question Text */}
-            <h2 className="text-xl md:text-2xl font-bold text-main leading-relaxed mb-8">
+            <h2 className="text-xl md:text-2xl font-bold text-main leading-relaxed mb-6">
               {currentQuestion.questionText}
             </h2>
+
+            {/* Question Diagram / Image Attachment */}
+            {currentQuestion.image?.url && (
+              <div className="mb-6 rounded-2xl overflow-hidden border border-main max-h-64 flex justify-center bg-elevated/50 p-2">
+                <img
+                  src={currentQuestion.image.url}
+                  alt="Question Diagram"
+                  className="max-h-60 object-contain rounded-xl"
+                />
+              </div>
+            )}
 
             {/* Options List with KBC-Style Selection Animation */}
             <div className="space-y-3.5">

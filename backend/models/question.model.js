@@ -54,6 +54,11 @@ const questionSchema = new mongoose.Schema(
       enum: ["easy", "medium", "hard"],
       default: "easy",
     },
+
+    image: {
+      url: { type: String, default: null },
+      fileId: { type: String, default: null },
+    },
   },
   {
     timestamps: true,

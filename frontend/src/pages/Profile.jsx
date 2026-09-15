@@ -77,6 +77,7 @@ export default function ProfileCard() {
   }, [getProfile]);
 
   const updateUser = useUserStore((state) => state.updateUser);
+  const uploadAvatar = useUserStore((state) => state.uploadAvatar);
   const [editingField, setEditingField] = useState(null);
 
   const [formData, setFormData] = useState({
@@ -87,6 +88,14 @@ export default function ProfileCard() {
 
   const handleEdit = (field) => setEditingField(field);
   const handleCancel = () => setEditingField(null);
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (file && user) {
+      await uploadAvatar(user._id || user.id, file);
+      await getProfile();
+    }
+  };
 
   const handleSave = async (field) => {
     console.log(`Updating ${field} to:`, formData[field]);
@@ -118,13 +127,19 @@ export default function ProfileCard() {
             <div className="absolute -inset-4 bg-blue-600/20 rounded-[3rem] blur-2xl animate-pulse" />
             <div className="relative dark:bg-[#080808] rounded-[3rem] border  border-slate-300 dark:border-white/10 shadow-2xl">
               <img
-                src={user.avatar.url}
+                src={user?.avatar?.url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300"}
                 className="w-44 h-44 rounded-[2.5rem] object-cover  dark:bg-neutral-900"
                 alt="Avatar"
               />
-              <button className="absolute -bottom-2 -right-2 p-4 bg-blue-600 rounded-3xl shadow-xl shadow-blue-600/40 hover:scale-110 active:scale-95 transition-all">
+              <label className="absolute -bottom-2 -right-2 p-4 bg-blue-600 rounded-3xl shadow-xl shadow-blue-600/40 hover:scale-110 active:scale-95 transition-all cursor-pointer">
                 <Camera size={22} className="text-white" />
-              </button>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                  className="hidden"
+                />
+              </label>
             </div>
           </div>
 

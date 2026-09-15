@@ -83,26 +83,28 @@
   - Student Answer Sheet Inspection modal with question-by-question response review.
   - Complete Student Roster & Analytics page (`/instructor/students`) with search, filter, average scores, attempt counts, and **"Export Roster"** CSV download.
   - Visual Graphical Analytics on Instructor Dashboard (`InstructorAnalyticsChart.jsx`) with 7-Day Submissions Area Chart and Student Score Distribution Bar Chart.
+- [x] **Server-Validated Timed Quiz Engine (V2 P0)**:
+  - Real-time client & server timestamp validation (`startedAt`, `remainingTimeSeconds`).
+  - 15-second server grace buffer (`handleExpiredAttempt`) before auto-abandoning expired attempts.
+  - Student pre-quiz eligibility check endpoint (`GET /api/v1/student/quiz/:quizId/eligibility`).
+  - 28 automated integration test cases passing cleanly in Vitest (`npm run test`).
+- [x] **Admin Control Panel (V2 P1)**:
+  - Full system metrics (total users, active quizzes, platform pass rates).
+  - User role elevation (`user` ↔ `instructor` ↔ `admin`) with last-admin safeguards and account suspension toggle.
+- [x] **Media & Image Uploads (V2 P1)**:
+  - Question diagram attachments & User avatar uploads via ImageKit SDK (`/quimora/questions` & `/quimora/profile`).
+- [x] **Analytics & Visualizations (V2 P2)**:
+  - Recharts integration in Instructor and Student dashboards for score distributions and historical trend lines.
+- [x] **UI Polish & Mobile Responsiveness (V2 P2)**:
+  - Responsive quiz-taking interface for mobile devices with diagram image attachments.
+  - Polished dark/light theme consistency across all sub-dashboards.
 
 ---
 
-### ⚠️ What is In Progress / Partially Built (Adha Adhura Kissa)
-- [ ] **Quiz Engine & Edge-Case Handling**:
-  - Real-time client-side timer needs server-side timestamp validation (prevents client clock tampering).
-  - Auto-submission when the timer expires.
-  - Question navigation state persistence (local storage sync so accidental reload doesn't wipe progress).
-  - Prevention of multiple active attempts on single-attempt quizzes.
-- [ ] **Admin Control Panel**:
-  - Full system metrics (total users, active quizzes, platform pass rates).
-  - User management CRUD (ban, promote, suspend accounts).
-  - Global content moderation queue.
-- [ ] **Media & Image Uploads**:
-  - Question/avatar uploads via ImageKit integrated smoothly in UI forms.
-- [ ] **Analytics & Visualizations**:
-  - Recharts integration in Instructor and Student dashboards for score distributions and historical trend lines.
-- [ ] **UI Polish & Mobile Responsiveness**:
-  - Responsive quiz-taking interface for mobile devices.
-  - Polished dark/light theme consistency across all sub-dashboards.
+### ⚠️ What is In Progress / Priority Scope (V3 Next Milestone)
+- [ ] **Question Bank Library**: Tagged shared question pool reusable across multiple quizzes.
+- [ ] **Adaptive Difficulty Engine**: Real-time adjustment of question difficulty based on student accuracy.
+- [ ] **Automated Certificate Generation**: PDF completion certificates issued upon achieving passing score.
 
 ---
 
@@ -227,6 +229,12 @@ graph LR
 ---
 
 ## 5. 🌿 GIT WORKFLOW & CODING DISCIPLINE
+
+### ⛔ STRICT PROHIBITION FOR AI ASSISTANTS (NO AUTOMATED GIT PUSH)
+> 🚨 **CRITICAL MANDATE:**
+> **The AI assistant MUST NEVER execute `git push` to remote repositories.**
+> AI is permitted to stage (`git add`) and commit (`git commit`) locally ONLY when explicitly requested.
+> Pushing code to remote (`git push origin <branch>`) MUST ALWAYS be performed manually by the human developer/user.
 
 ### Branching Strategy
 - `main` : Production-ready code only.

@@ -1,8 +1,9 @@
 import express from 'express';
 
 import authMiddleware, { authorizeRoles } from '../middleware/auth.middleware.js';
-import { createQuestion, deleteMultipleQuestions, deleteQuestion, getQuizQuestions, getQuestionById, updateQuestion, createBulkQuestions } from '../controllers/question.controllers.js';
+import { createQuestion, deleteMultipleQuestions, deleteQuestion, getQuizQuestions, getQuestionById, updateQuestion, createBulkQuestions, uploadQuestionImage } from '../controllers/question.controllers.js';
 import { validateObjectId } from '../middleware/validObjectId.middleware.js';
+import { questionImageUpload } from '../middleware/multer.middleware.js';
 
 const router = express.Router({ mergeParams: true });
 
@@ -12,6 +13,7 @@ router.get("/", authMiddleware, authorizeRoles("instructor", "admin"), getQuizQu
 router.delete('/', authMiddleware, authorizeRoles("instructor"), deleteMultipleQuestions);
 router.get('/:questionId', validateObjectId('questionId'), authMiddleware, getQuestionById);
 router.patch('/:questionId', validateObjectId('questionId'), authMiddleware, authorizeRoles("instructor"), updateQuestion);
+router.patch('/:questionId/image', validateObjectId('questionId'), authMiddleware, authorizeRoles("instructor", "admin"), questionImageUpload, uploadQuestionImage);
 router.delete('/:questionId', validateObjectId('questionId'), authMiddleware, authorizeRoles("instructor"), deleteQuestion);
 
 // router.delete('/:id', authMiddleware, deleteQuestion);

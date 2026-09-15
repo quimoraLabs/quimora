@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Quiz from "../models/quiz.model.js";
 // import User from "../models/user.model.js";
 import { isDuplicateQuestion } from "../utils/duplicate.utils.js";
+import imagekit, { deleteMedia } from "../utils/imagekit.utils.js";
 
 import {
   assertQuestionExists,
@@ -298,6 +299,53 @@ export const deleteMultipleQuestions = async (req, res, next) => {
       message: "Questions deleted successfully",
       deletedQuestionIds: idsToDelete.map((id) => id.toString()),
       ...(invalidIds.length > 0 && { invalidIds }),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Upload image diagram for a question using ImageKit
+ */
+export const uploadQuestionImage = async (req, res, next) => {
+  try {
+    const { questionId } = req.params;
+    const userId = req.auth?.userId;
+
+    const question = await assertQuestionExists(questionId);
+    const quiz = await assertQuizExists(question.quizId);
+
+    if (quiz.createdBy.toString() !== userId.toString() && req.auth?.role !== "admin") {
+      return res.status(403).json({ success: false, message: "Unauthorized access path." });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "Please upload an image file" });
+    }
+
+    if (question.image && question.image.fileId) {
+      await deleteMedia(question.image.fileId);
+    }
+
+    const uploadResponse = await imagekit.upload({
+      file: req.file.buffer,
+      fileName: `question-${question._id}`,
+      folder: "/quimora/questions",
+    });
+
+    question.image = {
+      url: uploadResponse.url,
+      fileId: uploadResponse.fileId,
+    };
+
+    await question.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Question diagram image uploaded successfully",
+      image: question.image,
+      question,
     });
   } catch (error) {
     next(error);

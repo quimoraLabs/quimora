@@ -15,4 +15,10 @@ export const singleUpload = multer({
   storage, 
   fileFilter,
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
-}).single("avatar"); // This is the key the frontend will send.
+}).single("avatar"); // This is the key the frontend will send for avatar.
+
+export const questionImageUpload = multer({
+  storage,
+  fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+}).single("image"); // This is the key for question image diagrams.

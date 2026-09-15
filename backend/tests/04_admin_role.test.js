@@ -60,4 +60,14 @@ describe('👑 Module 4: Admin Role, Dashboard & User Management APIs', () => {
     expect(res.statusCode).toBe(403);
     expect(res.body.message).toContain('Role not allowed');
   });
+
+  it('6. PATCH /api/v1/users/:userId/role - admin changes user role successfully', async () => {
+    const res = await request(app)
+      .patch(`/api/v1/users/${tempUserId}/role`)
+      .set('Authorization', `Bearer ${authData.admin.token}`)
+      .send({ role: 'instructor' });
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toHaveProperty('success', true);
+    expect(res.body.user).toHaveProperty('role', 'instructor');
+  });
 });

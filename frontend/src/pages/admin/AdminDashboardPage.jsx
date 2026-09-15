@@ -9,7 +9,7 @@ import { ConfirmationModal } from '../../components/common/ConfirmModal';
 import NewUsersChart from '../../features/admin/components/NewUserChart';
 
 const AdminDashboardPage = () => {
-  const { stats, users, loading, error, clearError, fetchStats, fetchUsers, toggleUserActive, deleteUser } = useAdminStore();
+  const { stats, users, loading, error, clearError, fetchStats, fetchUsers, toggleUserActive, changeUserRole, deleteUser } = useAdminStore();
   const [selectedUser, setSelectedUser] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -174,6 +174,7 @@ const AdminDashboardPage = () => {
         users={users || []}
         loading={loading}
         onToggleActive={toggleUserActive}
+        onRoleChange={changeUserRole}
         onDelete={handleDeleteClick}
         onViewDetails={handleViewUser}
       />

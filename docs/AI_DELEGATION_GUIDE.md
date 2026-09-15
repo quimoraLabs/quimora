@@ -46,8 +46,10 @@ A task is only **Done** when all affected documentation layers in `docs/` are up
 * **`API_REFERENCE.md`**: Document new or modified endpoints.
 * **`DECISIONS.md`**: Record any new business logic or technical decisions.
 
-### Step 5: Conventional Commit
+### Step 5: Conventional Commit (Local Only)
 Use standardized commit messages (`feat:`, `fix:`, `docs:`).
+
+> ⛔ **NO AUTOMATED GIT PUSH:** The AI assistant is strictly forbidden from executing `git push`. Local commit staging is allowed when requested, but pushing to remote MUST always be done manually by the user.
 
 ---
 

@@ -77,4 +77,11 @@ describe('👨‍🏫 Module 3: Instructor Role, Quiz CRUD & Groq AI Generator A
     expect(res.statusCode).toBe(403);
     expect(res.body.message).toContain('Role not allowed');
   });
+
+  it('8. PATCH /api/v1/quizzes/:quizId/questions/:questionId/image - validates image file upload payload', async () => {
+    const res = await request(app)
+      .patch('/api/v1/quizzes/65a123456789012345678901/questions/65a123456789012345678902/image')
+      .set('Authorization', `Bearer ${authData.instructor.token}`);
+    expect([400, 404]).toContain(res.statusCode);
+  });
 });

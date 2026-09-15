@@ -74,4 +74,23 @@ export const useAdminStore = create((set, get) => ({
       set({ error: error.response?.data?.message || 'Failed to delete user' });
     }
   },
+
+  changeUserRole: async (userId, newRole) => {
+    try {
+      const response = await axiosClient.patch(`/users/${userId}/role`, { role: newRole });
+      set((state) => ({
+        users: state.users.map((user) =>
+          (user._id === userId || user.id === userId)
+            ? { ...user, role: newRole }
+            : user
+        )
+      }));
+      get().fetchStats();
+      return response.data;
+    } catch (error) {
+      const msg = error.response?.data?.message || 'Failed to change user role';
+      set({ error: msg });
+      throw new Error(msg);
+    }
+  },
 }));

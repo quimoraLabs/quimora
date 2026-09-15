@@ -51,11 +51,11 @@
 
 ---
 
-## 3. Student Attempt Engine (`/api/v1/attempts`)
+## 3. Student Attempt Engine (`/api/v1/student`)
 
-### `GET /api/v1/attempts/check-eligibility`
+### `GET /api/v1/student/quiz/:quizId/eligibility`
 * **Access:** Student (`user`)
-* **Query Params:** `?quizId=65a123...`
+* **URL Params:** `quizId` (MongoDB ObjectId)
 * **Success Response (200 OK):**
   ```json
   {
@@ -70,7 +70,7 @@
   }
   ```
 
-### `POST /api/v1/attempts/start`
+### `POST /api/v1/student/quiz/start`
 * **Access:** Student (`user`)
 * **Request Body:** `{ "quizId": "..." }`
 * **Success Response (200 OK):**
@@ -93,7 +93,20 @@
   }
   ```
 
-### `POST /api/v1/attempts/submit`
+### `PATCH /api/v1/student/quiz/save-draft`
+* **Access:** Student (`user`)
+* **Request Body:**
+  ```json
+  {
+    "attemptId": "65b...",
+    "userAnswers": [
+      { "questionId": "...", "selectedOption": 1 }
+    ]
+  }
+  ```
+* **Success Response (200 OK):** Draft state saved.
+
+### `POST /api/v1/student/quiz/submit`
 * **Access:** Student (`user`)
 * **Request Body:**
   ```json
@@ -138,3 +151,5 @@
 | `GET` | `/api/v1/admin/stats` | Admin | Platform-wide stats (total users, quizzes, attempts). |
 | `GET` | `/api/v1/users` | Admin | List registered users with role filter & pagination. |
 | `PATCH` | `/api/v1/users/:userId/active` | Admin | Toggle user active/suspended state. |
+| `PATCH` | `/api/v1/users/:userId/role` | Admin | Role elevation (`user` ↔ `instructor` ↔ `admin`) with last-admin protection. |
+

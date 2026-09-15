@@ -26,27 +26,27 @@
 
 ---
 
-## 🟡 V2 Current Development (In Progress & Priority Scope)
+## 🟡 V2 Shipped Scope (Completed & Verified)
 
 ### P0 — Critical & Core Experience
 - [x] **Automated Vitest Test Runner**: Wired in `backend/package.json` (`npm run test`).
-- [ ] **Server-Validated Timed Quiz Engine**:
+- [x] **Server-Validated Timed Quiz Engine**:
   - [x] Backend session `startedAt` and duration calculation baseline (`createAttemptSession`).
-  - [ ] Exact server `remainingTimeSeconds` returned in session initialization payload.
-  - [ ] 15-second server grace buffer enforcement before marking session as `'abandoned'`.
-  - [ ] Student pre-quiz eligibility check endpoint (`GET /api/v1/attempts/check-eligibility`).
-  - [ ] Automated Vitest coverage in `backend/tests/02_student_role.test.js`.
+  - [x] Exact server `remainingTimeSeconds` returned in session initialization payload.
+  - [x] 15-second server grace buffer enforcement before marking session as `'abandoned'`.
+  - [x] Student pre-quiz eligibility check endpoint (`GET /api/v1/student/quiz/:quizId/eligibility`).
+  - [x] Automated Vitest coverage in `backend/tests/02_student_role.test.js`.
 
 ### P1 — Essential Enhancements
-- [ ] **Admin Control Suite**:
-  - [ ] System metrics summary endpoint & UI panel (total users, active quizzes, platform pass rates).
-  - [ ] User role elevation (`user` ↔ `instructor`) and account suspension toggle.
-- [ ] **Media & Image Uploads**:
-  - [ ] Question image attachments & User Avatar upload UI powered by ImageKit SDK.
+- [x] **Admin Control Suite**:
+  - [x] System metrics summary endpoint & UI panel (total users, active quizzes, platform pass rates).
+  - [x] User role elevation (`user` ↔ `instructor`) and account suspension toggle.
+- [x] **Media & Image Uploads**:
+  - [x] Question image attachments & User Avatar upload UI powered by ImageKit SDK.
 
 ### P2 — UX Polish
-- [ ] Mobile-responsive quiz taking interface optimization.
-- [ ] Dynamic dark/light theme consistency across instructor and student views.
+- [x] Mobile-responsive quiz taking interface optimization (`TakeExamPage.jsx` diagram rendering & responsive layout).
+- [x] Dynamic dark/light theme consistency across instructor and student views.
 
 ---
 
