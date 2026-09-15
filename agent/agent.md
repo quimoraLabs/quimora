@@ -100,8 +100,9 @@
   - Endpoint `POST /api/v1/quizzes/:quizId/clone` duplicating quiz schema + all associated question documents with `(Copy)` naming.
 - [x] **Security Hardening**:
   - `helmet()` middleware mounted on Express `server.js` securing HTTP headers.
-- [x] **Docker & CI/CD Pipeline**:
-  - Production `Dockerfile`, `docker-compose.yml`, and GitHub Actions workflow (`.github/workflows/ci.yml`).
+- [x] **Docker & Redis Caching Layer**:
+  - `redis:7-alpine` Docker Compose container service + `ioredis` backend integration (`redis.js`) with automatic DB fallback.
+  - Active quiz list & leaderboard caching enabled.
 - [x] **Automated Test Suite**:
   - 29 Vitest integration test cases across 4 modules (`01_authentication`, `02_student_role`, `03_instructor_role`, `04_admin_role`).
   - Frontend Vitest suite executed cleanly (`npm run test`).
@@ -117,7 +118,6 @@
 
 ### ❌ What is Genuinely Pending Infrastructure & Polish
 - [ ] **Database Index Optimization**: Full audit of Mongoose schema indexes for high-concurrency read queries.
-- [ ] **Redis Caching**: Redis layer for leaderboard queries and read-heavy quiz payloads.
 
 ---
 

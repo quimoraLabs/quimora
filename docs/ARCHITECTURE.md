@@ -22,14 +22,14 @@ Quimora follows a **decoupled monorepo design** with an Express.js REST API back
                                   ┌────────────────────────┐
                                   │   EXPRESS 5.x SERVER   │
                                   │   Node.js ES Modules   │
-                                  └─────┬──────────────┬───┘
-                                        │              │
-                   ┌────────────────────┘              └────────────────────┐
-                   ▼                                                        ▼
-         ┌───────────────────┐                                    ┌───────────────────┐
-         │ MONGODB + MONGOOSE│                                    │  GROQ AI ENGINE   │
-         │ Primary Database  │                                    │ Llama 3 / Mixtral │
-         └───────────────────┘                                    └───────────────────┘
+                                  └─┬──────────┬─────────┬─┘
+                                    │          │         │
+              ┌─────────────────────┘          │         └─────────────────────┐
+              ▼                                ▼                               ▼
+    ┌───────────────────┐            ┌───────────────────┐           ┌───────────────────┐
+    │ MONGODB + MONGOOSE│            │ REDIS 7 (DOCKER)  │           │  GROQ AI ENGINE   │
+    │ Primary Database  │            │ In-Memory Cache   │           │ Llama 3 / Mixtral │
+    └───────────────────┘            └───────────────────┘           └───────────────────┘
 ```
 
 ---
@@ -40,10 +40,11 @@ Quimora follows a **decoupled monorepo design** with an Express.js REST API back
 * **Runtime**: Node.js (ES Modules `"type": "module"`)
 * **Framework**: Express.js 5.x
 * **Database**: MongoDB with Mongoose 9.x ODM
+* **In-Memory Cache**: Redis 7 Container (Docker Compose) + `ioredis` with graceful DB fallback
 * **Authentication**: JSON Web Tokens (JWT) + Bcrypt password hashing
 * **Email Service**: Nodemailer (OTP Mailer for password recovery)
 * **AI Integration**: Groq SDK (`groq-sdk`) for fast LLM question generation
-* **Security & Middleware**: Morgan logger, Express Rate Limit, Cors, Bcryptjs
+* **Security & Middleware**: `helmet()` security headers, Morgan logger, Express Rate Limit, Cors
 
 ### Frontend Ecosystem
 * **Framework**: React 19 + Vite 8

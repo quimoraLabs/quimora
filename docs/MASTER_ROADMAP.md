@@ -43,10 +43,13 @@
   - [x] User role elevation (`user` ↔ `instructor`) and account suspension toggle.
 - [x] **Media & Image Uploads**:
   - [x] Question image attachments & User Avatar upload UI powered by ImageKit SDK.
+- [x] **Docker & Redis In-Memory Caching**:
+  - [x] Redis 7 container service in `docker-compose.yml` + `ioredis` backend integration (`redis.js`) with automatic DB fallback.
 
 ### P2 — UX Polish
 - [x] Mobile-responsive quiz taking interface optimization (`TakeExamPage.jsx` diagram rendering & responsive layout).
 - [x] Dynamic dark/light theme consistency across instructor and student views.
+- [x] 1-Click Quiz Clone / Duplication (`POST /api/v1/quizzes/:quizId/clone`).
 
 ---
 

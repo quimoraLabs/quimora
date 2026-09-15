@@ -3,6 +3,7 @@ import User from "../models/user.model.js";
 import Question from "../models/question.model.js";
 import QuizAttempt from "../models/quizAttempt.model.js";
 import mongoose from "mongoose";
+import { redisCache } from "../config/redis.js";
 import {
   assertQuizExists,
   assertUserExists,
@@ -17,6 +18,12 @@ export const getAvailableQuizzesForStudents = async (req, res, next) => {
     let { page = 1, limit = 10 } = req.query;
     page = parseInt(page, 10);
     limit = parseInt(limit, 10);
+
+    const cacheKey = `quizzes:student:p${page}:l${limit}`;
+    const cachedData = await redisCache.get(cacheKey);
+    if (cachedData) {
+      return res.status(200).json(cachedData);
+    }
 
     const query = {
       status: "published",
@@ -34,7 +41,7 @@ export const getAvailableQuizzesForStudents = async (req, res, next) => {
       .skip((page - 1) * limit)
       .limit(limit);
 
-    res.status(200).json({
+    const responsePayload = {
       success: true,
       pagination: {
         totalItems,
@@ -43,7 +50,11 @@ export const getAvailableQuizzesForStudents = async (req, res, next) => {
         limit,
       },
       data: quizzes,
-    });
+    };
+
+    await redisCache.set(cacheKey, responsePayload, 180);
+
+    res.status(200).json(responsePayload);
   } catch (error) {
     next(error);
   }

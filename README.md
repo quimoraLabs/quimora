@@ -98,10 +98,12 @@ quimora/
 | | Lucide React & Motion | Modern UI icons & smooth animation engine |
 | **Backend** | Node.js & Express 5 | Asynchronous JavaScript runtime & web framework |
 | | MongoDB & Mongoose | NoSQL document database & ODM |
+| | Redis 7 & ioredis | Fast in-memory caching with DB fallback |
 | | JWT & Bcrypt | Authentication & hashing |
 | | ImageKit | Cloud image asset management |
 | | Nodemailer | Transactional OTP email engine |
-| **Dev Tools** | Nodemon | Server hot-reloading |
+| **Dev Tools** | Docker & Docker Compose | Containerized application stack & Redis service |
+| | Nodemon | Server hot-reloading |
 | | Concurrently | Single command multi-process runner |
 
 ---
