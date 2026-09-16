@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import Quiz from "../models/quiz.model.js";
 // import User from "../models/user.model.js";
 import { isDuplicateQuestion } from "../utils/duplicate.utils.js";
-import imagekit, { deleteMedia } from "../utils/imagekit.utils.js";
+import imagekit, { deleteMedia, uploadMedia } from "../utils/imagekit.utils.js";
 
 import {
   assertQuestionExists,
@@ -328,10 +328,11 @@ export const uploadQuestionImage = async (req, res, next) => {
       await deleteMedia(question.image.fileId);
     }
 
-    const uploadResponse = await imagekit.upload({
-      file: req.file.buffer,
+    const uploadResponse = await uploadMedia({
+      fileBuffer: req.file.buffer,
       fileName: `question-${question._id}`,
       folder: "/quimora/questions",
+      mimetype: req.file.mimetype,
     });
 
     question.image = {

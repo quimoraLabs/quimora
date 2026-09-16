@@ -2,7 +2,7 @@ import User from "../models/user.model.js";
 import Quiz from "../models/quiz.model.js";
 import Question from "../models/question.model.js";
 import QuizAttempt from "../models/quizAttempt.model.js";
-import imagekit, { deleteMedia } from "../utils/imagekit.utils.js";
+import imagekit, { deleteMedia, uploadMedia } from "../utils/imagekit.utils.js";
 import { assertUserExists as checkUser } from "../utils/assertion.utils.js";
 
 /**
@@ -233,10 +233,11 @@ export const upadteAvatar = async (req, res, next) => {
       await deleteMedia(user.avatar.fileId);
     }
 
-    const uploadResponse = await imagekit.upload({
-      file: req.file.buffer,
+    const uploadResponse = await uploadMedia({
+      fileBuffer: req.file.buffer,
       fileName: `avatar-${user._id}`,
       folder: "/quimora/profile",
+      mimetype: req.file.mimetype,
     });
 
     user.avatar = {

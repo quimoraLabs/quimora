@@ -135,7 +135,11 @@ export const forgetPasswordRequest = async (req, res, next) => {
       purpose: "reset",
     };
 
-    await sendOTPEmail(email, otpCode);
+    try {
+      await sendOTPEmail(email, otpCode);
+    } catch (emailError) {
+      console.warn("Email delivery failed:", emailError.message);
+    }
 
     await user.save();
     res

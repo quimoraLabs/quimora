@@ -88,13 +88,27 @@ const transporter = nodemailer.createTransport({
 });
 
 export const sendOTPEmail = async (email, otpCode) => {
-  const mailOptions = {
-    from: config.emailUser,
-    to: email,
-    subject: "Your Password Reset OTP",
-     html: generateOTPTemplate(otpCode),
-  };
-  await transporter.sendMail(mailOptions);
+  if (config.nodeENV === 'test') {
+    console.log(`[TEST] OTP sent to ${email}: ${otpCode}`);
+    return;
+  }
+
+  if (!config.emailUser || !config.emailPass) {
+    console.warn('Email credentials not configured');
+    return;
+  }
+
+  try {
+    const mailOptions = {
+      from: config.emailUser,
+      to: email,
+      subject: "Your Password Reset OTP",
+      html: generateOTPTemplate(otpCode),
+    };
+    await transporter.sendMail(mailOptions);
+  } catch (err) {
+    console.error('Failed to send OTP email:', err.message);
+  }
 };
 
 

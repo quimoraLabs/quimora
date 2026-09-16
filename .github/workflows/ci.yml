@@ -26,13 +26,15 @@ jobs:
           node-version: 20
           cache: 'npm'
 
-      - name: Install Root & Workspace Dependencies
+      - name: Install Dependencies
         run: npm run install:all
 
-      - name: Run Backend Integration Test Suite
+      - name: Run Backend Integration Tests
         env:
+          NODE_ENV: test
           MONGO_URI: mongodb://localhost:27017/quimora_test
-          JWT_SECRET: ci_test_secret_key
+          MONGO_URI_TEST: mongodb://localhost:27017/quimora_test
+          JWT_SECRET: ci_test_secret_key_for_quimora_application_12345
           IMAGEKIT_PUBLIC_KEY: dummy_public_key
           IMAGEKIT_PRIVATE_KEY: dummy_private_key
           IMAGEKIT_URL_ENDPOINT: https://ik.imagekit.io/dummy
@@ -40,3 +42,4 @@ jobs:
 
       - name: Verify Frontend Production Build
         run: npm --prefix frontend run build
+
