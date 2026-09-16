@@ -6,5 +6,6 @@ export default defineConfig({
     setupFiles: ['./tests/setup.js'],
     reporters: ['verbose'],
     testTimeout: 10000,
+    fileParallelism: false,
   },
 });

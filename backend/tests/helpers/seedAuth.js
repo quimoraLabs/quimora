@@ -3,45 +3,69 @@ import config from '../../config/config.js';
 import User from '../../models/user.model.js';
 
 export const createTestUsersAndTokens = async () => {
-  const timestamp = Date.now() + Math.floor(Math.random() * 10000);
+  const timestamp = Date.now() + Math.floor(Math.random() * 100000);
 
   // 1. Create or Find Student
   let student = await User.findOne({ email: 'student@test.com' });
   if (!student) {
-    student = await User.create({
-      name: 'Test Student',
-      email: 'student@test.com',
-      username: `student_${timestamp}`,
-      password: 'password123',
-      role: 'user',
-      active: true,
-    });
+    try {
+      student = await User.create({
+        name: 'Test Student',
+        email: 'student@test.com',
+        username: `student_${timestamp}`,
+        password: 'password123',
+        role: 'user',
+        active: true,
+      });
+    } catch (err) {
+      if (err.code === 11000) {
+        student = await User.findOne({ email: 'student@test.com' });
+      } else {
+        throw err;
+      }
+    }
   }
 
   // 2. Create or Find Instructor
   let instructor = await User.findOne({ email: 'instructor@test.com' });
   if (!instructor) {
-    instructor = await User.create({
-      name: 'Test Instructor',
-      email: 'instructor@test.com',
-      username: `instructor_${timestamp}`,
-      password: 'password123',
-      role: 'instructor',
-      active: true,
-    });
+    try {
+      instructor = await User.create({
+        name: 'Test Instructor',
+        email: 'instructor@test.com',
+        username: `instructor_${timestamp}`,
+        password: 'password123',
+        role: 'instructor',
+        active: true,
+      });
+    } catch (err) {
+      if (err.code === 11000) {
+        instructor = await User.findOne({ email: 'instructor@test.com' });
+      } else {
+        throw err;
+      }
+    }
   }
 
   // 3. Create or Find Admin
   let admin = await User.findOne({ email: 'admin@test.com' });
   if (!admin) {
-    admin = await User.create({
-      name: 'Test Admin',
-      email: 'admin@test.com',
-      username: `admin_${timestamp}`,
-      password: 'password123',
-      role: 'admin',
-      active: true,
-    });
+    try {
+      admin = await User.create({
+        name: 'Test Admin',
+        email: 'admin@test.com',
+        username: `admin_${timestamp}`,
+        password: 'password123',
+        role: 'admin',
+        active: true,
+      });
+    } catch (err) {
+      if (err.code === 11000) {
+        admin = await User.findOne({ email: 'admin@test.com' });
+      } else {
+        throw err;
+      }
+    }
   }
 
   // Generate tokens
