@@ -2,7 +2,7 @@
 
 > **Document Type:** Layer 2 Authoritative API Contract  
 > **Base URL:** `http://localhost:5000/api/v1` (Development)  
-> **Last Updated:** 2026-09-15  
+> **Last Updated:** 2026-09-28  
 
 ---
 
@@ -16,7 +16,7 @@
     "status": "ok",
     "message": "Quimora Server is healthy and operational",
     "uptimeSeconds": 1420,
-    "timestamp": "2026-09-15T19:54:00.000Z",
+    "timestamp": "2026-09-28T19:54:00.000Z",
     "environment": "development",
     "redis": "connected"
   }
@@ -28,15 +28,7 @@
 
 ### `POST /api/v1/auth/register`
 * **Access:** Public
-* **Request Body:**
-  ```json
-  {
-    "name": "John Doe",
-    "email": "john@example.com",
-    "password": "password123",
-    "role": "instructor" // "user" | "instructor" | "admin"
-  }
-  ```
+* **Request Body:** `{ "name": "...", "email": "...", "password": "...", "role": "user" }`
 * **Success Response (201 Created):** Returns JWT token and user profile object.
 
 ### `POST /api/v1/auth/login`
@@ -56,119 +48,112 @@
 
 ---
 
-## 2. Quiz Management Endpoints (`/api/v1/quizzes`)
+## 2. V3 Interest & Discovery Endpoints (`/api/v1/interests` & `/api/v1/student/interests`)
+
+### `GET /api/v1/interests`
+* **Access:** Public
+* **Description:** Fetch all active interest topics and category tags.
+* **Success Response (200 OK):**
+  ```json
+  {
+    "success": true,
+    "data": [
+      { "_id": "65a...", "name": "Web Development", "slug": "web-dev", "topicTags": ["React", "Node.js"] }
+    ]
+  }
+  ```
+
+### `POST /api/v1/student/interests`
+* **Access:** Student (`user`)
+* **Request Body:** `{ "interestIds": ["65a...", "65b..."] }`
+* **Success Response (200 OK):** Selected interests saved to student profile.
+
+### `GET /api/v1/student/quizzes`
+* **Access:** Student (`user`)
+* **Query Params:** `interestId` (optional), `level` (optional)
+* **Description:** List published quizzes matching student selected interests and Elo level.
+
+---
+
+## 3. V3 Elo, Level & Student Profile Endpoints (`/api/v1/student`)
+
+### `GET /api/v1/student/elo`
+* **Access:** Student (`user`)
+* **Description:** Fetch current Elo ratings across all interest categories.
+* **Success Response (200 OK):**
+  ```json
+  {
+    "success": true,
+    "data": [
+      { "interestId": "65a...", "interestName": "Web Development", "rating": 1250, "quizzesAttempted": 5 }
+    ]
+  }
+  ```
+
+### `GET /api/v1/student/level`
+* **Access:** Student (`user`)
+* **Description:** Fetch mapped student level tier, badge, and progress to next level.
+* **Success Response (200 OK):**
+  ```json
+  {
+    "success": true,
+    "data": {
+      "levelName": "Intermediate",
+      "minElo": 1200,
+      "maxElo": 1400,
+      "currentElo": 1250,
+      "badge": "intermediate-shield.png"
+    }
+  }
+  ```
+
+---
+
+## 4. V3 Instructor Assignment & Student Consent Endpoints
+
+### `GET /api/v1/student/quiz/:quizId/instructor`
+* **Access:** Student (`user`)
+* **Description:** Fetch assigned primary instructor profile (name, bio, expertise, overall rating) before attempt start.
+
+### `POST /api/v1/student/quiz/:quizId/consent`
+* **Access:** Student (`user`)
+* **Description:** Record explicit student consent to attempt quiz under assigned instructor.
+* **Request Body:** `{ "consented": true }`
+* **Success Response (200 OK):** Consent recorded token returned.
+
+---
+
+## 5. Core Quiz & Attempt Endpoints (`/api/v1/quizzes` & `/api/v1/student/quiz`)
 
 | Method | Endpoint | Access Role | Description |
 | :--- | :--- | :--- | :--- |
 | `POST` | `/api/v1/quizzes` | Instructor, Admin | Create a new quiz. |
-| `GET` | `/api/v1/quizzes/student` | Student | List all active & published quizzes available to students. |
-| `GET` | `/api/v1/quizzes/instructor` | Instructor, Admin | Fetch quizzes created by the logged-in instructor. |
 | `GET` | `/api/v1/quizzes/:id` | Private | Fetch detailed quiz info and questions. |
 | `PUT` | `/api/v1/quizzes/:id` | Creator, Admin | Update quiz title, description, timeLimit, passingScore. |
 | `POST` | `/api/v1/quizzes/:quizId/clone` | Instructor, Admin | 1-Click clone quiz and duplicate all associated questions. |
-| `DELETE` | `/api/v1/quizzes/:id` | Creator, Admin | Delete a quiz and dependent questions. |
+| `GET` | `/api/v1/student/quiz/:quizId/eligibility` | Student | Verify attempt eligibility, active sessions, and remaining attempts. |
+| `POST` | `/api/v1/student/quiz/start` | Student | Start session (Requires pre-quiz consent verification). |
+| `POST` | `/api/v1/student/quiz/submit` | Student | Submit answers; triggers Elo score computation & updates. |
 
 ---
 
-## 3. Student Attempt Engine (`/api/v1/student`)
-
-### `GET /api/v1/student/quiz/:quizId/eligibility`
-* **Access:** Student (`user`)
-* **URL Params:** `quizId` (MongoDB ObjectId)
-* **Success Response (200 OK):**
-  ```json
-  {
-    "success": true,
-    "data": {
-      "isEligible": true,
-      "hasActiveSession": false,
-      "activeAttemptId": null,
-      "attemptsRemaining": 2,
-      "remainingTimeSeconds": 1800
-    }
-  }
-  ```
-
-### `POST /api/v1/student/quiz/start`
-* **Access:** Student (`user`)
-* **Request Body:** `{ "quizId": "..." }`
-* **Success Response (200 OK):**
-  ```json
-  {
-    "success": true,
-    "message": "Quiz session initialized successfully",
-    "data": {
-      "attemptId": "65b...",
-      "startedAt": "2026-09-15T16:00:00.000Z",
-      "remainingTimeSeconds": 1800,
-      "quiz": {
-        "_id": "...",
-        "title": "Node.js Fundamentals",
-        "timeLimit": 30,
-        "totalQuestions": 10,
-        "questions": [ /* sanitized options (no isCorrect) */ ]
-      }
-    }
-  }
-  ```
-
-### `PATCH /api/v1/student/quiz/save-draft`
-* **Access:** Student (`user`)
-* **Request Body:**
-  ```json
-  {
-    "attemptId": "65b...",
-    "userAnswers": [
-      { "questionId": "...", "selectedOption": 1 }
-    ]
-  }
-  ```
-* **Success Response (200 OK):** Draft state saved.
-
-### `POST /api/v1/student/quiz/submit`
-* **Access:** Student (`user`)
-* **Request Body:**
-  ```json
-  {
-    "attemptId": "65b...",
-    "answers": [
-      { "questionId": "...", "selectedOption": 0 }
-    ]
-  }
-  ```
-* **Success Response (200 OK):**
-  ```json
-  {
-    "success": true,
-    "message": "Quiz submitted successfully",
-    "data": {
-      "attemptId": "...",
-      "score": 8,
-      "totalMarks": 10,
-      "percentage": 80,
-      "passed": true,
-      "timeSpentSeconds": 420
-    }
-  }
-  ```
-
----
-
-## 4. Groq AI Integration Endpoints (`/api/v1/instructor/ai`)
+## 6. Groq AI Integration Endpoints (`/api/v1/instructor/ai`)
 
 | Method | Endpoint | Access Role | Description |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/v1/instructor/ai/generate-questions` | Instructor, Admin | Generate MCQs via Groq AI SDK (`topic`, `count`, `difficulty`). |
+| `POST` | `/api/v1/instructor/ai/generate-questions` | Instructor, Admin | Generate standard MCQs via Groq AI SDK (`topic`, `count`, `difficulty`). |
+| `POST` | `/api/v1/instructor/ai/generate-questions/elo` | Instructor, Admin | Generate MCQs calibrated to target Elo rating range ($K = 32$). |
 | `POST` | `/api/v1/instructor/ai/generate-description` | Instructor, Admin | Auto-generate quiz description via Groq AI SDK. |
 
 ---
 
-## 5. Admin Control Endpoints (`/api/v1/admin` & `/api/v1/users`)
+## 7. Admin & Analytics Control Endpoints (`/api/v1/admin` & `/api/v1/users`)
 
 | Method | Endpoint | Access Role | Description |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/v1/admin/stats` | Admin | Platform-wide stats (total users, quizzes, attempts). |
+| `GET` | `/api/v1/instructor/analytics/:quizId` | Primary Inst, Admin | Detailed analytics (student names, scores, submission timestamps). |
+| `GET` | `/api/v1/instructor/analytics/:quizId/aggregate` | External Inst | Anonymized aggregate analytics (pass rate, average, score histogram). |
 | `GET` | `/api/v1/users` | Admin | List registered users with role filter & pagination. |
 | `PATCH` | `/api/v1/users/:userId/active` | Admin | Toggle user active/suspended state. |
-| `PATCH` | `/api/v1/users/:userId/role` | Admin | Role elevation (`user` ↔ `instructor` ↔ `admin`) with last-admin protection. |
-
+| `PATCH` | `/api/v1/users/:userId/role` | Admin | Role elevation (`user` <-> `instructor` <-> `admin`). |

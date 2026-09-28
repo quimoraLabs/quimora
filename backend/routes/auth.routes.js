@@ -6,6 +6,7 @@ import {
   createUserByAdmin,
   forgetPasswordRequest,
   verifyOTP,
+  changePassword,
 } from "../controllers/auth.controllers.js";
 import authMiddleware, {
   authorizeRoles,
@@ -47,5 +48,6 @@ router.post("/login", loginLimiter, loginUser);
 router.get("/me", authMiddleware, getMe);
 router.patch("/request-otp", otpLimiter, forgetPasswordRequest);
 router.patch("/verify-otp", otpLimiter, verifyOTP);
+router.patch("/change-password", authMiddleware, changePassword);
 
 export default router;

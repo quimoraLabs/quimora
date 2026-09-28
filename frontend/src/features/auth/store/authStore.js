@@ -99,6 +99,27 @@ const useAuthStore = create((set, get) => ({
     }
   },
 
+  changePassword: async (currentPassword, newPassword) => {
+    set({ loading: true });
+    try {
+      const response = await axiosClient.patch(`/auth/change-password`, {
+        currentPassword,
+        newPassword,
+      });
+      if (response.data.success) {
+        toast.success("Password changed successfully!");
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Change password failed:", error);
+      toast.error(error.response?.data?.message || "Failed to change password.");
+      return false;
+    } finally {
+      set({ loading: false });
+    }
+  },
+
   getProfile: async () => {
     set({ loading: true });
     try {

@@ -2,18 +2,17 @@ import express from "express";
 import cors from "cors";
 import morgan from "morgan";
 import helmet from "helmet";
-import connectDB from "../config/connectDB.js";
-import config from "../config/config.js";
-import authRoutes from "../routes/auth.routes.js";
-import userRoutes from "../routes/user.routes.js";
-import quizRoutes from "../routes/quiz.routes.js";
-import studentQuizRoutes from "../routes/studentQuiz.routes.js";
-import { errorHandler } from "../middleware/error.middleware.js";
-import questionRoutes from "../routes/question.routes.js";
-import { validateObjectId } from "../middleware/validObjectId.middleware.js";
-import instructorDashboardRoutes from "../routes/instructorDashboard.routes.js";
-import adminRoutes from "../routes/admin.routes.js";
-import { redisCache } from "../config/redis.js";
+import config from "./config/config.js";
+import authRoutes from "./routes/auth.routes.js";
+import userRoutes from "./routes/user.routes.js";
+import quizRoutes from "./routes/quiz.routes.js";
+import studentQuizRoutes from "./routes/studentQuiz.routes.js";
+import { errorHandler } from "./middleware/error.middleware.js";
+import questionRoutes from "./routes/question.routes.js";
+import { validateObjectId } from "./middleware/validObjectId.middleware.js";
+import instructorDashboardRoutes from "./routes/instructorDashboard.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
+import { redisCache } from "./config/redis.js";
 
 const app = express();
 
@@ -28,7 +27,7 @@ if (config.nodeENV !== "production") {
 // ============================================================
 // 2️⃣ CORS CONFIGURATION - COMPLETE FIX
 // ============================================================
-const allowedOrigins = [
+export const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
   "http://localhost:5174",
@@ -37,15 +36,15 @@ const allowedOrigins = [
   "https://quimora-rho.vercel.app",
 ];
 
-// CORS Middleware - Option 1: Custom (Already in your code)
+// CORS Middleware
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  
+
   // Debug log - helps find issues in development
   if (config.nodeENV === "development") {
-    console.log(`🌐 ${req.method} ${req.url} - Origin: ${origin || 'No Origin'}`);
+    console.log(`🌐 ${req.method} ${req.url} - Origin: ${origin || "No Origin"}`);
   }
-  
+
   const isAllowed =
     !origin ||
     allowedOrigins.includes(origin) ||
@@ -69,49 +68,13 @@ app.use((req, res, next) => {
   res.setHeader("Access-Control-Max-Age", "86400"); // Cache preflight for 24 hours
 
   if (req.method === "OPTIONS") {
-    return res.status(204).end(); // 204 No Content is better for OPTIONS
+    return res.status(204).end();
   }
   next();
 });
 
 // ============================================================
-// 3️⃣ ALTERNATIVE: Using CORS Package (Uncomment if custom fails)
-// ============================================================
-/*
-const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl)
-    if (!origin) return callback(null, true);
-    
-    const allowed = [
-      "http://localhost:5173",
-      "http://localhost:3000",
-      "https://hoppscotch.io",
-      "https://quimora.onrender.com",
-      "https://quimora-rho.vercel.app",
-    ];
-    
-    if (allowed.includes(origin) || 
-        origin.endsWith(".vercel.app") || 
-        origin.endsWith(".onrender.com") ||
-        origin.includes("localhost")) {
-      callback(null, true);
-    } else {
-      console.log(`❌ CORS blocked: ${origin}`);
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "Cache-Control", "Pragma"],
-  maxAge: 86400,
-};
-
-app.use(cors(corsOptions));
-*/
-
-// ============================================================
-// 4️⃣ MIDDLEWARE & SECURITY HEADERS
+// 3️⃣ MIDDLEWARE & SECURITY HEADERS
 // ============================================================
 app.use(helmet({ contentSecurityPolicy: false }));
 if (process.env.NODE_ENV !== "test") {
@@ -121,7 +84,7 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // ============================================================
-// 5️⃣ API ROUTES
+// 4️⃣ API ROUTES
 // ============================================================
 const apiRouter = express.Router();
 
@@ -141,7 +104,7 @@ apiRouter.use("/instructor", instructorDashboardRoutes);
 app.use(config.apiPrefix, apiRouter);
 
 // ============================================================
-// 6️⃣ HEALTH CHECK ENDPOINTS
+// 5️⃣ HEALTH CHECK ENDPOINTS
 // ============================================================
 const healthHandler = (req, res) => {
   res.status(200).json({
@@ -159,7 +122,7 @@ app.get("/health", healthHandler);
 apiRouter.get("/health", healthHandler);
 
 // ============================================================
-// 7️⃣ 404 Handler
+// 6️⃣ 404 HANDLER
 // ============================================================
 app.use((req, res) => {
   res.status(404).json({
@@ -169,22 +132,8 @@ app.use((req, res) => {
 });
 
 // ============================================================
-// 8️⃣ GLOBAL ERROR HANDLER
+// 7️⃣ GLOBAL ERROR HANDLER
 // ============================================================
 app.use(errorHandler);
-
-// ============================================================
-// 9️⃣ START SERVER
-// ============================================================
-const PORT = config.port || 5000;
-if (process.env.NODE_ENV !== "test") {
-  app.listen(PORT, () => {
-    console.log(`🚀 Server is running on port ${PORT}`);
-    console.log(`🌍 Environment: ${config.nodeENV}`);
-    console.log(`📡 API Prefix: ${config.apiPrefix}`);
-    console.log(`🔗 Allowed Origins: ${allowedOrigins.join(", ")}`);
-    connectDB();
-  });
-}
 
 export default app;

@@ -1,20 +1,23 @@
-# 🎨 Quimora Frontend — Web Application
+# 🎨 Quimora — Frontend Client
 
-The frontend client for **Quimora**, built with React 19, Vite, Tailwind CSS v4, and Zustand.
+The React 19 client web application for **Quimora**, built with Vite 8, Tailwind CSS v4, and Zustand.
+
+> 📌 **Main Documentation:** For overall project architecture, setup, design rules, and roadmap, refer to the root [README.md](file:///d:/quimora/README.md) and [docs/](file:///d:/quimora/docs/).
 
 ---
 
-## 🚀 Tech Stack & Libraries
+## 🚀 Quick Start
 
-- **Framework**: [React 19](https://react.dev/)
-- **Build Tool**: [Vite 8](https://vitejs.dev/)
-- **Styling**: [Tailwind CSS v4](https://tailwindcss.com/)
-- **State Management**: [Zustand 5](https://github.com/pmndrs/zustand)
-- **Routing**: [React Router 7/8](https://reactrouter.com/)
-- **Icons & Animations**: [Lucide React](https://lucide.dev/) & [Motion (Framer Motion)](https://motion.dev/)
-- **Charts**: [Recharts](https://recharts.org/)
-- **Notifications**: [React Hot Toast](https://react-hot-toast.com/)
-- **HTTP Client**: Axios with centralized interceptors (`axiosClient`)
+```bash
+# Install dependencies
+npm install
+
+# Run Vite dev server with HMR
+npm run dev
+
+# Build production bundle
+npm run build
+```
 
 ---
 
@@ -22,44 +25,20 @@ The frontend client for **Quimora**, built with React 19, Vite, Tailwind CSS v4,
 
 ```
 frontend/src/
-├── api/            # Axios instance, baseURL & auth token interceptor
-├── assets/         # Static images, logos, and vector assets
-├── components/     # Global reusable UI (modals, buttons, banners, inputs)
-├── features/       # Modular feature folders (admin, auth, quiz, student, instructor)
-│   ├── admin/      # Admin store, tables, stats cards, chart components
-│   ├── auth/       # Login, register, OTP verification forms & stores
-│   ├── student/    # Quiz player, result breakdown screen
-│   └── quiz/       # Quiz creation, question builder
-├── layouts/        # Layout wrappers (Navbar, Sidebar, Footer, Role Guards)
-├── pages/          # Top-level page views & routes
-├── routes/         # React Router index & role authorization guards
-├── store/          # Global Zustand stores (useAuthStore, useQuizStore, etc.)
-└── utils/          # Formatting helpers & validation functions
+├── api/        # Axios client instance & Bearer auth interceptors
+├── components/ # Reusable UI components & modals
+├── features/   # Modular feature modules (admin, auth, quiz, student, instructor)
+├── layouts/    # Navbar, Sidebar, Footer, and Guard layouts
+├── pages/      # Route page views
+├── routes/     # React Router setup & RBAC route protection
+├── store/      # Global Zustand stores (auth, quiz, admin)
+└── utils/      # Formatting helpers & validation functions
 ```
 
 ---
 
-## ⚙️ Local Development Setup
+## 📚 Related Documentation
 
-1. Make sure backend API server is running on `http://localhost:5000/api/v1`.
-2. Copy environment file:
-   ```bash
-   cp .env.example .env
-   ```
-3. Install dependencies:
-   ```bash
-   npm install
-   ```
-4. Start development server:
-   ```bash
-   npm run dev
-   ```
-
----
-
-## 🔑 Key Scripts
-
-- `npm run dev`: Start Vite development server with HMR.
-- `npm run build`: Build production assets into `dist/`.
-- `npm run lint`: Run ESLint checks.
-- `npm run preview`: Locally preview production build.
+- **System Architecture**: [`docs/ARCHITECTURE.md`](file:///d:/quimora/docs/ARCHITECTURE.md)
+- **Product Spec**: [`docs/PRODUCT_SPEC.md`](file:///d:/quimora/docs/PRODUCT_SPEC.md)
+- **V3 Plan**: [`docs/V3_PLAN.md`](file:///d:/quimora/docs/V3_PLAN.md)

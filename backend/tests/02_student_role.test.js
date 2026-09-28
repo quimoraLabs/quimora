@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import request from 'supertest';
-import app from '../api/server.js';
+import app from '../app.js';
 import Quiz from '../models/quiz.model.js';
 import Question from '../models/question.model.js';
 import { createTestUsersAndTokens } from './helpers/seedAuth.js';

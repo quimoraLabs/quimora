@@ -106,6 +106,7 @@ export const sendOTPEmail = async (email, otpCode) => {
       html: generateOTPTemplate(otpCode),
     };
     await transporter.sendMail(mailOptions);
+    console.log(`[EMAIL SUCCESS] OTP Email successfully sent to ${email}`);
   } catch (err) {
     console.error('Failed to send OTP email:', err.message);
   }

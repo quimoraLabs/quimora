@@ -1,8 +1,8 @@
 # Quimora — Master Roadmap (Layer 4)
 
 > **Document Type:** Layer 4 Unified Backlog & Single Source of Truth  
-> **Replaces:** Embedded roadmaps in `README.md`, `V2-BACKLOG.md`, `V2-PLAN-FRESH.md`  
-> **Last Updated:** 2026-09-15  
+> **Replaces:** Embedded roadmaps in `README.md` and outdated backlog files  
+> **Last Updated:** 2026-09-28  
 
 ---
 
@@ -15,7 +15,7 @@
 - [x] **Core Database Models**:
   - [x] `User`, `Quiz`, `Question`, `QuizAttempt` Mongoose schemas wired & tested.
 - [x] **Backend Integration Test Suite**:
-  - [x] Automated test suites in `backend/tests/` (281 lines total) using Vitest (`npm run test`).
+  - [x] Automated test suites in `backend/tests/` using Vitest (`npm run test`).
 - [x] **Groq AI Integration**:
   - [x] AI Question generator (`/api/v1/instructor/ai/generate-questions`) powered by Groq SDK.
   - [x] AI Quiz Description generator (`/api/v1/instructor/ai/generate-description`).
@@ -28,7 +28,6 @@
 
 ## 🟡 V2 Shipped Scope (Completed & Verified)
 
-### P0 — Critical & Core Experience
 - [x] **Automated Vitest Test Runner**: Wired in `backend/package.json` (`npm run test`).
 - [x] **Server-Validated Timed Quiz Engine**:
   - [x] Backend session `startedAt` and duration calculation baseline (`createAttemptSession`).
@@ -36,8 +35,6 @@
   - [x] 15-second server grace buffer enforcement before marking session as `'abandoned'`.
   - [x] Student pre-quiz eligibility check endpoint (`GET /api/v1/student/quiz/:quizId/eligibility`).
   - [x] Automated Vitest coverage in `backend/tests/02_student_role.test.js`.
-
-### P1 — Essential Enhancements
 - [x] **Admin Control Suite**:
   - [x] System metrics summary endpoint & UI panel (total users, active quizzes, platform pass rates).
   - [x] User role elevation (`user` ↔ `instructor`) and account suspension toggle.
@@ -45,24 +42,24 @@
   - [x] Question image attachments & User Avatar upload UI powered by ImageKit SDK.
 - [x] **Docker & Redis In-Memory Caching**:
   - [x] Redis 7 container service in `docker-compose.yml` + `ioredis` backend integration (`redis.js`) with automatic DB fallback.
-
-### P2 — UX Polish
-- [x] Mobile-responsive quiz taking interface optimization (`TakeExamPage.jsx` diagram rendering & responsive layout).
-- [x] Dynamic dark/light theme consistency across instructor and student views.
-- [x] 1-Click Quiz Clone / Duplication (`POST /api/v1/quizzes/:quizId/clone`).
-
----
-
-## 🔵 V3 Planned Scope (Next Milestone)
-
-- [ ] **Question Bank Library**: Tagged shared question pool reusable across multiple quizzes.
-- [ ] **Adaptive Difficulty Engine**: Real-time adjustment of question difficulty based on student accuracy.
-- [ ] **Automated Certificate Generation**: PDF completion certificates issued upon achieving passing score.
+- [x] **UX Polish**:
+  - [x] Mobile-responsive quiz taking interface optimization (`TakeExamPage.jsx`).
+  - [x] Dynamic dark/light theme consistency across instructor and student views.
+  - [x] 1-Click Quiz Clone / Duplication (`POST /api/v1/quizzes/:quizId/clone`).
 
 ---
 
-## 4. Long-Term Vision (V4)
+## 🔵 V3 Planned Scope (Interest-Driven Adaptive Engine — Current Target)
 
-- [ ] **AI Proctoring & Integrity Verification**: Tab-switch monitoring and webcam framing alerts.
-- [ ] **Native Mobile Application**: Cross-platform iOS/Android app built with React Native.
-- [ ] **Enterprise Multi-Tenancy**: Organization workspace isolation and custom branding.
+- [ ] **Interest Selection & Quiz Filtering**: Student selects interest topic tags to discover and filter relevant quizzes without forced enrollment.
+- [ ] **Elo Rating Engine**: Real-time Elo scoring formula adjusting student rating and question difficulty based on accuracy.
+- [ ] **Level Mapping System**: Tiered levels (Beginner, Learner, Intermediate, Advanced, Master, Expert) computed dynamically from Elo ratings.
+- [ ] **Instructor Assignment & Consent**: Explicit 1:1 instructor assignment per quiz; student consent flow showing instructor profile prior to quiz start.
+- [ ] **Privacy-Preserving Instructor Analytics**: Instructor views granular data for assigned students, and anonymized aggregate data for external students.
+- [ ] **Elo-Aware AI Question Generation**: Groq AI engine generates questions calibrated to student Elo rating levels.
+
+---
+
+## 🔮 Future Scope (V4/V5)
+
+> *Future is bright. Once V3 is reached, V4/V5 will be planned. For now, focus on V3.*

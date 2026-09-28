@@ -27,7 +27,7 @@ async function runTests() {
   console.log("==================================================");
 
   const { default: connectDB } = await import("../config/connectDB.js");
-  const { default: app } = await import("../api/server.js");
+  const { default: app } = await import("../app.js");
 
   await connectDB();
   server = app.listen(5001);

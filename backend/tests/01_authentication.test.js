@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import request from 'supertest';
-import app from '../api/server.js';
+import app from '../app.js';
 import { createTestUsersAndTokens } from './helpers/seedAuth.js';
 
 describe('🔐 Module 1: Authentication & User Verification APIs', () => {
@@ -83,6 +83,18 @@ describe('🔐 Module 1: Authentication & User Verification APIs', () => {
     const res = await request(app)
       .patch('/api/v1/auth/request-otp')
       .send({ email: 'student@test.com' });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+  });
+
+  it('8. PATCH /api/v1/auth/change-password - changes authenticated user password directly', async () => {
+    const res = await request(app)
+      .patch('/api/v1/auth/change-password')
+      .set('Authorization', `Bearer ${authData.student.token}`)
+      .send({
+        currentPassword: 'password123',
+        newPassword: 'newpassword123',
+      });
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
   });
