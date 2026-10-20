@@ -28,7 +28,7 @@ For every feature or bug fix, define a concise specification (10–15 lines) usi
   - [ ] <Testable criterion 1>
   - [ ] <Testable criterion 2>
 **Out of Scope:** <Explicitly list what should NOT be built>
-**Related Docs:** <Reference section in V3_PLAN.md, API_REFERENCE.md, or rule in DECISIONS.md>
+**Related Docs:** <Reference section in MASTER_ROADMAP.md, API_REFERENCE.md, or rule in DECISIONS.md>
 **Owner Decisions:** <State pre-determined business rules>
 ```
 
@@ -42,8 +42,7 @@ Review the implementation by testing against defined Acceptance Criteria and Vit
 
 ### Step 4: Enforce Documentation Sync
 A task is only **Done** when all affected documentation layers in `docs/` are updated:
-* **`MASTER_ROADMAP.md`**: Mark completed items (`[x]`).
-* **`V3_PLAN.md` & `agent/agent.md`**: Update sprint phase progress.
+* **`MASTER_ROADMAP.md` & `agent/agent.md`**: Update roadmap items and sprint phase progress.
 * **`API_REFERENCE.md`**: Document new or modified endpoints.
 * **`DATA_MODEL.md`**: Document Mongoose schemas (`Interest`, `EloRating`, `Level`, `InstructorProfile`, `QuizAssignment`).
 * **`DECISIONS.md`**: Record any new business logic, Elo math ($K=32$), level thresholds, or consent rules.

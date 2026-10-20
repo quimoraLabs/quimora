@@ -1,8 +1,8 @@
 # Quimora — API Reference Guide (Layer 2)
 
 > **Document Type:** Layer 2 Authoritative API Contract  
-> **Base URL:** `http://localhost:5000/api/v1` (Development)  
-> **Last Updated:** 2026-09-28  
+> **Base URL:** `http://localhost:5000/api/v2` (Active) | `/api/v1` (Backward Compatible)  
+> **Last Updated:** 2026-10-20  
 
 ---
 

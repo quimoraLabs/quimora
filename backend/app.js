@@ -100,8 +100,11 @@ apiRouter.use(
 );
 apiRouter.use("/instructor", instructorDashboardRoutes);
 
-// Mount the versioned router centrally
+// Mount the versioned router centrally (supports both /api/v2 and legacy /api/v1)
 app.use(config.apiPrefix, apiRouter);
+if (config.apiPrefix !== "/api/v1") {
+  app.use("/api/v1", apiRouter);
+}
 
 // ============================================================
 // 5️⃣ HEALTH CHECK ENDPOINTS
