@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import {
   Trophy,
@@ -12,6 +12,7 @@ import {
   Users,
   BookOpen,
   Star,
+  Sparkles,
 } from "lucide-react";
 import useStudentQuizStore from "../../features/student/exam/store/useStudentQuizStore";
 import PerformanceTrend from "../../features/student/dashboard/PerformanceTrendCard";
@@ -20,6 +21,8 @@ import LatestResult from "../../features/student/dashboard/LatestResultCard";
 import Leaderboard from "../../features/student/dashboard/LeaderboardItem";
 import WeakestArea from "../../features/student/dashboard/WeakestAreasCard";
 import StatCard from "../../components/common/StatCard";
+import InterestOnboardingModal from "../../features/student/components/InterestOnboardingModal";
+import axiosClient from "../../api/axiosClient";
 
 /**
  * @desc    Student Dashboard Page
@@ -29,10 +32,27 @@ import StatCard from "../../components/common/StatCard";
  */
 function StudentDashboardPage() {
   const { dashboardStats, dashboardLoading, fetchDashboardStats } = useStudentQuizStore();
+  const [profileData, setProfileData] = useState(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
-  // Fetch dashboard stats on mount
+  const fetchProfile = async () => {
+    try {
+      const res = await axiosClient.get("/interests/student/profile");
+      if (res.data?.success && res.data?.data) {
+        setProfileData(res.data.data);
+        if (!res.data.data.profile?.onboardingCompleted) {
+          setShowOnboarding(true);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load student profile:", err);
+    }
+  };
+
+  // Fetch dashboard stats & student profile on mount
   useEffect(() => {
     fetchDashboardStats();
+    fetchProfile();
   }, [fetchDashboardStats]);
 
   // Re-fetch stats when window/tab regains focus
@@ -145,6 +165,83 @@ function StudentDashboardPage() {
           />
         ))}
       </div>
+
+      {/* ===== ADAPTIVE LEARNING & ELO SKILL TIERS ===== */}
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="p-6 bg-gradient-to-r from-indigo-900/10 via-purple-900/10 to-transparent border border-indigo-200/60 dark:border-indigo-900/40 rounded-3xl backdrop-blur-md shadow-sm"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+          <div>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 text-xs font-bold uppercase tracking-wider mb-1.5">
+              <Sparkles className="w-3.5 h-3.5" />
+              Adaptive Elo Calibration
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+              Your Active Learning Interests & Skill Tiers
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Real-time Elo ratings ($K=32$) dynamically adapt difficulty based on your test performance.
+            </p>
+          </div>
+
+          <button
+            onClick={() => setShowOnboarding(true)}
+            className="px-4 py-2 text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-white dark:bg-gray-900 border border-indigo-200 dark:border-indigo-800 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition-all shadow-sm cursor-pointer whitespace-nowrap self-start sm:self-auto"
+          >
+            ⚙️ Edit Interests ({profileData?.profile?.interests?.length || 0}/10)
+          </button>
+        </div>
+
+        {profileData?.profile?.interests?.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pt-2">
+            {profileData.profile.interests.map((interest) => {
+              // Find matching Elo rating for this interest
+              const elo = profileData.eloRatings?.find(
+                (r) => r.interestId?._id === interest._id || r.interestId === interest._id
+              );
+              const ratingValue = elo?.rating || 1000;
+
+              return (
+                <div
+                  key={interest._id}
+                  className="p-3.5 bg-white dark:bg-gray-900 border border-gray-200/80 dark:border-gray-800 rounded-2xl shadow-xs flex items-center justify-between gap-3"
+                >
+                  <div className="min-w-0">
+                    <p className="font-bold text-xs text-gray-900 dark:text-white truncate">
+                      {interest.name}
+                    </p>
+                    <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate">
+                      {interest.topicTags?.join(", ") || "General"}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <span className="inline-block px-2 py-0.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 font-extrabold text-xs">
+                      {ratingValue} Elo
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="py-4 text-center">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              No interests selected yet. Pick 5 to 6 interests to calibrate your personalized questions.
+            </p>
+          </div>
+        )}
+      </motion.div>
+
+      {/* ===== INTEREST ONBOARDING MODAL ===== */}
+      <InterestOnboardingModal
+        isOpen={showOnboarding}
+        onComplete={() => {
+          setShowOnboarding(false);
+          fetchProfile();
+        }}
+      />
 
       {/* ===== MAIN CONTENT GRID ===== */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">

@@ -95,4 +95,22 @@ describe('🎓 Module 2: Student Role Dashboard & Quiz Attempt APIs', () => {
     expect(res.body.data.remainingTimeSeconds).toBeGreaterThan(0);
     expect(res.body.data.remainingTimeSeconds).toBeLessThanOrEqual(1800);
   });
+
+  it('8. GET /api/v2/interests - returns all active interest topics', async () => {
+    const res = await request(app).get('/api/v2/interests');
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toHaveProperty('success', true);
+    expect(Array.isArray(res.body.data)).toBe(true);
+  });
+
+  it('9. GET /api/v2/interests/student/profile - returns student profile with elo ratings', async () => {
+    const res = await request(app)
+      .get('/api/v2/interests/student/profile')
+      .set('Authorization', `Bearer ${authData.student.token}`);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toHaveProperty('success', true);
+    expect(res.body.data).toHaveProperty('profile');
+    expect(res.body.data).toHaveProperty('eloRatings');
+  });
 });
+

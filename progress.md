@@ -60,7 +60,7 @@ Quimora is evolving through distinct, versioned milestones:
 
 ## 🟡 V3 Active Work Tracker (Adaptive & Interest-Driven Engine)
 
-### Phase 1: Foundation, User Architecture & Elo Engine (~70% Backend Complete)
+### Phase 1: Foundation, User Architecture & Elo Engine (✅ 100% Complete)
 - [x] **V3 Documentation Alignment**:
   - [x] Defined V3 Fresh Start policy, Protected Admin Role rule, and V3 User Architecture specifications in `DECISIONS.md`, `DATA_MODEL.md`, `ARCHITECTURE.md`, and `MASTER_ROADMAP.md`.
 - [x] **V3 Schemas & Models**:
@@ -82,11 +82,16 @@ Quimora is evolving through distinct, versioned milestones:
   - [x] `backend/services/instructorProfile.service.js` (Instructor bio, expertise, assigned quiz counters).
   - [x] `backend/services/eloEngine.service.js` (Mathematical Elo rating calculation, $K=32$).
   - [x] `backend/services/levelMapping.service.js` (Elo score to tier mapping with Redis cache).
-- [ ] **Phase 1 In-Progress / Next**:
-  - [ ] Interest selection API endpoints (`/api/v1/interests`, `/api/v1/student/profile/interests`).
-  - [ ] Student onboarding guard in middleware (`403 ONBOARDING_REQUIRED`).
-  - [ ] Frontend Student Onboarding Modal (Select 5–6 initial interests, max 10).
-  - [ ] Frontend Student Dashboard Interest Filter Bar.
+- [x] **V3 Interest & Onboarding APIs**:
+  - [x] `GET /api/v2/interests` (Public interest topic catalog).
+  - [x] `GET /api/v2/interests/student/profile` (Student profile with active Elo ratings).
+  - [x] `POST /api/v2/interests/student/onboarding` (Onboarding validation: 5-6 interests).
+  - [x] `PUT /api/v2/interests/student/interests` (Post-onboarding updates: max 10 interests).
+  - [x] Student onboarding guard in middleware (`checkStudentOnboarding` -> `403 ONBOARDING_REQUIRED`).
+- [x] **Frontend Onboarding & Discovery UI**:
+  - [x] `InterestOnboardingModal.jsx` (Interactive modal with 5-6 topic selection, live pill counter, Framer Motion animations).
+  - [x] `InterestFilterBar.jsx` (Horizontal pill filter bar on `QuizListPage.jsx` and `StudentDashboardPage.jsx`).
+  - [x] Adaptive Elo Skill Tiers display card on student dashboard.
 
 ---
 

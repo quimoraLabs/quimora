@@ -68,11 +68,12 @@ All technical specifications, schemas, business rules, and roadmaps are maintain
   - Implemented `levelMapping.service.js` for Elo → Level tier mapping with Redis caching.
 - [x] **Middleware Updates**:
   - Updated `auth.middleware.js` with account suspension check and active user status verification.
-- [ ] **Phase 1 Remaining Deliverables**:
-  - [ ] Interest selection API endpoints (`/api/v2/interests`, `/api/v2/student/profile/interests`).
-  - [ ] Student onboarding guard enforcement (`403 ONBOARDING_REQUIRED`).
-  - [ ] Frontend Student Onboarding Modal (pick 5–6 initial interests, max 10).
-  - [ ] Frontend Student Dashboard Interest Filter Bar.
+- [x] **Phase 1 Completed Deliverables**:
+  - [x] Interest selection API endpoints (`/api/v2/interests`, `/api/v2/interests/student/onboarding`, `/api/v2/interests/student/interests`, `/api/v2/interests/student/profile`).
+  - [x] Student onboarding guard enforcement (`checkStudentOnboarding` -> `403 ONBOARDING_REQUIRED`).
+  - [x] Frontend Student Onboarding Modal (`InterestOnboardingModal.jsx` with 5–6 initial selection, max 10 cap).
+  - [x] Frontend Student Dashboard & Quiz List Interest Filter Bar (`InterestFilterBar.jsx`).
+  - [x] Automated test coverage: 32/32 tests passing; frontend build 100% verified.
 
 ---
 

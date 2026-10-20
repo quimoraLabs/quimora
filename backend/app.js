@@ -12,6 +12,7 @@ import questionRoutes from "./routes/question.routes.js";
 import { validateObjectId } from "./middleware/validObjectId.middleware.js";
 import instructorDashboardRoutes from "./routes/instructorDashboard.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
+import interestRoutes from "./routes/interest.routes.js";
 import { redisCache } from "./config/redis.js";
 
 const app = express();
@@ -99,6 +100,7 @@ apiRouter.use(
   questionRoutes
 );
 apiRouter.use("/instructor", instructorDashboardRoutes);
+apiRouter.use("/interests", interestRoutes);
 
 // Mount the versioned router centrally (supports both /api/v2 and legacy /api/v1)
 app.use(config.apiPrefix, apiRouter);
