@@ -3,6 +3,8 @@ import User from "../models/user.model.js";
 import Question from "../models/question.model.js";
 import QuizAttempt from "../models/quizAttempt.model.js";
 import StudentProfile from "../models/studentProfile.model.js";
+import StudentQuizProgress from "../models/studentQuizProgress.model.js";
+import { autoGenerateTopicQuiz } from "../services/aiQuizGenerator.service.js";
 import mongoose from "mongoose";
 import { redisCache } from "../config/redis.js";
 import {
@@ -55,7 +57,19 @@ export const getAvailableQuizzesForStudents = async (req, res, next) => {
       }
     }
 
-    const totalItems = await Quiz.countDocuments(query);
+    let totalItems = await Quiz.countDocuments(query);
+
+    // Auto-generate topic quizzes using AI if student has selected interests but 0 quizzes exist
+    if (userId && totalItems === 0) {
+      const studentProf = await StudentProfile.findOne({ userId }).populate("interests");
+      if (studentProf && Array.isArray(studentProf.interests) && studentProf.interests.length > 0) {
+        for (const interest of studentProf.interests) {
+          await autoGenerateTopicQuiz(interest);
+        }
+        totalItems = await Quiz.countDocuments(query);
+      }
+    }
+
     const quizzes = await Quiz.find(query)
       .populate("createdBy", "name email")
       .populate("interestIds", "name slug")
@@ -63,41 +77,84 @@ export const getAvailableQuizzesForStudents = async (req, res, next) => {
       .skip((page - 1) * limit)
       .limit(limit);
 
-    // Compute student's attempts for each quiz
+    // Compute student's attempts and decoupled progress for each quiz
     let attemptsMap = {};
+    let progressMap = {};
     if (userId && quizzes.length > 0) {
       const quizIds = quizzes.map((q) => q._id);
-      const attempts = await QuizAttempt.aggregate([
-        {
-          $match: {
-            userId: new mongoose.Types.ObjectId(userId),
-            quizId: { $in: quizIds },
+
+      const [attempts, progresses] = await Promise.all([
+        QuizAttempt.aggregate([
+          {
+            $match: {
+              userId: new mongoose.Types.ObjectId(userId),
+              quizId: { $in: quizIds },
+            },
           },
-        },
-        {
-          $group: {
-            _id: "$quizId",
-            count: { $sum: 1 },
+          {
+            $group: {
+              _id: "$quizId",
+              count: { $sum: 1 },
+            },
           },
-        },
+        ]),
+        StudentQuizProgress.find({
+          userId: new mongoose.Types.ObjectId(userId),
+          quizId: { $in: quizIds },
+        }).lean(),
       ]);
+
       attempts.forEach((a) => {
         attemptsMap[a._id.toString()] = a.count;
+      });
+
+      progresses.forEach((p) => {
+        progressMap[p.quizId.toString()] = p;
       });
     }
 
     const formattedQuizzes = quizzes.map((quiz) => {
       const quizObj = quiz.toObject ? quiz.toObject() : { ...quiz };
       const attemptsUsed = attemptsMap[quizObj._id.toString()] || 0;
-      const maxAttempts = typeof quizObj.maxAttempts === "number" ? quizObj.maxAttempts : 0;
-      const attemptsRemaining = maxAttempts > 0 ? Math.max(0, maxAttempts - attemptsUsed) : null;
+      const prog = progressMap[quizObj._id.toString()] || {
+        passAttemptsCount: 0,
+        maxPassAllowed: 3,
+        failAttemptsCount: 0,
+        isLocked: false,
+        lockReason: "NONE",
+        appealStatus: "NONE",
+      };
+
+      const passAttemptsCount = prog.passAttemptsCount || 0;
+      const maxPassAllowed = prog.maxPassAllowed || 3;
+      const failAttemptsCount = prog.failAttemptsCount || 0;
+      const maxFailAllowed = 6;
+      const isLocked =
+        prog.isLocked ||
+        failAttemptsCount >= maxFailAllowed ||
+        passAttemptsCount >= maxPassAllowed;
+
+      const lockReason =
+        prog.lockReason !== "NONE"
+          ? prog.lockReason
+          : failAttemptsCount >= maxFailAllowed
+          ? "FAIL_LIMIT_EXCEEDED"
+          : passAttemptsCount >= maxPassAllowed
+          ? "PASS_LIMIT_REACHED"
+          : "NONE";
 
       return {
         ...quizObj,
         attemptsUsed,
-        maxAttempts,
-        attemptsRemaining,
-        canAttempt: maxAttempts === 0 || attemptsUsed < maxAttempts,
+        passAttemptsCount,
+        maxPassAllowed,
+        failAttemptsCount,
+        maxFailAllowed,
+        isLocked,
+        lockReason,
+        appealStatus: prog.appealStatus || "NONE",
+        hasPassedOnce: prog.hasPassedOnce || false,
+        canAttempt: !isLocked,
       };
     });
 

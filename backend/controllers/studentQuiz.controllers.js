@@ -15,6 +15,8 @@ import {
 import { sanitizeQuestionsForStudent } from "../utils/attempt.utils.js";
 import { createAttemptSession, handleExpiredAttempt, submitAttemptSession, saveDraftSession, sanitizeAttemptData, checkQuizEligibility } from "../services/quizAttempt.service.js";
 import { fetchStudentDashboardAnalytics, getQuizLeaderboard } from "../services/studentDashboard.service.js";
+import StudentQuizProgress from "../models/studentQuizProgress.model.js";
+import { recordAttemptRewards } from "../services/rewards.service.js";
 
 /**
  * @desc    Quick eligibility check before user enters rules/start screen
@@ -29,9 +31,44 @@ export const checkStudentQuizEligibility = async (req, res, next) => {
 
     const eligibility = await checkQuizEligibility(quizId, userId);
 
+    // Fetch decoupled pass and fail progress tracker
+    let progress = await StudentQuizProgress.findOne({ userId, quizId }).lean();
+    if (!progress) {
+      progress = {
+        passAttemptsCount: 0,
+        maxPassAllowed: 3,
+        failAttemptsCount: 0,
+        isLocked: false,
+        lockReason: "NONE",
+        appealStatus: "NONE",
+      };
+    }
+
+    const isLocked =
+      progress.isLocked ||
+      progress.failAttemptsCount >= 6 ||
+      progress.passAttemptsCount >= progress.maxPassAllowed;
+
+    const lockReason =
+      progress.lockReason !== "NONE"
+        ? progress.lockReason
+        : progress.failAttemptsCount >= 6
+        ? "FAIL_LIMIT_EXCEEDED"
+        : progress.passAttemptsCount >= progress.maxPassAllowed
+        ? "PASS_LIMIT_REACHED"
+        : "NONE";
+
     return res.status(200).json({
       success: true,
-      data: eligibility,
+      data: {
+        ...eligibility,
+        isEligible: eligibility.isEligible && !isLocked,
+        progress: {
+          ...progress,
+          isLocked,
+          lockReason,
+        },
+      },
     });
   } catch (error) {
     next(error);
@@ -50,13 +87,45 @@ export const startQuizAttempt = async (req, res, next) => {
     const { quizId, questionLimit } = req.body;
     const userId = req.auth.userId.toString();
 
-    // 1. Fetch & Validate Quiz Availability
+    // 1. Validate Question Limit (Strict options: 10, 20, 25, 30, 40, 50)
+    const ALLOWED_LIMITS = [10, 20, 25, 30, 40, 50];
+    if (questionLimit && !ALLOWED_LIMITS.includes(Number(questionLimit))) {
+      return res.status(400).json({
+        error: `Invalid question limit. Allowed options are: ${ALLOWED_LIMITS.join(", ")}`,
+      });
+    }
+
+    // 2. Fetch & Validate Quiz Availability
     const quiz = await assertQuizExists(quizId);
     if (quiz.status !== "published" || !quiz.isActive) {
       return res.status(400).json({ error: "Quiz is currently unavailable" });
     }
 
-    // 2. Resolve Active Attempt / Auto-Abandon Logic
+    // 3. Check Decoupled Fail & Pass Limits (StudentQuizProgress)
+    const progress = await StudentQuizProgress.findOne({ userId, quizId });
+    if (progress) {
+      if (progress.failAttemptsCount >= 6) {
+        return res.status(403).json({
+          success: false,
+          error: "Quiz is locked due to reaching 6 failed attempts. Please submit an Admin Appeal to proceed.",
+          isLocked: true,
+          lockReason: "FAIL_LIMIT_EXCEEDED",
+          failAttemptsCount: progress.failAttemptsCount,
+        });
+      }
+      if (progress.passAttemptsCount >= progress.maxPassAllowed) {
+        return res.status(403).json({
+          success: false,
+          error: `You have reached the maximum allowed pass attempts (${progress.maxPassAllowed}) for this quiz. Unlock an extra pass attempt in the Reward Store.`,
+          isLocked: true,
+          lockReason: "PASS_LIMIT_REACHED",
+          passAttemptsCount: progress.passAttemptsCount,
+          maxPassAllowed: progress.maxPassAllowed,
+        });
+      }
+    }
+
+    // 4. Resolve Active Attempt / Auto-Abandon Logic
     let activeAttempt = await QuizAttempt.findOne({ userId, quizId, status: "started" });
     activeAttempt = await handleExpiredAttempt(activeAttempt, quiz.timeLimit);
 
@@ -172,7 +241,18 @@ export const submitQuizAttempt = async (req, res, next) => {
     // 2. Execute Submission Logic via Service Layer
     const result = await submitAttemptSession(attemptId, userId, answers);
 
-    // 3. Send Success Response
+    // 3. Record Pass/Fail Trackers and Award Coins
+    const attempt = await QuizAttempt.findById(attemptId).select("quizId").lean();
+    if (attempt && attempt.quizId) {
+      const rewardResult = await recordAttemptRewards(
+        userId,
+        attempt.quizId,
+        result.scorePercentage
+      );
+      result.rewards = rewardResult;
+    }
+
+    // 4. Send Success Response
     return res.status(200).json({
       success: true,
       message: "Quiz submitted successfully",

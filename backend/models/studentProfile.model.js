@@ -39,6 +39,30 @@ const studentProfileSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    coinsBalance: {
+      type: Number,
+      default: 100, // Starter welcome gift
+      min: 0,
+    },
+    hintTokens: {
+      type: Number,
+      default: 3, // Starter hints
+      min: 0,
+    },
+    unlockedBadges: [
+      {
+        badgeId: String,
+        title: String,
+        unlockedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+    activeTheme: {
+      type: String,
+      default: "default",
+    },
   },
   {
     timestamps: true,
