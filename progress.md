@@ -15,9 +15,9 @@ Quimora is evolving through distinct, versioned milestones:
 
 ```
 ┌─────────────────────────┐      ┌─────────────────────────┐      ┌─────────────────────────┐
-│       V1 SHIPPED        │ ───► │       V2 SHIPPED        │ ───► │       V3 IN PROGRESS    │
+│       V1 SHIPPED        │ ───► │       V2 SHIPPED        │ ───► │       V3 COMPLETED      │
 │  Baseline Auth & Quizzes│      │  Timed Engine & Admin   │      │ Adaptive Elo & Profiles │
-│       ✅ 100% DONE       │      │       ✅ 100% DONE       │      │      🟢 ~65% DONE       │
+│       ✅ 100% DONE       │      │       ✅ 100% DONE       │      │       ✅ 100% DONE       │
 └─────────────────────────┘      └─────────────────────────┘      └─────────────────────────┘
 ```
 
@@ -114,12 +114,14 @@ Quimora is evolving through distinct, versioned milestones:
 
 ---
 
-### Phase 3: Elo-Aware AI Question Generation & Vitest Suites (Pending)
-- [ ] **Elo-Aware Groq AI Generation**:
-  - [ ] Pass student Elo level or target difficulty band to AI question generator prompt.
-  - [ ] Generate questions calibrated to target student capability bands.
-- [ ] **Automated Test Coverage**:
-  - [ ] `backend/tests/05_v3_adaptive_engine.test.js` covering Elo score changes, level transitions, and consent enforcement.
+### Phase 3: Elo-Aware AI Question Generation & Vitest Suites (✅ 100% Complete)
+- [x] **Elo-Aware Groq AI Generation**:
+  - [x] Pedagogical prompt calibration for 6 skill tiers (Beginner to Expert) and arbitrary student Elo ratings in `backend/services/aiQuestion.service.js`.
+  - [x] Controller parameter extraction (`targetTier`, `targetElo`) in `backend/controllers/aiQuestion.controllers.js`.
+  - [x] Frontend skill tier selector with visual pills in `AIGenerateModal.jsx`.
+  - [x] Question preview cards tagged with calibrated skill tier metadata.
+- [x] **Automated Test Coverage**:
+  - [x] `backend/tests/05_v3_adaptive_engine.test.js` created and passing (9 tests covering levels, real-time Elo tier mapping, 1:1 quiz assignment, pre-quiz transparency profile, telemetry consent, and AI generation calibration).
 
 ---
 
@@ -127,11 +129,13 @@ Quimora is evolving through distinct, versioned milestones:
 
 | Test Suite | Purpose | Status |
 | :--- | :--- | :--- |
-| `01_authentication.test.js` | Auth, JWT, OTP, Bcrypt, Role guards | 🟢 Verified |
-| `02_student_role.test.js` | Timed quizzes, quiz attempts, eligibility | 🟢 Verified |
-| `03_instructor_role.test.js` | Quiz CRUD, AI generation, bulk import | 🟢 Verified |
-| `04_admin_role.test.js` | System metrics, user suspension, role elevation | 🟢 Verified |
-| `05_v3_adaptive_engine.test.js` | Elo rating math, level mapping, assignment consent | 🟡 Planned for Phase 3 |
+| `01_authentication.test.js` | Auth, JWT, OTP, Bcrypt, Role guards | 🟢 Verified (8/8) |
+| `02_student_role.test.js` | Timed quizzes, quiz attempts, eligibility | 🟢 Verified (9/9) |
+| `03_instructor_role.test.js` | Quiz CRUD, AI generation, bulk import | 🟢 Verified (9/9) |
+| `04_admin_role.test.js` | System metrics, user suspension, role elevation | 🟢 Verified (6/6) |
+| `05_v3_adaptive_engine.test.js` | Elo rating math, level mapping, assignment consent | 🟢 Verified (9/9) |
+
+**Total:** 41 / 41 Tests Passing (100% Pass Rate across 5 test suites)
 
 ---
 

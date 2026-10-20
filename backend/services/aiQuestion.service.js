@@ -10,11 +10,25 @@ import config from "../config/config.js";
  * @param {string} [params.additionalContext] - Optional extra instructions or guidelines
  * @returns {Promise<Array>} List of formatted questions
  */
+/**
+ * Service to generate multiple-choice quiz questions using Groq AI.
+ * Supports Elo-aware adaptive question calibration for targeted student skill tiers.
+ * @param {Object} params
+ * @param {string} params.topic - Subject or topic description (e.g. "React Hooks")
+ * @param {number} [params.count=5] - Number of questions to generate (1 to 10)
+ * @param {string} [params.difficulty="medium"] - "easy" | "medium" | "hard" | "mixed"
+ * @param {string} [params.additionalContext] - Optional extra instructions or guidelines
+ * @param {string} [params.targetTier] - "Beginner" | "Learner" | "Intermediate" | "Advanced" | "Master" | "Expert"
+ * @param {number} [params.targetElo] - Exact target Elo score (e.g. 1450)
+ * @returns {Promise<Array>} List of formatted questions
+ */
 export const generateAIQuestionsService = async ({
   topic,
   count = 5,
   difficulty = "medium",
   additionalContext = "",
+  targetTier = "",
+  targetElo = null,
 }) => {
   const apiKey = config.groqApiKey;
 
@@ -34,6 +48,22 @@ export const generateAIQuestionsService = async ({
     ? difficulty.toLowerCase()
     : "medium";
 
+  // Tier-specific pedagogical calibration guidelines
+  const TIER_CALIBRATIONS = {
+    Beginner: "Calibrated for Beginner tier (Elo 0-999): Focus strictly on foundational terms, core syntax, definitions, and direct recall. Avoid multi-step reasoning.",
+    Learner: "Calibrated for Learner tier (Elo 1000-1199): Focus on standard usage patterns, basic error resolution, and common real-world language/framework APIs.",
+    Intermediate: "Calibrated for Intermediate tier (Elo 1200-1399): Focus on edge cases, idiomatic code, efficiency considerations, and standard design patterns.",
+    Advanced: "Calibrated for Advanced tier (Elo 1400-1599): Focus on architectural trade-offs, concurrency/race conditions, system internals, and performance profiling.",
+    Master: "Calibrated for Master tier (Elo 1600-1799): Focus on complex production failure modes, memory leak debugging, subtle runtime mechanics, and distributed resilience.",
+    Expert: "Calibrated for Expert tier (Elo 1800+): Focus on low-level runtime engine internals, compiler optimizations, esoteric specification details, and maximum scale trade-offs.",
+  };
+
+  const selectedTierGuidance = targetTier && TIER_CALIBRATIONS[targetTier]
+    ? TIER_CALIBRATIONS[targetTier]
+    : targetElo !== null
+    ? `Target student Elo rating is ${targetElo}. Calibrate question difficulty and nuances to precisely assess this skill band.`
+    : "";
+
   const systemPrompt = `You are an expert AI exam question generator for an online quiz platform.
 Your task is to generate high-quality, factually accurate multiple choice questions (MCQs) on the given topic.
 
@@ -41,22 +71,26 @@ CRITICAL REQUIREMENTS:
 1. STRICT TOPIC FIDELITY & REAL-WORLD ACCURACY:
    - Ensure all questions strictly pertain to the exact real-world technology or topic requested.
    - If the user input has a minor typo (e.g. "Redus Toolkit" -> "Redux Toolkit"), automatically recognize and correct it to the real technology ("Redux Toolkit") and generate authentic questions about Redux Toolkit (state management, createSlice, configureStore, createAsyncThunk, React Redux).
-   - DO NOT invent fictional libraries (e.g. "Redus Toolkit for data reduction/LZ77") and DO NOT confuse it with unrelated databases or tools (e.g. Redis).
-2. Output MUST be valid, raw JSON only. Do not include markdown code blocks or extra text.
-3. The JSON object MUST have a top-level key "questions" containing an array of question objects.
-4. Each question object MUST contain:
+   - DO NOT invent fictional libraries and DO NOT confuse it with unrelated tools.
+2. ADAPTIVE ELO CALIBRATION:
+   ${selectedTierGuidance ? `IMPORTANT: ${selectedTierGuidance}` : "Balance questions according to the specified difficulty."}
+3. Output MUST be valid, raw JSON only. Do not include markdown code blocks or extra text.
+4. The JSON object MUST have a top-level key "questions" containing an array of question objects.
+5. Each question object MUST contain:
    - "questionText": Clear string asking the question.
    - "marks": Integer score for the question (2 for easy, 5 for medium, 10 for hard).
    - "difficulty": String ("easy", "medium", or "hard").
    - "options": An array of EXACTLY 4 option objects.
-5. Each option object MUST contain:
+6. Each option object MUST contain:
    - "optionText": String content for the choice.
    - "isCorrect": Boolean (true or false).
-6. EXACTLY ONE option per question MUST have "isCorrect": true, and the other 3 MUST have "isCorrect": false.`;
+7. EXACTLY ONE option per question MUST have "isCorrect": true, and the other 3 MUST have "isCorrect": false.`;
 
   const userPrompt = `Topic: "${topic}"
 Number of questions: ${numQuestions}
 Difficulty requested: ${isMixed ? "MIXED (generate a balanced mix of Easy, Medium, and Hard difficulty questions, e.g. 2 Easy, 2 Medium, 1 Hard)" : targetDifficulty}
+${targetTier ? `Adaptive Skill Tier Target: ${targetTier}` : ""}
+${targetElo ? `Target Student Elo: ${targetElo}` : ""}
 ${additionalContext ? `Additional Instructions: ${additionalContext}` : ""}
 
 Generate ${numQuestions} multiple-choice questions now in pure JSON format.`;
@@ -216,6 +250,7 @@ Generate ${numQuestions} multiple-choice questions now in pure JSON format.`;
       marks: qMarks,
       difficulty: qDiff,
       options: finalOptions,
+      ...(targetTier ? { targetTier } : {}),
     };
   });
 

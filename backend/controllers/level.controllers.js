@@ -57,3 +57,28 @@ export const getStudentLevels = async (req, res, next) => {
     next(err);
   }
 };
+
+/**
+ * @desc    Get level tier calculation for arbitrary Elo score
+ * @route   GET /api/v2/levels/current-tier
+ * @access  Public
+ */
+export const getCurrentTierForElo = async (req, res, next) => {
+  try {
+    const elo = Number(req.query.elo) || 1000;
+    const level = await LevelMappingService.getLevelForElo(elo);
+    res.status(200).json({
+      success: true,
+      data: {
+        elo,
+        tier: level?.levelName || "Beginner",
+        minElo: level?.minElo ?? 0,
+        maxElo: level?.maxElo ?? 999,
+        badge: level?.badge || "",
+        description: level?.description || "",
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};

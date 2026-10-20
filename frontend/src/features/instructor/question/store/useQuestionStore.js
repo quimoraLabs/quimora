@@ -182,8 +182,8 @@ const useQuestionStore = create((set) => ({
     }
   },
 
-  // 5. GENERATE AI QUESTIONS (GROQ)
-  generateAIQuestions: async ({ topic, count, difficulty, additionalContext }) => {
+  // 5. GENERATE AI QUESTIONS (GROQ - ELO AWARE)
+  generateAIQuestions: async ({ topic, count, difficulty, additionalContext, targetTier, targetElo }) => {
     set({ loading: true });
     try {
       const response = await axiosClient.post("/instructor/ai/generate-questions", {
@@ -191,6 +191,8 @@ const useQuestionStore = create((set) => ({
         count,
         difficulty,
         additionalContext,
+        targetTier,
+        targetElo,
       });
 
       if (response.data?.success) {

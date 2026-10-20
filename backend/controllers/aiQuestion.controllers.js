@@ -8,7 +8,14 @@ import { generateAIQuestionsService, generateAIDescriptionService } from "../ser
  */
 export const generateAIQuestions = async (req, res, next) => {
   try {
-    const { topic, count = 5, difficulty = "medium", additionalContext = "" } = req.body;
+    const {
+      topic,
+      count = 5,
+      difficulty = "medium",
+      additionalContext = "",
+      targetTier = "",
+      targetElo = null,
+    } = req.body;
 
     if (!topic || typeof topic !== "string" || !topic.trim()) {
       return res.status(400).json({
@@ -22,6 +29,8 @@ export const generateAIQuestions = async (req, res, next) => {
       count: parseInt(count, 10) || 5,
       difficulty,
       additionalContext: additionalContext?.trim() || "",
+      targetTier: typeof targetTier === "string" ? targetTier.trim() : "",
+      targetElo: targetElo !== null ? Number(targetElo) : null,
     });
 
     res.status(200).json({

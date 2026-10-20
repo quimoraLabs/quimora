@@ -8,6 +8,7 @@ export default function AIGenerateModal({ isOpen, onClose, quizId, initialTopic 
   const [topic, setTopic] = useState(initialTopic);
   const [count, setCount] = useState(5);
   const [difficulty, setDifficulty] = useState("mixed");
+  const [targetTier, setTargetTier] = useState("");
   const [additionalContext, setAdditionalContext] = useState("");
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -31,6 +32,7 @@ export default function AIGenerateModal({ isOpen, onClose, quizId, initialTopic 
       topic: topic.trim(),
       count: parseInt(count, 10),
       difficulty,
+      targetTier,
       additionalContext: additionalContext.trim(),
     });
 
@@ -216,6 +218,42 @@ export default function AIGenerateModal({ isOpen, onClose, quizId, initialTopic 
                 </div>
               </div>
 
+              {/* V3 Adaptive Skill Tier (Elo calibration) */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs font-semibold text-main uppercase tracking-wider">
+                    Adaptive Skill Tier Calibration
+                  </label>
+                  <span className="text-[11px] text-purple-400 font-medium">
+                    {targetTier ? `Calibrating for ${targetTier}` : "All Skill Bands"}
+                  </span>
+                </div>
+                <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5">
+                  {[
+                    { id: "", label: "Default" },
+                    { id: "Beginner", label: "Beginner" },
+                    { id: "Learner", label: "Learner" },
+                    { id: "Intermediate", label: "Intermed." },
+                    { id: "Advanced", label: "Advanced" },
+                    { id: "Master", label: "Master" },
+                    { id: "Expert", label: "Expert" },
+                  ].map((tier) => (
+                    <button
+                      key={tier.id}
+                      type="button"
+                      onClick={() => setTargetTier(tier.id)}
+                      className={`py-1.5 px-2 rounded-xl text-[11px] font-semibold border transition-all cursor-pointer text-center truncate ${
+                        targetTier === tier.id
+                          ? "bg-purple-600 text-white border-purple-500 shadow-sm"
+                          : "bg-main text-muted border-main hover:text-main"
+                      }`}
+                    >
+                      {tier.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Additional Context */}
               <div>
                 <label className="block text-xs font-semibold text-main uppercase tracking-wider mb-2">
@@ -282,7 +320,7 @@ export default function AIGenerateModal({ isOpen, onClose, quizId, initialTopic 
                     <div className="flex items-start justify-between gap-4">
                       <div className="space-y-1">
                         <span className="inline-block px-2 py-0.5 bg-purple-500/10 text-purple-400 text-[10px] font-bold uppercase rounded-md border border-purple-500/20">
-                          {q.difficulty} • {q.marks} Marks
+                          {q.difficulty} • {q.marks} Marks {q.targetTier ? `• ${q.targetTier} Tier` : ""}
                         </span>
                         <p className="font-semibold text-sm text-main">
                           {idx + 1}. {q.questionText}
