@@ -28,6 +28,41 @@ const instructorProfileSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
+    headline: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    department: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    organization: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    officeHours: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    githubUrl: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    linkedinUrl: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    websiteUrl: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     rating: {
       type: Number,
       default: 5.0,

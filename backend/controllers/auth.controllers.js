@@ -105,7 +105,7 @@ export const loginUser = async (req, res, next) => {
  */
 export const getMe = async (req, res, next) => {
   try {
-    const { user } = await UserService.getUserProfile(req.auth.userId);
+    const { user, profile } = await UserService.getUserProfile(req.auth.userId);
     if (!user.active || user.suspendedAt) {
       return res.status(403).json({
         success: false,
@@ -115,7 +115,10 @@ export const getMe = async (req, res, next) => {
     const userObj = user.toObject ? user.toObject() : { ...user };
     delete userObj.password;
     delete userObj.__v;
-    res.json(userObj);
+    res.json({
+      ...userObj,
+      profile: profile || null,
+    });
   } catch (err) {
     if (err.statusCode) {
       return res.status(err.statusCode).json({

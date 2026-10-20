@@ -22,7 +22,7 @@ const app = express();
 
 // ============================================================
 // 1️⃣ ETAG DISABLE (Development only)
-// ============================================================
+// ============================================================ 
 if (config.nodeENV !== "production") {
   app.set("etag", false);
   console.log("🔧 Development Mode: ETags disabled");

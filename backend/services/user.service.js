@@ -89,31 +89,95 @@ export class UserService {
   }
 
   /**
-   * Update user details (username, email, name, avatar)
+   * Update user details (username, email, name, avatar) + role-specific profile fields
    */
   static async updateUser(userId, updateData) {
-    const allowedUpdates = {};
-    const safeFields = ["username", "email", "name", "avatar"];
-
-    safeFields.forEach((field) => {
-      if (updateData[field] !== undefined) {
-        allowedUpdates[field] = updateData[field];
-      }
-    });
-
-    const updatedUser = await User.findOneAndUpdate(
-      { _id: userId },
-      { $set: allowedUpdates },
-      { returnDocument: "after", runValidators: true }
-    );
-
-    if (!updatedUser) {
+    const user = await User.findById(userId);
+    if (!user) {
       const error = new Error("User not found");
       error.statusCode = 404;
       throw error;
     }
 
-    return updatedUser;
+    // 1. Update User basic safe fields
+    const safeUserFields = ["username", "email", "name", "avatar"];
+    safeUserFields.forEach((field) => {
+      if (updateData[field] !== undefined) {
+        user[field] = updateData[field];
+      }
+    });
+    await user.save();
+
+    // 2. Update Role-Specific Profile (Student / Instructor)
+    let roleProfile = null;
+    if (user.role === "user") {
+      let studentProfile = await StudentProfile.findOne({ userId });
+      if (!studentProfile) {
+        studentProfile = new StudentProfile({ userId });
+      }
+
+      const studentAllowedFields = [
+        "headline",
+        "bio",
+        "department",
+        "college",
+        "semester",
+        "githubUrl",
+        "linkedinUrl",
+        "websiteUrl",
+        "activeTheme",
+      ];
+
+      studentAllowedFields.forEach((field) => {
+        if (updateData[field] !== undefined) {
+          studentProfile[field] = updateData[field];
+        }
+      });
+
+      if (Array.isArray(updateData.interests)) {
+        studentProfile.interests = updateData.interests;
+      }
+
+      await studentProfile.save();
+      roleProfile = await studentProfile.populate("interests");
+    } else if (user.role === "instructor") {
+      let instructorProfile = await InstructorProfile.findOne({ userId });
+      if (!instructorProfile) {
+        instructorProfile = new InstructorProfile({ userId });
+      }
+
+      const instructorAllowedFields = [
+        "headline",
+        "bio",
+        "department",
+        "organization",
+        "officeHours",
+        "githubUrl",
+        "linkedinUrl",
+        "websiteUrl",
+      ];
+
+      instructorAllowedFields.forEach((field) => {
+        if (updateData[field] !== undefined) {
+          instructorProfile[field] = updateData[field];
+        }
+      });
+
+      if (Array.isArray(updateData.expertise)) {
+        instructorProfile.expertise = updateData.expertise;
+      }
+
+      await instructorProfile.save();
+      roleProfile = instructorProfile;
+    }
+
+    const userObj = user.toObject();
+    delete userObj.password;
+
+    return {
+      ...userObj,
+      profile: roleProfile || null,
+    };
   }
 
   /**

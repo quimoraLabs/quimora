@@ -34,8 +34,13 @@ export const getAllUsers = async (req, res, next) => {
 
 export const getUserById = async (req, res, next) => {
   try {
-    const user = await checkUser(req.params.userId);
-    res.status(200).json(user);
+    const { user, profile } = await UserService.getUserProfile(req.params.userId);
+    const userObj = user.toObject ? user.toObject() : { ...user };
+    delete userObj.password;
+    res.status(200).json({
+      ...userObj,
+      profile: profile || null,
+    });
   } catch (err) {
     next(err);
   }

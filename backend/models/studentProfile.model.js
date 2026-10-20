@@ -39,6 +39,46 @@ const studentProfileSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    headline: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    bio: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    department: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    college: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    semester: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    githubUrl: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    linkedinUrl: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    websiteUrl: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     coinsBalance: {
       type: Number,
       default: 100, // Starter welcome gift

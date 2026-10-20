@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Toaster } from "react-hot-toast";
 import useAuthStore from "./features/auth/store/authStore";
 import Loader from "./components/common/Loader";
+import ScrollToTop from "./components/common/ScrollToTop";
 import { AppRouter } from "./routes/AppRouter";
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
 
   return (
     <>
+      <ScrollToTop />
       <Toaster position="top-center" reverseOrder={false} />
       <AppRouter />
     </>

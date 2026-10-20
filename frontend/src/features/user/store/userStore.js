@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import toast from "react-hot-toast";
 import axiosClient from "../../../api/axiosClient";
-
+import useAuthStore from "../../auth/store/authStore";
 
 const useUserStore = create((set) => ({
   user: null,
@@ -28,13 +28,10 @@ const useUserStore = create((set) => ({
   getUser: async (id) => {
     set({ loading: true });
     try {
-
-
       const response = await axiosClient.get(`/users/${id}`);
       set({ user: response.data });
     } catch (error) {
       console.error("Error fetching user profile:", error);
-      //   toast.error("Failed to fetch user profile.");
       set({ user: null });
     } finally {
       set({ loading: false });
@@ -43,14 +40,19 @@ const useUserStore = create((set) => ({
   updateUser: async (id, data) => {
     set({ loading: true });
     try {
-
-
       const response = await axiosClient.patch(`/users/${id}`, data);
-      set({ user: response.data });
+      const updatedData = response.data?.user || response.data;
+      set({ user: updatedData });
+      
+      // Keep authStore in sync
+      useAuthStore.setState({ user: updatedData });
+
       toast.success("Profile updated successfully!");
+      return updatedData;
     } catch (error) {
       console.error("Error updating user profile:", error);
-      toast.error("Failed to update profile.");
+      toast.error(error.response?.data?.message || "Failed to update profile.");
+      throw error;
     } finally {
       set({ loading: false });
     }
