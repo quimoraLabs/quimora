@@ -7,5 +7,11 @@ export default defineConfig({
     reporters: ['verbose'],
     testTimeout: 10000,
     fileParallelism: false,
+    pool: 'forks',
+    poolOptions: {
+      forks: {
+        singleFork: true,
+      },
+    },
   },
 });

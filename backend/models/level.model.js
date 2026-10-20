@@ -31,7 +31,6 @@ const levelSchema = new mongoose.Schema(
   }
 );
 
-levelSchema.index({ levelName: 1 }, { unique: true });
 levelSchema.index({ minElo: 1, maxElo: 1 });
 
 const Level = mongoose.model("Level", levelSchema);

@@ -13,6 +13,8 @@ import { validateObjectId } from "./middleware/validObjectId.middleware.js";
 import instructorDashboardRoutes from "./routes/instructorDashboard.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import interestRoutes from "./routes/interest.routes.js";
+import levelRoutes from "./routes/level.routes.js";
+import quizAssignmentRoutes from "./routes/quizAssignment.routes.js";
 import { redisCache } from "./config/redis.js";
 
 const app = express();
@@ -101,6 +103,8 @@ apiRouter.use(
 );
 apiRouter.use("/instructor", instructorDashboardRoutes);
 apiRouter.use("/interests", interestRoutes);
+apiRouter.use("/levels", levelRoutes);
+apiRouter.use("/", quizAssignmentRoutes);
 
 // Mount the versioned router centrally (supports both /api/v2 and legacy /api/v1)
 app.use(config.apiPrefix, apiRouter);

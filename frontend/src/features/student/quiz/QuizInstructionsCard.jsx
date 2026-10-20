@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "motion/react";
 import {
   ShieldCheck,
@@ -12,8 +13,10 @@ import { useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import useStudentQuizStore from "../exam/store/useStudentQuizStore";
 import { enterFullScreen, exitFullScreen } from "../exam/hooks/enterFullScreen";
+import InstructorConsentModal from "../components/InstructorConsentModal";
 
 export const QuizInstructionsCard = () => {
+  const [showConsentModal, setShowConsentModal] = useState(false);
   const rules = [
     "Do not switch tabs or windows during the test. Doing so will be flagged.",
     "Multiple tab switches will result in automatic submission.",
@@ -32,19 +35,21 @@ export const QuizInstructionsCard = () => {
   const quizDuration = location.state?.timeLimit || 10;
   const totalQuestions = location.state?.totalQuestions || 0;
 
-  console.log(quizId, quizTitle, quizDuration, totalQuestions);
-
   const handleGoBack = () => {
     exitFullScreen();
     navigate("/student/quizzes");
   };
 
-  const handleStartQuiz = async () => {
+  const handleStartQuizClick = () => {
     if (!quizId) {
       toast.error("Quiz metadata is missing!");
       return;
     }
+    setShowConsentModal(true);
+  };
 
+  const executeStartQuiz = async () => {
+    setShowConsentModal(false);
     try {
       enterFullScreen();
       await startAttempt(quizId, navigate);
@@ -139,7 +144,7 @@ export const QuizInstructionsCard = () => {
 
         <div className="flex flex-col sm:flex-row gap-4">
           <button
-            onClick={handleStartQuiz}
+            onClick={handleStartQuizClick}
             className="flex-1 bg-brand-mid hover:bg-brand-primary text-white font-bold py-4 px-6 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand-mid/10"
           >
             <Play className="w-5 h-5 animate-pulse" />{" "}
@@ -152,6 +157,14 @@ export const QuizInstructionsCard = () => {
             <X className="w-5 h-5" /> Cancel Attempt
           </button>
         </div>
+
+        <InstructorConsentModal
+          isOpen={showConsentModal}
+          quizId={quizId}
+          quizTitle={quizTitle}
+          onConsentConfirmed={executeStartQuiz}
+          onCancel={() => setShowConsentModal(false)}
+        />
       </motion.div>
     </div>
   );

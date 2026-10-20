@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import QuizAttempt from "../models/quizAttempt.model.js";
+import QuizAssignment from "../models/quizAssignment.model.js";
 import { assertQuizExists } from "../utils/assertion.utils.js";
 import { fetchInstructorDashboardData } from "../services/instructorDashboard.service.js";
 
@@ -25,7 +26,7 @@ export const getInstructorDashboard = async (req, res, next) => {
 };
 
 /**
- * @desc    Get students who have attempted quizzes created by the logged-in instructor
+ * @desc    Get students who have attempted quizzes created by or assigned to the instructor
  * @route   GET /api/v2/instructor/students
  * @access  Private (Instructor)
  * @returns {Object} Aggregated list of students and their stats
@@ -33,6 +34,10 @@ export const getInstructorDashboard = async (req, res, next) => {
 export const getInstructorStudents = async (req, res, next) => {
   try {
     const instructorId = new mongoose.Types.ObjectId(req.auth.userId);
+
+    // Fetch all quizzes assigned to this instructor
+    const assignedDocs = await QuizAssignment.find({ instructorId }).select("quizId");
+    const assignedQuizIds = assignedDocs.map((a) => a.quizId);
 
     const students = await QuizAttempt.aggregate([
       {
@@ -46,7 +51,10 @@ export const getInstructorStudents = async (req, res, next) => {
       { $unwind: "$quizDetails" },
       {
         $match: {
-          "quizDetails.createdBy": instructorId,
+          $or: [
+            { "quizDetails.createdBy": instructorId },
+            { "quizDetails._id": { $in: assignedQuizIds } },
+          ],
           status: "completed",
         },
       },

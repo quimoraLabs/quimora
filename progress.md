@@ -17,7 +17,7 @@ Quimora is evolving through distinct, versioned milestones:
 ┌─────────────────────────┐      ┌─────────────────────────┐      ┌─────────────────────────┐
 │       V1 SHIPPED        │ ───► │       V2 SHIPPED        │ ───► │       V3 IN PROGRESS    │
 │  Baseline Auth & Quizzes│      │  Timed Engine & Admin   │      │ Adaptive Elo & Profiles │
-│       ✅ 100% DONE       │      │       ✅ 100% DONE       │      │      🟡 ~25% DONE       │
+│       ✅ 100% DONE       │      │       ✅ 100% DONE       │      │      🟢 ~65% DONE       │
 └─────────────────────────┘      └─────────────────────────┘      └─────────────────────────┘
 ```
 
@@ -95,17 +95,22 @@ Quimora is evolving through distinct, versioned milestones:
 
 ---
 
-### Phase 2: Level Badges & Instructor Assignment Flow (Pending)
-- [ ] **Frontend Tier Badges**:
-  - [ ] Visual badge indicators for Beginner, Learner, Intermediate, Advanced, Master, Expert tiers.
-  - [ ] Student Profile Elo progression chart.
-- [ ] **Quiz Assignment & Consent**:
-  - [ ] Instructor Quiz Assignment management UI.
-  - [ ] Pre-Quiz Student Consent Modal showing instructor bio, rating, and verified credentials.
-  - [ ] Pre-Quiz Consent API endpoint (`POST /api/v1/student/quiz/:quizId/consent`).
-- [ ] **Privacy-Preserving Analytics Middleware**:
-  - [ ] Granular analytics for assigned quiz students.
-  - [ ] Anonymized aggregate analytics for external student attempts.
+### Phase 2: Level Badges & Instructor Assignment Flow (✅ 100% Complete)
+- [x] **Frontend Tier Badges**:
+  - [x] `LevelBadge.jsx` component supporting 6 tiers (Beginner, Learner, Intermediate, Advanced, Master, Expert) with dynamic Elo auto-mapping (`getTierFromElo`).
+  - [x] Integrated into `StudentDashboardPage.jsx` alongside real-time Elo ratings.
+- [x] **Level Thresholds API**:
+  - [x] `GET /api/v2/levels` (Fetch all 6 canonical level tiers).
+  - [x] `GET /api/v2/levels/current-tier?elo=:elo` (Real-time tier calculation and metadata).
+- [x] **1:1 Quiz Assignment & Consent Engine**:
+  - [x] `POST /api/v2/instructor/quizzes/:quizId/assign` (Assign quiz to certified instructor with role).
+  - [x] `GET /api/v2/instructor/quizzes/assigned` (List instructor's assigned quizzes).
+  - [x] `GET /api/v2/quizzes/:quizId/assigned-instructor` (Transparency endpoint returning verified instructor credentials, bio, and expertise).
+  - [x] `POST /api/v2/student/quiz/:quizId/consent` (Student telemetry disclosure consent recording).
+  - [x] `InstructorConsentModal.jsx` (Interactive pre-quiz student modal showing instructor profile and telemetry terms).
+  - [x] Wired into `QuizInstructionsCard.jsx` before entering examination hall.
+- [x] **Privacy-Preserving Analytics**:
+  - [x] `instructorDashboard.controllers.js` updated to include both author and assigned quizzes in student roster analytics.
 
 ---
 

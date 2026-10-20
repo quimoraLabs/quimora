@@ -22,6 +22,7 @@ import Leaderboard from "../../features/student/dashboard/LeaderboardItem";
 import WeakestArea from "../../features/student/dashboard/WeakestAreasCard";
 import StatCard from "../../components/common/StatCard";
 import InterestOnboardingModal from "../../features/student/components/InterestOnboardingModal";
+import LevelBadge from "../../features/student/components/LevelBadge";
 import axiosClient from "../../api/axiosClient";
 
 /**
@@ -217,9 +218,7 @@ function StudentDashboardPage() {
                     </p>
                   </div>
                   <div className="text-right shrink-0">
-                    <span className="inline-block px-2 py-0.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 font-extrabold text-xs">
-                      {ratingValue} Elo
-                    </span>
+                    <LevelBadge elo={ratingValue} />
                   </div>
                 </div>
               );
