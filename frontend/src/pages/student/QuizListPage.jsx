@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import { Play, Sparkles, SlidersHorizontal, BookOpen } from "lucide-react";
+import { Play, Sparkles, SlidersHorizontal, BookOpen, RotateCcw } from "lucide-react";
 import useQuizListStore from "../../features/student/quiz/store/useQuizListStore";
 import DataTable from "../../components/common/DataTable";
 import InterestFilterBar from "../../features/student/components/InterestFilterBar";
@@ -128,31 +128,71 @@ function QuizListPage() {
   }, [quizzes, selectedInterestId, interests]);
 
   // Define headers for the DataTable
-  const headers = useMemo(() => ["Quiz Title", "Time Limit", "Questions", ""], []);
+  const headers = useMemo(() => ["Quiz Title", "Time Limit", "Questions", "Attempts", ""], []);
 
   // Define renderRow for DataTable
-  const renderQuizRow = useCallback((quiz) => (
-    <>
-      <td className="px-6 py-4 whitespace-nowrap">
-        <div className="text-sm font-medium text-main">{quiz?.title}</div>
-        <div className="text-sm text-muted">{quiz?.description}</div>
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">
-        {quiz?.timeLimit} minutes
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">
-        {quiz?.questions?.length || 0}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-        <button
-          onClick={() => handleStart(quiz)}
-          className="inline-flex items-center gap-2 px-4 py-2 border border-transparent text-sm font-medium rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 transition-all shadow-sm cursor-pointer"
-        >
-          <Play className="w-4 h-4" /> Start
-        </button>
-      </td>
-    </>
-  ), [handleStart]);
+  const renderQuizRow = useCallback((quiz) => {
+    const isExhausted = quiz?.maxAttempts > 0 && (quiz?.attemptsRemaining === 0 || quiz?.canAttempt === false);
+
+    return (
+      <>
+        <td className="px-6 py-4 whitespace-nowrap">
+          <div className="text-sm font-medium text-main">{quiz?.title}</div>
+          <div className="text-sm text-muted">{quiz?.description}</div>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">
+          {quiz?.timeLimit} minutes
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">
+          {quiz?.questions?.length || 0}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm">
+          {quiz?.maxAttempts > 0 ? (
+            <div className="flex flex-col gap-1">
+              <span
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold w-fit ${
+                  !isExhausted
+                    ? "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800"
+                    : "bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800"
+                }`}
+              >
+                <RotateCcw className="w-3 h-3" />
+                {quiz?.attemptsUsed || 0} / {quiz?.maxAttempts} Used
+              </span>
+              <span className="text-[11px] text-muted">
+                {!isExhausted
+                  ? `${quiz?.attemptsRemaining ?? (quiz.maxAttempts - (quiz.attemptsUsed || 0))} attempts left`
+                  : "No attempts remaining"}
+              </span>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold w-fit bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                <RotateCcw className="w-3 h-3" />
+                Unlimited
+              </span>
+              <span className="text-[11px] text-muted">
+                {quiz?.attemptsUsed || 0} attempts taken
+              </span>
+            </div>
+          )}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+          <button
+            onClick={() => handleStart(quiz)}
+            disabled={isExhausted}
+            className={`inline-flex items-center gap-2 px-4 py-2 border border-transparent text-sm font-medium rounded-xl text-white transition-all shadow-sm ${
+              isExhausted
+                ? "bg-gray-400 dark:bg-zinc-700 opacity-60 cursor-not-allowed"
+                : "bg-indigo-600 hover:bg-indigo-700 cursor-pointer shadow-indigo-500/20 hover:shadow-indigo-500/30"
+            }`}
+          >
+            <Play className="w-4 h-4" /> {isExhausted ? "Limit Reached" : "Start"}
+          </button>
+        </td>
+      </>
+    );
+  }, [handleStart]);
 
   return (
     <div className="p-4 md:p-8 text-main min-h-screen space-y-6">

@@ -63,6 +63,44 @@ export const getAvailableQuizzesForStudents = async (req, res, next) => {
       .skip((page - 1) * limit)
       .limit(limit);
 
+    // Compute student's attempts for each quiz
+    let attemptsMap = {};
+    if (userId && quizzes.length > 0) {
+      const quizIds = quizzes.map((q) => q._id);
+      const attempts = await QuizAttempt.aggregate([
+        {
+          $match: {
+            userId: new mongoose.Types.ObjectId(userId),
+            quizId: { $in: quizIds },
+          },
+        },
+        {
+          $group: {
+            _id: "$quizId",
+            count: { $sum: 1 },
+          },
+        },
+      ]);
+      attempts.forEach((a) => {
+        attemptsMap[a._id.toString()] = a.count;
+      });
+    }
+
+    const formattedQuizzes = quizzes.map((quiz) => {
+      const quizObj = quiz.toObject ? quiz.toObject() : { ...quiz };
+      const attemptsUsed = attemptsMap[quizObj._id.toString()] || 0;
+      const maxAttempts = typeof quizObj.maxAttempts === "number" ? quizObj.maxAttempts : 0;
+      const attemptsRemaining = maxAttempts > 0 ? Math.max(0, maxAttempts - attemptsUsed) : null;
+
+      return {
+        ...quizObj,
+        attemptsUsed,
+        maxAttempts,
+        attemptsRemaining,
+        canAttempt: maxAttempts === 0 || attemptsUsed < maxAttempts,
+      };
+    });
+
     const responsePayload = {
       success: true,
       pagination: {
@@ -71,10 +109,10 @@ export const getAvailableQuizzesForStudents = async (req, res, next) => {
         currentPage: page,
         limit,
       },
-      data: quizzes,
+      data: formattedQuizzes,
     };
 
-    await redisCache.set(cacheKey, responsePayload, 60);
+    await redisCache.set(cacheKey, responsePayload, 10);
 
     res.status(200).json(responsePayload);
   } catch (error) {

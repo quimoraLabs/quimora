@@ -66,7 +66,7 @@ export const handleExpiredAttempt = async (attempt, quizTimeLimit) => {
     return attempt;
 };
 
-// Helper to initialize snapshot creation (supports student custom question limit)
+// Helper to initialize snapshot creation (supports student custom question limit & full two-level randomization)
 export const createAttemptSession = async (userId, quizId, questionLimit = null) => {
     let rawQuestions = await Question.find({ quizId })
         .select("questionText marks difficulty options")
@@ -76,40 +76,53 @@ export const createAttemptSession = async (userId, quizId, questionLimit = null)
         throw new Error("Cannot start a quiz that contains no active questions");
     }
 
-    // If student requested a question limiter, select that subset
-    const limit = questionLimit ? parseInt(questionLimit, 10) : null;
-    if (limit && limit > 0 && limit < rawQuestions.length) {
-        // Randomize question order for distinct attempt experiences
-        const shuffled = [...rawQuestions];
-        for (let i = shuffled.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-        }
-        rawQuestions = shuffled.slice(0, limit);
+    // 1. Always thoroughly randomize questions using Fisher-Yates shuffle
+    const shuffled = [...rawQuestions];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
 
-    const questionSnapshots = rawQuestions.map((q) => ({
-        questionId: q._id,
-        questionText: q.questionText,
-        marks: q.marks || 1,
-        difficulty: q.difficulty,
-        options: (q.options || []).map((opt) => ({
-            _id: opt._id,
-            optionText: opt.optionText || opt.text,
-            isCorrect: Boolean(opt.isCorrect),
-        })),
-    }));
+    // 2. Determine session question count: student chosen limit or default 50
+    let limit = questionLimit ? parseInt(questionLimit, 10) : 50;
+    if (isNaN(limit) || limit <= 0) {
+        limit = 50;
+    }
+
+    // Slice to limit (capped by total available questions)
+    const selectedQuestions = shuffled.slice(0, Math.min(limit, shuffled.length));
+
+    // 3. Shuffle options within each question so ABCD positions cannot be memorized
+    const questionSnapshots = selectedQuestions.map((q) => {
+        const shuffledOptions = [...(q.options || [])];
+        for (let i = shuffledOptions.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffledOptions[i], shuffledOptions[j]] = [shuffledOptions[j], shuffledOptions[i]];
+        }
+
+        return {
+            questionId: q._id,
+            questionText: q.questionText,
+            marks: q.marks || 1,
+            difficulty: q.difficulty,
+            options: shuffledOptions.map((opt) => ({
+                _id: opt._id,
+                optionText: opt.optionText || opt.text,
+                isCorrect: Boolean(opt.isCorrect),
+            })),
+        };
+    });
 
     const attempt = await QuizAttempt.create({
         userId,
         quizId,
-        totalQuestions: rawQuestions.length,
+        totalQuestions: questionSnapshots.length,
         questionSnapshots,
         status: "started",
         startedAt: new Date(),
     });
 
-    return { attempt, rawQuestions };
+    return { attempt, rawQuestions: questionSnapshots };
 };
 
 // Helper to process quiz submission, verify time, and calculate score

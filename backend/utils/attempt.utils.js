@@ -1,6 +1,6 @@
 export const sanitizeQuestionsForStudent = (rawQuestions) => {
     return rawQuestions.map((q) => ({
-        _id: q._id,
+        _id: q._id || q.questionId,
         questionText: q.questionText,
         marks: q.marks,
         difficulty: q.difficulty,
@@ -11,4 +11,4 @@ export const sanitizeQuestionsForStudent = (rawQuestions) => {
             }))
             : [],
     }));
-};
+};

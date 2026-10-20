@@ -94,8 +94,8 @@ export const startQuizAttempt = async (req, res, next) => {
       selectedOptions: ans.selectedOptions,
     }));
 
-    // If question limit was chosen on fresh attempt, scale timeLimit (1 min/question, min 5)
-    const sessionTimeLimit = (attempt.totalQuestions && attempt.totalQuestions < (quiz.questions?.length || 0))
+    // Calibrate time limit proportionally to questions count (1 min per question, minimum 5 mins)
+    const sessionTimeLimit = attempt.totalQuestions
       ? Math.max(5, Math.ceil(attempt.totalQuestions * 1))
       : (quiz.timeLimit || 10);
 

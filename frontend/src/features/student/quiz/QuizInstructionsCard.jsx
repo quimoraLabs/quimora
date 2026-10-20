@@ -41,17 +41,24 @@ export const QuizInstructionsCard = () => {
   // Determine available options for session question limit
   const questionOptions = useMemo(() => {
     if (!totalQuestions || totalQuestions <= 5) return [];
-    const opts = [];
-    if (totalQuestions >= 10) opts.push(10);
-    if (totalQuestions >= 15) opts.push(15);
-    if (totalQuestions >= 20) opts.push(20);
+    const candidates = [10, 25, 50];
+    const opts = candidates.filter((n) => n < totalQuestions);
     if (!opts.includes(totalQuestions)) {
       opts.push(totalQuestions);
     }
-    return opts;
+    return opts.sort((a, b) => a - b);
   }, [totalQuestions]);
 
-  const effectiveQuestionsCount = selectedQuestionLimit || totalQuestions;
+  // Student decides how many questions to attempt: Default to 50 (or max available)
+  useEffect(() => {
+    if (totalQuestions >= 50) {
+      setSelectedQuestionLimit(50);
+    } else if (totalQuestions > 0) {
+      setSelectedQuestionLimit(totalQuestions);
+    }
+  }, [totalQuestions]);
+
+  const effectiveQuestionsCount = selectedQuestionLimit || (totalQuestions >= 50 ? 50 : totalQuestions);
   const effectiveTimeLimit = selectedQuestionLimit
     ? Math.max(5, Math.ceil(selectedQuestionLimit * 1))
     : quizDuration;
@@ -164,21 +171,35 @@ export const QuizInstructionsCard = () => {
               </div>
               <div className="flex flex-wrap gap-2">
                 {questionOptions.map((opt) => {
-                  const isSelected =
-                    selectedQuestionLimit === opt ||
-                    (!selectedQuestionLimit && opt === totalQuestions);
+                  const isSelected = selectedQuestionLimit === opt;
+                  const isDefault = opt === 50;
                   return (
                     <button
                       key={opt}
                       type="button"
-                      onClick={() => setSelectedQuestionLimit(opt === totalQuestions ? null : opt)}
-                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      onClick={() => setSelectedQuestionLimit(opt)}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                         isSelected
-                          ? "bg-indigo-600 text-white shadow-sm shadow-indigo-500/30"
+                          ? "bg-indigo-600 text-white shadow-sm shadow-indigo-500/30 ring-2 ring-indigo-500/30"
                           : "bg-surface border border-main text-muted hover:border-indigo-400"
                       }`}
                     >
-                      {opt === totalQuestions ? `All Questions (${totalQuestions})` : `${opt} Questions`}
+                      <span>
+                        {opt === totalQuestions && opt !== 50
+                          ? `All Questions (${totalQuestions})`
+                          : `${opt} Questions`}
+                      </span>
+                      {isDefault && (
+                        <span
+                          className={`text-[10px] px-1.5 py-0.5 rounded-md uppercase tracking-wider font-extrabold ${
+                            isSelected
+                              ? "bg-white/20 text-white"
+                              : "bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300"
+                          }`}
+                        >
+                          Default
+                        </span>
+                      )}
                     </button>
                   );
                 })}
