@@ -2,6 +2,7 @@ import Quiz from "../models/quiz.model.js";
 import User from "../models/user.model.js";
 import Question from "../models/question.model.js";
 import QuizAttempt from "../models/quizAttempt.model.js";
+import StudentProfile from "../models/studentProfile.model.js";
 import mongoose from "mongoose";
 import { redisCache } from "../config/redis.js";
 import {
@@ -24,7 +25,12 @@ export const getAvailableQuizzesForStudents = async (req, res, next) => {
     page = parseInt(page, 10);
     limit = parseInt(limit, 10);
 
-    const cacheKey = `quizzes:student:p${page}:l${limit}`;
+    const userId = req.auth?.userId;
+
+    const cacheKey = userId
+      ? `quizzes:student:${userId}:p${page}:l${limit}`
+      : `quizzes:student:all:p${page}:l${limit}`;
+
     const cachedData = await redisCache.get(cacheKey);
     if (cachedData) {
       return res.status(200).json(cachedData);
@@ -39,9 +45,20 @@ export const getAvailableQuizzesForStudents = async (req, res, next) => {
       ],
     };
 
+    // V3 Interest-Driven Filter: only return quizzes matching the student's selected interests
+    if (userId) {
+      const profile = await StudentProfile.findOne({ userId });
+      if (profile && Array.isArray(profile.interests) && profile.interests.length > 0) {
+        query.interestIds = { $in: profile.interests };
+      } else {
+        query.interestIds = { $in: [] };
+      }
+    }
+
     const totalItems = await Quiz.countDocuments(query);
     const quizzes = await Quiz.find(query)
       .populate("createdBy", "name email")
+      .populate("interestIds", "name slug")
       .sort({ startDate: -1 })
       .skip((page - 1) * limit)
       .limit(limit);
@@ -50,14 +67,14 @@ export const getAvailableQuizzesForStudents = async (req, res, next) => {
       success: true,
       pagination: {
         totalItems,
-        totalPages: Math.ceil(totalItems / limit),
+        totalPages: Math.ceil(totalItems / limit) || 1,
         currentPage: page,
         limit,
       },
       data: quizzes,
     };
 
-    await redisCache.set(cacheKey, responsePayload, 180);
+    await redisCache.set(cacheKey, responsePayload, 60);
 
     res.status(200).json(responsePayload);
   } catch (error) {

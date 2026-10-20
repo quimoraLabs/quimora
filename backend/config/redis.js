@@ -72,6 +72,19 @@ export const redisCache = {
     }
   },
 
+  async delPattern(pattern) {
+    if (!isRedisConnected || !redisClient) return false;
+    try {
+      const keys = await redisClient.keys(pattern);
+      if (keys && keys.length > 0) {
+        await redisClient.del(...keys);
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  },
+
   isConnected() {
     return isRedisConnected;
   },

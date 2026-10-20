@@ -2,14 +2,15 @@ import StudentProfile from "../models/studentProfile.model.js";
 import Interest from "../models/interest.model.js";
 import EloRating from "../models/eloRating.model.js";
 import QuizAttempt from "../models/quizAttempt.model.js";
+import { redisCache } from "../config/redis.js";
 
 export class StudentProfileService {
   /**
    * Complete initial student interest onboarding (requires 5-6 interests)
    */
   static async completeOnboarding(userId, interestIds) {
-    if (!Array.isArray(interestIds) || interestIds.length < 5 || interestIds.length > 6) {
-      const error = new Error("Initial onboarding requires selecting between 5 and 6 interests");
+    if (!Array.isArray(interestIds) || interestIds.length < 1 || interestIds.length > 10) {
+      const error = new Error("Please select at least 1 interest (up to 10)");
       error.statusCode = 400;
       throw error;
     }
@@ -46,6 +47,9 @@ export class StudentProfileService {
         { upsert: true, new: true }
       );
     }
+
+    // Invalidate cached quizzes for this student so feed updates instantly
+    await redisCache.delPattern(`quizzes:student:${userId}:*`);
 
     return profile;
   }
@@ -108,6 +112,9 @@ export class StudentProfileService {
         { upsert: true, new: true }
       );
     }
+
+    // Invalidate cached quizzes for this student so feed updates instantly
+    await redisCache.delPattern(`quizzes:student:${userId}:*`);
 
     return profile;
   }

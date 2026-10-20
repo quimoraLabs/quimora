@@ -14,6 +14,8 @@ import {
   Layers,
   ArrowRight,
   Loader2,
+  Check,
+  Search,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import axiosClient from "../../../api/axiosClient";
@@ -32,8 +34,18 @@ const ICON_MAP = {
 export default function InterestOnboardingModal({ isOpen, onComplete }) {
   const [interests, setInterests] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+
+  const filteredInterests = interests.filter((interest) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase().trim();
+    const nameMatch = interest.name?.toLowerCase().includes(q);
+    const descMatch = interest.description?.toLowerCase().includes(q);
+    const tagMatch = interest.topicTags?.some((tag) => tag.toLowerCase().includes(q));
+    return nameMatch || descMatch || tagMatch;
+  });
 
   useEffect(() => {
     if (!isOpen) return;
@@ -61,19 +73,19 @@ export default function InterestOnboardingModal({ isOpen, onComplete }) {
       if (prev.includes(id)) {
         return prev.filter((item) => item !== id);
       }
-      if (prev.length >= 6) {
-        toast.error("You can select a maximum of 6 interests during onboarding.");
+      if (prev.length >= 10) {
+        toast.error("You can select a maximum of 10 interests.");
         return prev;
       }
       return [...prev, id];
     });
   };
 
-  const isCountValid = selectedIds.length >= 5 && selectedIds.length <= 6;
+  const isCountValid = selectedIds.length >= 1 && selectedIds.length <= 10;
 
   const handleSubmit = async () => {
     if (!isCountValid) {
-      toast.error("Please select 5 or 6 interests to complete onboarding.");
+      toast.error("Please select at least 1 interest to continue.");
       return;
     }
 
@@ -117,19 +129,17 @@ export default function InterestOnboardingModal({ isOpen, onComplete }) {
               Choose Your Learning Interests
             </h2>
             <p className="mt-2 text-sm md:text-base text-slate-600 dark:text-slate-400">
-              Select <span className="font-semibold text-indigo-600 dark:text-indigo-400">5 to 6 topics</span>. 
+              Select <span className="font-semibold text-indigo-600 dark:text-indigo-400">1 or more topics</span> (up to 10). 
               We'll calibrate your initial Elo rating (1000) and unlock topic-specific challenges.
             </p>
 
-            {/* Selection Counter Pill */}
-            <div className="mt-4 flex items-center gap-3">
+            {/* Selection Counter Pill & Search Bar */}
+            <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div
-                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-colors ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-colors w-fit ${
                   isCountValid
                     ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400"
-                    : selectedIds.length > 6
-                    ? "bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-400"
-                    : "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-400"
+                    : "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400"
                 }`}
               >
                 {isCountValid ? (
@@ -138,10 +148,22 @@ export default function InterestOnboardingModal({ isOpen, onComplete }) {
                   <AlertCircle className="w-3.5 h-3.5" />
                 )}
                 <span>
-                  {selectedIds.length} of 5-6 selected
-                  {selectedIds.length < 5 && ` (need ${5 - selectedIds.length} more)`}
-                  {isCountValid && " — Perfect!"}
+                  {selectedIds.length === 0
+                    ? "Select at least 1 topic to unlock"
+                    : `${selectedIds.length} topic${selectedIds.length === 1 ? "" : "s"} selected`}
                 </span>
+              </div>
+
+              {/* Quick Tech Search Bar */}
+              <div className="relative flex-1 max-w-xs">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Filter by tech (e.g. HTML, React, Python)..."
+                  className="w-full pl-8 pr-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all shadow-2xs"
+                />
               </div>
             </div>
           </div>
@@ -153,9 +175,20 @@ export default function InterestOnboardingModal({ isOpen, onComplete }) {
                 <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
                 <p className="text-sm font-medium">Loading topics & skill bands...</p>
               </div>
+            ) : filteredInterests.length === 0 ? (
+              <div className="py-12 text-center text-slate-500 dark:text-slate-400">
+                <p className="text-sm">No topics matching &quot;{searchQuery}&quot;</p>
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="mt-2 text-xs text-indigo-600 dark:text-indigo-400 font-semibold hover:underline"
+                >
+                  Clear search
+                </button>
+              </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                {interests.map((interest) => {
+                {filteredInterests.map((interest) => {
                   const isSelected = selectedIds.includes(interest._id);
                   const IconComponent = ICON_MAP[interest.icon] || Globe;
 
@@ -169,20 +202,20 @@ export default function InterestOnboardingModal({ isOpen, onComplete }) {
                           : "bg-slate-50/50 border-slate-200 hover:border-slate-300 dark:bg-slate-800/40 dark:border-slate-800 dark:hover:border-slate-700"
                       }`}
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
                           <div
-                            className={`p-2.5 rounded-xl transition-colors ${
+                            className={`p-2.5 rounded-xl shrink-0 transition-colors ${
                               isSelected
-                                ? "bg-indigo-600 text-white"
+                                ? "bg-indigo-600 text-white shadow-sm"
                                 : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 group-hover:text-indigo-600"
                             }`}
                           >
                             <IconComponent className="w-5 h-5" />
                           </div>
-                          <div>
+                          <div className="min-w-0 flex-1">
                             <h4
-                              className={`font-semibold text-sm transition-colors ${
+                              className={`font-semibold text-sm truncate transition-colors ${
                                 isSelected
                                   ? "text-indigo-950 dark:text-indigo-200"
                                   : "text-slate-900 dark:text-white"
@@ -190,38 +223,44 @@ export default function InterestOnboardingModal({ isOpen, onComplete }) {
                             >
                               {interest.name}
                             </h4>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">
+                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
                               {interest.description || "Adaptive quiz topic"}
                             </p>
                           </div>
                         </div>
 
+                        {/* Checkbox selector: fixed 22px size with shrink-0 so it NEVER squishes */}
                         <div
-                          className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${
+                          className={`w-5.5 h-5.5 rounded-md shrink-0 flex items-center justify-center transition-all border-2 ${
                             isSelected
-                              ? "bg-indigo-600 text-white"
-                              : "border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
+                              ? "bg-indigo-600 border-indigo-600 text-white shadow-sm"
+                              : "border-slate-400/60 dark:border-slate-600 bg-white/50 dark:bg-slate-800/80 group-hover:border-indigo-400"
                           }`}
                         >
-                          {isSelected && <CheckCircle2 className="w-4 h-4" />}
+                          {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                         </div>
                       </div>
 
-                      {/* Topic Tags Preview */}
+                      {/* Topic Tech Badges Preview */}
                       {Array.isArray(interest.topicTags) && interest.topicTags.length > 0 && (
-                        <div className="mt-3 flex flex-wrap gap-1.5">
-                          {interest.topicTags.slice(0, 3).map((tag, idx) => (
+                        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                          {interest.topicTags.slice(0, 4).map((tag, idx) => (
                             <span
                               key={idx}
-                              className={`text-[10px] font-medium px-2 py-0.5 rounded-md ${
+                              className={`text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-md border transition-colors ${
                                 isSelected
-                                  ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300"
-                                  : "bg-slate-200/60 text-slate-600 dark:bg-slate-750 dark:bg-slate-800 dark:text-slate-400"
+                                  ? "bg-indigo-100/90 text-indigo-700 border-indigo-300 dark:bg-indigo-900/60 dark:text-indigo-300 dark:border-indigo-700"
+                                  : "bg-white/80 text-slate-600 border-slate-200 dark:bg-slate-800/80 dark:text-slate-300 dark:border-slate-700"
                               }`}
                             >
-                              #{tag}
+                              {tag}
                             </span>
                           ))}
+                          {interest.topicTags.length > 4 && (
+                            <span className="text-[10px] font-medium text-slate-400">
+                              +{interest.topicTags.length - 4}
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>
@@ -253,7 +292,9 @@ export default function InterestOnboardingModal({ isOpen, onComplete }) {
                 </>
               ) : (
                 <>
-                  Unlock Quizzes
+                  {selectedIds.length > 0
+                    ? `Unlock Quizzes (${selectedIds.length} selected)`
+                    : "Select at least 1 topic"}
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}

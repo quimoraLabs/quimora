@@ -50,6 +50,11 @@ axiosClient.interceptors.response.use(
         window.location.href = "/login";
       }
     } else if (status === 403) {
+      // Suppress generic toast for onboarding required (handled gracefully by OnboardingModal)
+      if (error.response?.data?.code === "ONBOARDING_REQUIRED") {
+        return Promise.reject(error);
+      }
+
       // Unauthorized / Forbidden: Role mismatch or restricted access
       toast.error(
         errorMessage ||

@@ -1,10 +1,11 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import { Play, Sparkles } from "lucide-react";
+import { Play, Sparkles, SlidersHorizontal, BookOpen } from "lucide-react";
 import useQuizListStore from "../../features/student/quiz/store/useQuizListStore";
 import DataTable from "../../components/common/DataTable";
 import InterestFilterBar from "../../features/student/components/InterestFilterBar";
+import InterestOnboardingModal from "../../features/student/components/InterestOnboardingModal";
 import axiosClient from "../../api/axiosClient";
 
 function QuizListPage() {
@@ -12,24 +13,29 @@ function QuizListPage() {
   const { fetchAvailableQuizzes, quizzes } = useQuizListStore();
   const [interests, setInterests] = useState([]);
   const [selectedInterestId, setSelectedInterestId] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loadingInterests, setLoadingInterests] = useState(true);
+
+  // Fetch only the student's chosen interests from their profile
+  const fetchStudentInterests = useCallback(async () => {
+    try {
+      setLoadingInterests(true);
+      const res = await axiosClient.get("/interests/student/profile");
+      if (res.data?.success && res.data?.data?.profile) {
+        const studentInterests = res.data.data.profile.interests || [];
+        setInterests(studentInterests);
+      }
+    } catch (err) {
+      console.error("Could not load student profile interests:", err);
+    } finally {
+      setLoadingInterests(false);
+    }
+  }, []);
 
   useEffect(() => {
     fetchAvailableQuizzes();
-
-    // Fetch active interests for the filter bar
-    const fetchInterests = async () => {
-      try {
-        const res = await axiosClient.get("/interests");
-        if (res.data?.success && Array.isArray(res.data?.data)) {
-          setInterests(res.data.data);
-        }
-      } catch (err) {
-        console.error("Could not load interests:", err);
-      }
-    };
-
-    fetchInterests();
-  }, [fetchAvailableQuizzes]);
+    fetchStudentInterests();
+  }, [fetchAvailableQuizzes, fetchStudentInterests]);
 
   const handleStart = useCallback((quiz) => {
     if (!quiz || !quiz.id) {
@@ -47,28 +53,78 @@ function QuizListPage() {
     });
   }, [navigate]);
 
-  // Filter quizzes by active interest
+  const handleOnboardingComplete = useCallback(() => {
+    setIsModalOpen(false);
+    fetchStudentInterests();
+    fetchAvailableQuizzes();
+  }, [fetchStudentInterests, fetchAvailableQuizzes]);
+
+  // Strictly filter quizzes by the student's selected profile interests
   const filteredQuizzes = useMemo(() => {
-    if (!selectedInterestId) return quizzes;
+    if (!quizzes || quizzes.length === 0 || !interests || interests.length === 0) {
+      return [];
+    }
 
-    const activeInterest = interests.find((i) => i._id === selectedInterestId);
-    if (!activeInterest) return quizzes;
+    const studentInterestIdStrings = new Set(
+      interests.map((i) => (i._id?.toString() || i.id?.toString() || "").trim())
+    );
 
-    const tags = (activeInterest.topicTags || []).map((t) => t.toLowerCase());
-    const interestName = activeInterest.name.toLowerCase();
+    // 1. Base filter: Quiz MUST belong to at least one of the student's chosen profile topics
+    const allowedQuizzes = quizzes.filter((q) => {
+      // Direct ID check
+      const matchesId = (q.interestIds || []).some((item) => {
+        const idStr = (typeof item === "object" ? item?._id : item)?.toString() || "";
+        return studentInterestIdStrings.has(idStr);
+      });
+      if (matchesId) return true;
 
-    return quizzes.filter((q) => {
-      const title = (q.title || "").toLowerCase();
-      const desc = (q.description || "").toLowerCase();
-      const quizTags = (q.tags || []).map((t) => t.toLowerCase());
+      // Fallback topic tag or name matching against student's selected interests
+      return interests.some((interest) => {
+        const tags = (interest.topicTags || []).map((t) => t.toLowerCase());
+        const interestName = (interest.name || "").toLowerCase();
+        const title = (q.title || "").toLowerCase();
+        const desc = (q.description || "").toLowerCase();
+        const quizTags = (q.tags || []).map((t) => t.toLowerCase());
 
-      const matchesTags = tags.some(
-        (t) => title.includes(t) || desc.includes(t) || quizTags.includes(t)
-      );
-      const matchesName = title.includes(interestName) || desc.includes(interestName);
-
-      return matchesTags || matchesName;
+        return (
+          tags.some((t) => title.includes(t) || desc.includes(t) || quizTags.includes(t)) ||
+          title.includes(interestName) ||
+          desc.includes(interestName)
+        );
+      });
     });
+
+    // 2. If a specific interest filter pill is clicked, filter strictly to that topic
+    if (selectedInterestId) {
+      const activeInterest = interests.find(
+        (i) => (i._id?.toString() || i.id?.toString()) === selectedInterestId.toString()
+      );
+      if (!activeInterest) return allowedQuizzes;
+
+      const targetId = (activeInterest._id?.toString() || activeInterest.id?.toString() || "").trim();
+      const tags = (activeInterest.topicTags || []).map((t) => t.toLowerCase());
+      const interestName = (activeInterest.name || "").toLowerCase();
+
+      return allowedQuizzes.filter((q) => {
+        const matchesId = (q.interestIds || []).some((item) => {
+          const idStr = (typeof item === "object" ? item?._id : item)?.toString() || "";
+          return idStr === targetId;
+        });
+        if (matchesId) return true;
+
+        const title = (q.title || "").toLowerCase();
+        const desc = (q.description || "").toLowerCase();
+        const quizTags = (q.tags || []).map((t) => t.toLowerCase());
+
+        return (
+          tags.some((t) => title.includes(t) || desc.includes(t) || quizTags.includes(t)) ||
+          title.includes(interestName) ||
+          desc.includes(interestName)
+        );
+      });
+    }
+
+    return allowedQuizzes;
   }, [quizzes, selectedInterestId, interests]);
 
   // Define headers for the DataTable
@@ -109,18 +165,28 @@ function QuizListPage() {
           </div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Available Quizzes</h1>
           <p className="text-sm text-muted mt-1">
-            Browse and filter quizzes customized to your learning interests.
+            Quizzes customized strictly to your chosen learning interests and electives.
           </p>
         </div>
 
-        <div className="text-xs font-semibold px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 self-start sm:self-auto">
-          Showing {filteredQuizzes.length} of {quizzes.length} Quizzes
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50/70 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-xs font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all cursor-pointer shadow-sm"
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            Manage Interests
+          </button>
+
+          <div className="text-xs font-semibold px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+            {filteredQuizzes.length} Quizzes Available
+          </div>
         </div>
       </div>
 
-      {/* Interest Filter Bar */}
+      {/* Interest Filter Bar (strictly displays only student's selected interests) */}
       {interests.length > 0 && (
-        <div className="bg-slate-50/50 dark:bg-slate-900/40 p-3 rounded-2xl border border-slate-200 dark:border-slate-800">
+        <div className="bg-slate-50/50 dark:bg-slate-900/40 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2">
           <InterestFilterBar
             interests={interests}
             activeInterestId={selectedInterestId}
@@ -129,7 +195,7 @@ function QuizListPage() {
         </div>
       )}
 
-      {/* Quizzes Table */}
+      {/* Quizzes Table / Empty State */}
       {filteredQuizzes.length > 0 ? (
         <DataTable
           headers={headers}
@@ -141,21 +207,48 @@ function QuizListPage() {
           type="quiz"
         />
       ) : (
-        <div className="py-16 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8">
+        <div className="py-16 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 max-w-lg mx-auto">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center mx-auto mb-4 text-indigo-600 dark:text-indigo-400">
+            <BookOpen className="w-6 h-6" />
+          </div>
           <p className="text-base font-semibold text-slate-800 dark:text-slate-200">
-            No quizzes match this interest topic.
+            {interests.length === 0
+              ? "No interests selected in your profile yet"
+              : selectedInterestId
+              ? "No quizzes found for this selected topic"
+              : "No quizzes match your selected interests"}
           </p>
-          <p className="text-xs text-muted mt-1">
-            Try switching to &quot;All Quizzes&quot; or selecting a different topic above.
+          <p className="text-xs text-muted mt-1.5">
+            {interests.length === 0
+              ? "Select your current topics or electives to unlock tailored quizzes."
+              : selectedInterestId
+              ? "Try switching to 'All Quizzes' or pick another topic from your interests."
+              : "Update your interests to explore quizzes across different engineering topics."}
           </p>
-          <button
-            onClick={() => setSelectedInterestId(null)}
-            className="mt-4 px-4 py-2 text-xs font-bold bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-xl hover:bg-indigo-100 transition-all cursor-pointer"
-          >
-            Clear Filter
-          </button>
+          <div className="mt-5 flex items-center justify-center gap-3">
+            {selectedInterestId && (
+              <button
+                onClick={() => setSelectedInterestId(null)}
+                className="px-4 py-2 text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl hover:bg-slate-200 transition-all cursor-pointer"
+              >
+                Clear Topic Filter
+              </button>
+            )}
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="px-4 py-2 text-xs font-bold bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all cursor-pointer shadow-md shadow-indigo-500/20"
+            >
+              Manage Interests
+            </button>
+          </div>
         </div>
       )}
+
+      {/* Onboarding / Interest Management Modal */}
+      <InterestOnboardingModal
+        isOpen={isModalOpen}
+        onComplete={handleOnboardingComplete}
+      />
     </div>
   );
 }
