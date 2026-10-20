@@ -66,14 +66,26 @@ export const handleExpiredAttempt = async (attempt, quizTimeLimit) => {
     return attempt;
 };
 
-// Helper to initialize snapshot creation
-export const createAttemptSession = async (userId, quizId) => {
-    const rawQuestions = await Question.find({ quizId })
+// Helper to initialize snapshot creation (supports student custom question limit)
+export const createAttemptSession = async (userId, quizId, questionLimit = null) => {
+    let rawQuestions = await Question.find({ quizId })
         .select("questionText marks difficulty options")
         .lean();
 
     if (!rawQuestions || rawQuestions.length === 0) {
         throw new Error("Cannot start a quiz that contains no active questions");
+    }
+
+    // If student requested a question limiter, select that subset
+    const limit = questionLimit ? parseInt(questionLimit, 10) : null;
+    if (limit && limit > 0 && limit < rawQuestions.length) {
+        // Randomize question order for distinct attempt experiences
+        const shuffled = [...rawQuestions];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        rawQuestions = shuffled.slice(0, limit);
     }
 
     const questionSnapshots = rawQuestions.map((q) => ({

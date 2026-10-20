@@ -247,6 +247,8 @@ function QuizListPage() {
       {/* Onboarding / Interest Management Modal */}
       <InterestOnboardingModal
         isOpen={isModalOpen}
+        initialSelectedIds={interests.map((i) => i._id || i.id)}
+        onClose={() => setIsModalOpen(false)}
         onComplete={handleOnboardingComplete}
       />
     </div>

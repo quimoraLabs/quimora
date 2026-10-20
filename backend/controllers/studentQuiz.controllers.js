@@ -47,7 +47,7 @@ export const checkStudentQuizEligibility = async (req, res, next) => {
 
 export const startQuizAttempt = async (req, res, next) => {
   try {
-    const { quizId } = req.body;
+    const { quizId, questionLimit } = req.body;
     const userId = req.auth.userId.toString();
 
     // 1. Fetch & Validate Quiz Availability
@@ -80,7 +80,7 @@ export const startQuizAttempt = async (req, res, next) => {
     let questionsForResponse;
 
     if (!attempt) {
-      const sessionData = await createAttemptSession(userId, quizId);
+      const sessionData = await createAttemptSession(userId, quizId, questionLimit);
       attempt = sessionData.attempt;
       questionsForResponse = sessionData.rawQuestions;
     } else {
@@ -94,8 +94,13 @@ export const startQuizAttempt = async (req, res, next) => {
       selectedOptions: ans.selectedOptions,
     }));
 
+    // If question limit was chosen on fresh attempt, scale timeLimit (1 min/question, min 5)
+    const sessionTimeLimit = (attempt.totalQuestions && attempt.totalQuestions < (quiz.questions?.length || 0))
+      ? Math.max(5, Math.ceil(attempt.totalQuestions * 1))
+      : (quiz.timeLimit || 10);
+
     const elapsedSeconds = Math.floor((Date.now() - new Date(attempt.startedAt).getTime()) / 1000);
-    const remainingTimeSeconds = quiz.timeLimit ? Math.max(0, (quiz.timeLimit * 60) - elapsedSeconds) : null;
+    const remainingTimeSeconds = sessionTimeLimit ? Math.max(0, (sessionTimeLimit * 60) - elapsedSeconds) : null;
 
     // 5. Send Clean Secure Payload Response
     return res.status(200).json({
@@ -110,7 +115,7 @@ export const startQuizAttempt = async (req, res, next) => {
           _id: quiz._id,
           title: quiz.title,
           description: quiz.description,
-          timeLimit: quiz.timeLimit,
+          timeLimit: sessionTimeLimit,
           totalQuestions: questionsForResponse.length,
           questions: sanitizeQuestionsForStudent(questionsForResponse),
         },

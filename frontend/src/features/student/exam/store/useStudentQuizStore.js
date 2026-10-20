@@ -91,14 +91,18 @@ const useStudentQuizStore = create((set, get) => ({
   },
 
   // 1. Start or Resume Quiz Attempt with accurate timer calculation & answer restoration
-  startAttempt: async (quizId, navigate) => {
+  startAttempt: async (quizId, navigate, options = {}) => {
     if (!quizId) {
       toast.error("Quiz ID is required to start an attempt.");
       return;
     }
     set({ loading: true });
     try {
-      const response = await axiosClient.post(`/student/quiz/start`, { quizId });
+      const payload = { quizId };
+      if (options.questionLimit) {
+        payload.questionLimit = options.questionLimit;
+      }
+      const response = await axiosClient.post(`/student/quiz/start`, payload);
       if (response.data.success) {
         const { attemptId, quiz, startedAt, answers: backendAnswers } = response.data.data;
 

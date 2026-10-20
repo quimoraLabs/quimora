@@ -236,6 +236,8 @@ function StudentDashboardPage() {
       {/* ===== INTEREST ONBOARDING MODAL ===== */}
       <InterestOnboardingModal
         isOpen={showOnboarding}
+        initialSelectedIds={profileData?.profile?.interests?.map((i) => i._id || i.id) || []}
+        onClose={() => setShowOnboarding(false)}
         onComplete={() => {
           setShowOnboarding(false);
           fetchProfile();
