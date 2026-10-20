@@ -1,9 +1,7 @@
 import mongoose from "mongoose";
 import Quiz from "../models/quiz.model.js";
-// import User from "../models/user.model.js";
 import { isDuplicateQuestion } from "../utils/duplicate.utils.js";
 import imagekit, { deleteMedia, uploadMedia } from "../utils/imagekit.utils.js";
-
 import {
   assertQuestionExists,
   assertUserExists,
@@ -13,7 +11,12 @@ import { getQuizAccess } from "../utils/getQuizAccess.utils.js";
 import Question from "../models/question.model.js";
 import { hasFieldChanges } from "../utils/helper.utils.js";
 
-// Create single question
+/**
+ * @desc    Create a single question for a quiz
+ * @route   POST /api/v2/quizzes/:quizId/questions
+ * @access  Private (Instructor/Admin)
+ * @returns {Object} Created question object
+ */
 export const createQuestion = async (req, res, next) => {
   try {
     const { quizId } = req.params;
@@ -48,7 +51,12 @@ export const createQuestion = async (req, res, next) => {
   }
 };
 
-// Create bulk questions
+/**
+ * @desc    Create multiple questions in bulk for a quiz
+ * @route   POST /api/v2/quizzes/:quizId/questions/bulk
+ * @access  Private (Instructor/Admin)
+ * @returns {Object} Created questions array and imported count
+ */
 export const createBulkQuestions = async (req, res, next) => {
   try {
     const { quizId } = req.params;
@@ -71,12 +79,10 @@ export const createBulkQuestions = async (req, res, next) => {
       return res.status(403).json({ success: false, message: "Unauthorized access to this quiz." });
     }
 
-    // Bug fix #1 & #2: Single duplicate check + validate options
     const cleanedQuestions = [];
     for (const q of questions) {
-      // Bug fix #2: Validate options
       if (!q.options || !Array.isArray(q.options) || q.options.length < 2) {
-        continue; // Skip invalid questions
+        continue;
       }
 
       cleanedQuestions.push({
@@ -88,7 +94,6 @@ export const createBulkQuestions = async (req, res, next) => {
       });
     }
 
-    // Bug fix #1: Single duplicate check (removed the first one)
     const existingQuestions = await Question.find({
       quizId,
       questionText: { $in: cleanedQuestions.map(q => q.questionText) }
@@ -101,7 +106,6 @@ export const createBulkQuestions = async (req, res, next) => {
       return res.status(409).json({ success: false, message: "All provided questions are duplicates." });
     }
 
-    // Bug fix #3: Handle update failure
     const createdQuestions = await Question.insertMany(uniqueQuestions);
     const createdQuestionIds = createdQuestions.map(q => q._id);
 
@@ -109,7 +113,6 @@ export const createBulkQuestions = async (req, res, next) => {
       $push: { questions: { $each: createdQuestionIds } },
     });
 
-    // If quiz update fails, clean up orphaned questions
     if (!updatedQuiz) {
       await Question.deleteMany({ _id: { $in: createdQuestionIds } });
       return res.status(500).json({ success: false, message: "Failed to update quiz" });
@@ -125,6 +128,12 @@ export const createBulkQuestions = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Get question details by Question ID
+ * @route   GET /api/v2/quizzes/:quizId/questions/:questionId
+ * @access  Private (Instructor/Admin)
+ * @returns {Object} Question details
+ */
 export const getQuestionById = async (req, res, next) => {
   try {
     const { quizId, questionId } = req.params;
@@ -149,7 +158,12 @@ export const getQuestionById = async (req, res, next) => {
   }
 };
 
-// Get all questions for a quiz with Pagination Protection
+/**
+ * @desc    Get all questions for a quiz with pagination
+ * @route   GET /api/v2/quizzes/:quizId/questions
+ * @access  Private (Instructor/Admin)
+ * @returns {Object} Paginated questions list
+ */
 export const getQuizQuestions = async (req, res, next) => {
   try {
     const { quizId } = req.params;
@@ -186,14 +200,18 @@ export const getQuizQuestions = async (req, res, next) => {
   }
 };
 
-// Update standalone question
+/**
+ * @desc    Update an existing question
+ * @route   PATCH /api/v2/quizzes/:quizId/questions/:questionId
+ * @access  Private (Instructor/Admin)
+ * @returns {Object} Updated question object
+ */
 export const updateQuestion = async (req, res, next) => {
   try {
     const { questionId } = req.params;
     const { questionText, marks, difficulty, options } = req.body;
     const userId = req.auth.userId.toString();
 
-    // 1. Fetch & Ownership Check
     const question = await assertQuestionExists(questionId);
     const quiz = await assertQuizExists(question.quizId);
 
@@ -201,15 +219,12 @@ export const updateQuestion = async (req, res, next) => {
       return res.status(403).json({ error: "Unauthorized access" });
     }
 
-    // 2. Extract incoming fields
     const updates = { questionText, marks, difficulty, options };
 
-    // 3. CLEAN CHECK using Utility ⚡
     if (!hasFieldChanges(updates, question)) {
       return res.status(400).json({ error: "No changes detected in the provided data" });
     }
 
-    // 4. Duplicate Question Check (Only if text changed)
     if (questionText && questionText.trim() !== question.questionText) {
       const isDuplicate = await isDuplicateQuestion(question.quizId, questionText, questionId);
       if (isDuplicate) {
@@ -217,7 +232,6 @@ export const updateQuestion = async (req, res, next) => {
       }
     }
 
-    // 5. Apply updates & Save
     Object.assign(question, updates);
     await question.save();
 
@@ -231,7 +245,12 @@ export const updateQuestion = async (req, res, next) => {
   }
 };
 
-// Delete single question
+/**
+ * @desc    Delete a single question
+ * @route   DELETE /api/v2/quizzes/:quizId/questions/:questionId
+ * @access  Private (Instructor/Admin)
+ * @returns {Object} Success status message
+ */
 export const deleteQuestion = async (req, res, next) => {
   try {
     const { questionId } = req.params;
@@ -254,6 +273,12 @@ export const deleteQuestion = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Delete multiple questions in bulk from a quiz
+ * @route   DELETE /api/v2/quizzes/:quizId/questions/bulk
+ * @access  Private (Instructor/Admin)
+ * @returns {Object} Array of deleted question IDs
+ */
 export const deleteMultipleQuestions = async (req, res, next) => {
   try {
     const { quizId } = req.params;
@@ -306,7 +331,10 @@ export const deleteMultipleQuestions = async (req, res, next) => {
 };
 
 /**
- * Upload image diagram for a question using ImageKit
+ * @desc    Upload diagram image for a question using ImageKit
+ * @route   PATCH /api/v2/quizzes/:quizId/questions/:questionId/image
+ * @access  Private (Instructor/Admin)
+ * @returns {Object} Image URL and fileId payload
  */
 export const uploadQuestionImage = async (req, res, next) => {
   try {

@@ -43,105 +43,73 @@
 
 ```javascript
 const userSchema = new mongoose.Schema({
-  name: { type: String, required: true, trim: true },
-  email: { type: String, required: true, unique: true, lowercase: true },
-  password: { type: String, required: true },
+  name: { type: String, trim: true },
+  email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+  username: { type: String, required: true, unique: true, trim: true },
+  avatar: { url: { type: String }, fileId: { type: String } },
+  password: { type: String, required: true, select: false },
   role: { type: String, enum: ['user', 'instructor', 'admin'], default: 'user' },
-  isVerified: { type: Boolean, default: false },
-  resetPasswordOTP: { type: String, default: null },
-  resetPasswordOTPExpires: { type: Date, default: null }
-}, { timestamps: true });
+  active: { type: Boolean, default: true },
+  suspendedAt: { type: Date, default: null },
+  suspendedReason: { type: String, default: null },
+  lastLoginAt: { type: Date, default: null },
+  lastUsernameChangedAt: { type: Date, default: null },
+  otp: {
+    code: { type: String, select: false },
+    expiresAt: { type: Date },
+    purpose: { type: String, enum: ['reset', 'verify', 'login'] }
+  }
+}, { timestamps: true, versionKey: false });
 ```
-* **Indexes:** `{ email: 1 }` (Unique).
+* **Indexes:** `{ email: 1 }` (Unique), `{ username: 1 }` (Unique), `{ role: 1, active: 1 }`.
 
 ---
 
-### 2.2 Question Schema (`backend/models/question.model.js`)
+### 2.2 StudentProfile Schema (`backend/models/studentProfile.model.js`)
 
 ```javascript
-const questionSchema = new mongoose.Schema({
-  quizId: { type: mongoose.Schema.Types.ObjectId, ref: 'Quiz', required: true },
-  questionText: { type: String, required: true },
-  options: [{
-    optionText: { type: String, required: true },
-    isCorrect: { type: Boolean, default: false }
-  }],
-  marks: { type: Number, default: 1 },
-  explanation: { type: String, default: '' },
-  category: { type: String, default: 'General' },
-  difficulty: { type: String, enum: ['easy', 'medium', 'hard'], default: 'medium' },
-  eloRating: { type: Number, default: 1200 } // V3 adaptive difficulty rating
-}, { timestamps: true });
+const studentProfileSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
+  interests: {
+    type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Interest' }],
+    validate: [
+      function (val) { return val.length <= 10; },
+      'Student cannot select more than 10 interests'
+    ]
+  },
+  onboardingCompleted: { type: Boolean, default: false },
+  totalAttempts: { type: Number, default: 0 },
+  totalQuizzesAttempted: { type: Number, default: 0 },
+  lastAttemptAt: { type: Date, default: null }
+}, { timestamps: true, versionKey: false });
 ```
-* **Indexes:** `{ quizId: 1 }`, `{ eloRating: 1 }`.
+* **Indexes:** `{ userId: 1 }` (Unique).
 
 ---
 
-### 2.3 Quiz Schema (`backend/models/quiz.model.js`)
+### 2.3 InstructorProfile Schema (`backend/models/instructorProfile.model.js`)
 
 ```javascript
-const quizSchema = new mongoose.Schema({
-  title: { type: String, required: true, trim: true },
-  description: { type: String, default: '' },
-  instructor: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  duration: { type: Number, required: true }, // duration in minutes
-  passingScore: { type: Number, default: 40 }, // percentage
-  totalMarks: { type: Number, default: 0 },
-  categories: [{ type: String }],
-  interestIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Interest' }], // V3 interest tag links
-  isPublished: { type: Boolean, default: false },
-  questions: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Question' }]
-}, { timestamps: true });
+const instructorProfileSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
+  expertise: {
+    type: [{ type: String, trim: true }],
+    validate: [
+      function (val) { return val.length >= 1; },
+      'Instructor must specify at least 1 area of expertise'
+    ]
+  },
+  bio: { type: String, default: '' },
+  rating: { type: Number, default: 5.0, min: 1.0, max: 5.0 },
+  totalStudents: { type: Number, default: 0 },
+  totalQuizzes: { type: Number, default: 0 }
+}, { timestamps: true, versionKey: false });
 ```
-* **Indexes:** `{ instructor: 1 }`, `{ isPublished: 1 }`, `{ interestIds: 1 }`.
+* **Indexes:** `{ userId: 1 }` (Unique).
 
 ---
 
-### 2.4 QuizAttempt Schema (`backend/models/quizAttempt.model.js`)
-
-```javascript
-const quizAttemptSchema = new mongoose.Schema({
-  student: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  quiz: { type: mongoose.Schema.Types.ObjectId, ref: 'Quiz', required: true },
-  responses: [{
-    question: { type: mongoose.Schema.Types.ObjectId, ref: 'Question' },
-    selectedOption: { type: Number, default: null }, // option index (0-based)
-    isCorrect: { type: Boolean, default: false },
-    marksObtained: { type: Number, default: 0 }
-  }],
-  score: { type: Number, default: 0 },
-  percentage: { type: Number, default: 0 },
-  passed: { type: Boolean, default: false },
-  timeSpentSeconds: { type: Number, default: 0 },
-  status: { type: String, enum: ['in-progress', 'completed', 'abandoned'], default: 'in-progress' },
-  startedAt: { type: Date, default: Date.now },
-  expiresAt: { type: Date, default: null }, // Server-side hard deadline
-  completedAt: { type: Date, default: null }
-}, { timestamps: true });
-```
-* **Indexes:** `{ student: 1, quiz: 1 }`, `{ quiz: 1, score: -1 }` (Leaderboard indexing).
-
----
-
-## 3. V3 Mongoose Schemas (Design Specification)
-
-### 3.1 Interest Schema (`backend/models/interest.model.js`)
-
-```javascript
-const interestSchema = new mongoose.Schema({
-  name: { type: String, required: true, unique: true, trim: true },
-  slug: { type: String, required: true, unique: true, lowercase: true },
-  description: { type: String, default: '' },
-  topicTags: [{ type: String, trim: true }],
-  icon: { type: String, default: '' },
-  isActive: { type: Boolean, default: true }
-}, { timestamps: true });
-```
-* **Indexes:** `{ slug: 1 }` (Unique), `{ topicTags: 1 }`.
-
----
-
-### 3.2 EloRating Schema (`backend/models/eloRating.model.js`)
+### 2.4 EloRating Schema (`backend/models/eloRating.model.js`)
 
 ```javascript
 const eloRatingSchema = new mongoose.Schema({
@@ -150,49 +118,33 @@ const eloRatingSchema = new mongoose.Schema({
   rating: { type: Number, default: 1000, min: 0 },
   highestRating: { type: Number, default: 1000 },
   quizzesAttempted: { type: Number, default: 0 },
+  isArchived: { type: Boolean, default: false },
   lastUpdated: { type: Date, default: Date.now }
-}, { timestamps: true });
+}, { timestamps: true, versionKey: false });
 ```
 * **Indexes:** `{ studentId: 1, interestId: 1 }` (Compound Unique).
 
 ---
 
-### 3.3 Level Schema (`backend/models/level.model.js`)
+### 2.5 Interest Schema (`backend/models/interest.model.js`)
 
 ```javascript
-const levelSchema = new mongoose.Schema({
-  levelName: { 
-    type: String, 
-    required: true, 
-    enum: ['Beginner', 'Learner', 'Intermediate', 'Advanced', 'Master', 'Expert'] 
-  },
-  minElo: { type: Number, required: true },
-  maxElo: { type: Number, required: true },
-  badge: { type: String, default: '' }, // URL or icon identifier
-  description: { type: String, default: '' }
-}, { timestamps: true });
+const interestSchema = new mongoose.Schema({
+  name: { type: String, required: true, unique: true, trim: true },
+  slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
+  description: { type: String, default: '', trim: true },
+  topicTags: [{ type: String, trim: true }],
+  icon: { type: String, default: '' },
+  isCore: { type: Boolean, default: false },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  isActive: { type: Boolean, default: true }
+}, { timestamps: true, versionKey: false });
 ```
-* **Indexes:** `{ minElo: 1, maxElo: 1 }`.
+* **Indexes:** `{ slug: 1 }` (Unique), `{ topicTags: 1 }`, `{ isCore: 1 }`, `{ createdBy: 1 }`.
 
 ---
 
-### 3.4 InstructorProfile Schema (`backend/models/instructorProfile.model.js`)
-
-```javascript
-const instructorProfileSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
-  expertise: [{ type: String, required: true }],
-  bio: { type: String, default: '' },
-  rating: { type: Number, default: 5.0, min: 1.0, max: 5.0 },
-  totalStudents: { type: Number, default: 0 },
-  assignedQuizCount: { type: Number, default: 0 }
-}, { timestamps: true });
-```
-* **Indexes:** `{ userId: 1 }` (Unique).
-
----
-
-### 3.5 QuizAssignment Schema (`backend/models/quizAssignment.model.js`)
+### 2.6 QuizAssignment Schema (`backend/models/quizAssignment.model.js`)
 
 ```javascript
 const quizAssignmentSchema = new mongoose.Schema({

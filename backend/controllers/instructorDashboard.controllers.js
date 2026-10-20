@@ -4,7 +4,10 @@ import { assertQuizExists } from "../utils/assertion.utils.js";
 import { fetchInstructorDashboardData } from "../services/instructorDashboard.service.js";
 
 /**
- * Express Controller to retrieve instructor dashboard analytics feed.
+ * @desc    Get instructor dashboard analytics feed
+ * @route   GET /api/v2/instructor/dashboard
+ * @access  Private (Instructor)
+ * @returns {Object} Instructor dashboard analytics payload
  */
 export const getInstructorDashboard = async (req, res, next) => {
   try {
@@ -22,7 +25,10 @@ export const getInstructorDashboard = async (req, res, next) => {
 };
 
 /**
- * Get students who have attempted quizzes created by the logged-in instructor.
+ * @desc    Get students who have attempted quizzes created by the logged-in instructor
+ * @route   GET /api/v2/instructor/students
+ * @access  Private (Instructor)
+ * @returns {Object} Aggregated list of students and their stats
  */
 export const getInstructorStudents = async (req, res, next) => {
   try {
@@ -84,7 +90,10 @@ export const getInstructorStudents = async (req, res, next) => {
 };
 
 /**
- * Get all submissions for a specific quiz (Instructor view).
+ * @desc    Get all submissions for a specific quiz (Instructor view)
+ * @route   GET /api/v2/instructor/quiz/:quizId/submissions
+ * @access  Private (Instructor, Admin)
+ * @returns {Object} Quiz submissions and summary
  */
 export const getQuizSubmissionsForInstructor = async (req, res, next) => {
   try {
@@ -131,7 +140,10 @@ export const getQuizSubmissionsForInstructor = async (req, res, next) => {
 };
 
 /**
- * Get single attempt question-by-question review for Instructor.
+ * @desc    Get single attempt question-by-question review for Instructor
+ * @route   GET /api/v2/instructor/attempts/:attemptId/review
+ * @access  Private (Instructor, Admin)
+ * @returns {Object} Full attempt review details
  */
 export const getAttemptReviewForInstructor = async (req, res, next) => {
   try {

@@ -4,7 +4,7 @@ import QuizAttempt from "../models/quizAttempt.model.js";
 
 /**
  * @desc    Get admin dashboard statistics
- * @route   GET /api/v1/admin/stats
+ * @route   GET /api/v2/admin/stats
  * @access  Private (Admin only)
  * @returns { success, stats: { users, studentsOverview, instructorsOverview } }
  */

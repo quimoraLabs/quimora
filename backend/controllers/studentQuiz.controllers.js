@@ -18,8 +18,9 @@ import { fetchStudentDashboardAnalytics, getQuizLeaderboard } from "../services/
 
 /**
  * @desc    Quick eligibility check before user enters rules/start screen
- * @route   GET /api/v1/student/quiz/:quizId/eligibility
+ * @route   GET /api/v2/student/quiz/:quizId/eligibility
  * @access  Private (Student)
+ * @returns {Object} Eligibility state and attempt quota status
  */
 export const checkStudentQuizEligibility = async (req, res, next) => {
   try {
@@ -39,8 +40,9 @@ export const checkStudentQuizEligibility = async (req, res, next) => {
 
 /**
  * @desc    Start or resume a quiz session for student
- * @route   POST /api/v1/student/quiz/start
+ * @route   POST /api/v2/student/quiz/start
  * @access  Private (Student)
+ * @returns {Object} Attempt ID, remaining time, and sanitized questions
  */
 
 export const startQuizAttempt = async (req, res, next) => {
@@ -121,8 +123,9 @@ export const startQuizAttempt = async (req, res, next) => {
 
 /**
  * @desc    Save draft answers for active quiz session
- * @route   PATCH /api/v1/student/quiz/save-draft
+ * @route   PATCH /api/v2/student/quiz/save-draft
  * @access  Private (Student)
+ * @returns {Object} Save result status
  */
 export const saveQuizDraft = async (req, res, next) => {
   try {
@@ -147,8 +150,9 @@ export const saveQuizDraft = async (req, res, next) => {
 
 /**
  * @desc    Submit or finish current quiz session for student
- * @route   POST /api/v1/student/quiz/submit
+ * @route   POST /api/v2/student/quiz/submit
  * @access  Private (Student)
+ * @returns {Object} Score, breakdown, and updated Elo rating
  */
 export const submitQuizAttempt = async (req, res, next) => {
   try {
@@ -162,8 +166,6 @@ export const submitQuizAttempt = async (req, res, next) => {
 
     // 2. Execute Submission Logic via Service Layer
     const result = await submitAttemptSession(attemptId, userId, answers);
-
-
 
     // 3. Send Success Response
     return res.status(200).json({
@@ -179,8 +181,9 @@ export const submitQuizAttempt = async (req, res, next) => {
 
 /**
  * @desc    Get detailed view of a single quiz attempt for student
- * @route   GET /api/v1/student/attempts/:attemptId
+ * @route   GET /api/v2/student/attempts/:attemptId
  * @access  Private (Student)
+ * @returns {Object} Sanitized attempt details with question snapshots
  */
 export const getStudentAttemptDetails = async (req, res, next) => {
   try {
@@ -218,8 +221,9 @@ export const getStudentAttemptDetails = async (req, res, next) => {
 
 /**
  * @desc    Get all historical attempts taken by the logged-in student
- * @route   GET /api/v1/student/attempts
+ * @route   GET /api/v2/student/attempts
  * @access  Private (Student)
+ * @returns {Object} List of sanitized historical quiz attempts
  */
 
 export const getStudentAttemptHistory = async (req, res, next) => {
@@ -251,8 +255,9 @@ export const getStudentAttemptHistory = async (req, res, next) => {
 
 /**
  * @desc    Get quick summary result for a submitted attempt
- * @route   GET /api/v1/student/attempts/:attemptId/result
+ * @route   GET /api/v2/student/attempts/:attemptId/result
  * @access  Private (Student)
+ * @returns {Object} Score summary and time taken
  */
 export const getStudentAttemptResultSummary = async (req, res, next) => {
   try {
@@ -288,8 +293,9 @@ export const getStudentAttemptResultSummary = async (req, res, next) => {
 
 /**
  * @desc    Get comprehensive analytics & stats for student dashboard
- * @route   GET /api/v1/student/dashboard
+ * @route   GET /api/v2/student/dashboard
  * @access  Private (Student)
+ * @returns {Object} Student dashboard metrics and recent activity
  */
 export const getStudentDashboardStats = async (req, res, next) => {
   try {
@@ -309,8 +315,9 @@ export const getStudentDashboardStats = async (req, res, next) => {
 
 /**
  * @desc    Get leaderboard specifically for a single quiz
- * @route   GET /api/v1/student/leaderboard/quiz/:quizId
+ * @route   GET /api/v2/student/leaderboard/quiz/:quizId
  * @access  Private (Student)
+ * @returns {Object} Ranked list of top student scores for the quiz
  */
 export const getStudentQuizWiseLeaderboard = async (req, res, next) => {
   try {

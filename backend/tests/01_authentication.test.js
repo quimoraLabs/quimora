@@ -10,10 +10,10 @@ describe('🔐 Module 1: Authentication & User Verification APIs', () => {
     authData = await createTestUsersAndTokens();
   });
 
-  it('1. POST /api/v1/auth/register - registers new user successfully', async () => {
+  it('1. POST /api/v2/auth/register - registers new user successfully', async () => {
     const timestamp = Date.now();
     const res = await request(app)
-      .post('/api/v1/auth/register')
+      .post('/api/v2/auth/register')
       .send({
         name: 'New Registered User',
         username: `reg_user_${timestamp}`,
@@ -24,9 +24,9 @@ describe('🔐 Module 1: Authentication & User Verification APIs', () => {
     expect(res.body.success).toBe(true);
   });
 
-  it('2. POST /api/v1/auth/login - authenticates valid user and returns JWT token', async () => {
+  it('2. POST /api/v2/auth/login - authenticates valid user and returns JWT token', async () => {
     const res = await request(app)
-      .post('/api/v1/auth/login')
+      .post('/api/v2/auth/login')
       .send({
         email: 'student@test.com',
         password: 'password123',
@@ -36,9 +36,9 @@ describe('🔐 Module 1: Authentication & User Verification APIs', () => {
     expect(res.body).toHaveProperty('token');
   });
 
-  it('3. POST /api/v1/auth/login - rejects invalid credentials', async () => {
+  it('3. POST /api/v2/auth/login - rejects invalid credentials', async () => {
     const res = await request(app)
-      .post('/api/v1/auth/login')
+      .post('/api/v2/auth/login')
       .send({
         email: 'student@test.com',
         password: 'wrongpassword',
@@ -48,9 +48,9 @@ describe('🔐 Module 1: Authentication & User Verification APIs', () => {
     expect(res.body.message).toBe('Invalid credentials');
   });
 
-  it('4. GET /api/v1/auth/me - returns logged-in user profile with valid Bearer token', async () => {
+  it('4. GET /api/v2/auth/me - returns logged-in user profile with valid Bearer token', async () => {
     const res = await request(app)
-      .get('/api/v1/auth/me')
+      .get('/api/v2/auth/me')
       .set('Authorization', `Bearer ${authData.student.token}`);
     expect([200, 403]).toContain(res.statusCode);
     if (res.statusCode === 200) {
@@ -58,15 +58,15 @@ describe('🔐 Module 1: Authentication & User Verification APIs', () => {
     }
   });
 
-  it('5. GET /api/v1/auth/me - rejects request with 401 if token is missing', async () => {
-    const res = await request(app).get('/api/v1/auth/me');
+  it('5. GET /api/v2/auth/me - rejects request with 401 if token is missing', async () => {
+    const res = await request(app).get('/api/v2/auth/me');
     expect(res.statusCode).toBe(401);
   });
 
-  it('6. POST /api/v1/auth/admin/create-user - admin successfully creates new user', async () => {
+  it('6. POST /api/v2/auth/admin/create-user - admin successfully creates new user', async () => {
     const timestamp = Date.now();
     const res = await request(app)
-      .post('/api/v1/auth/admin/create-user')
+      .post('/api/v2/auth/admin/create-user')
       .set('Authorization', `Bearer ${authData.admin.token}`)
       .send({
         name: 'Created By Admin',
@@ -79,17 +79,17 @@ describe('🔐 Module 1: Authentication & User Verification APIs', () => {
     expect(res.body.success).toBe(true);
   });
 
-  it('7. PATCH /api/v1/auth/request-otp - sends password reset request', async () => {
+  it('7. PATCH /api/v2/auth/request-otp - sends password reset request', async () => {
     const res = await request(app)
-      .patch('/api/v1/auth/request-otp')
+      .patch('/api/v2/auth/request-otp')
       .send({ email: 'student@test.com' });
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
   });
 
-  it('8. PATCH /api/v1/auth/change-password - changes authenticated user password directly', async () => {
+  it('8. PATCH /api/v2/auth/change-password - changes authenticated user password directly', async () => {
     const res = await request(app)
-      .patch('/api/v1/auth/change-password')
+      .patch('/api/v2/auth/change-password')
       .set('Authorization', `Bearer ${authData.student.token}`)
       .send({
         currentPassword: 'password123',

@@ -4,10 +4,11 @@ import Question from "../models/question.model.js";
 import QuizAttempt from "../models/quizAttempt.model.js";
 import imagekit, { deleteMedia, uploadMedia } from "../utils/imagekit.utils.js";
 import { assertUserExists as checkUser } from "../utils/assertion.utils.js";
+import UserService from "../services/user.service.js";
 
 /**
  * @desc    Get all users with consistent response format
- * @route   GET /api/v1/users
+ * @route   GET /api/v2/users
  * @access  Private (Admin only)
  * @returns { success, count, users }
  */
@@ -26,7 +27,7 @@ export const getAllUsers = async (req, res, next) => {
 
 /**
  * @desc    Get user by ID with consistent response format
- * @route   GET /api/v1/users/:userId
+ * @route   GET /api/v2/users/:userId
  * @access  Private (Admin only)
  * @returns { success, user }
  */
@@ -42,7 +43,7 @@ export const getUserById = async (req, res, next) => {
 
 /**
  * @desc    Update user details (username, email, name, avatar)
- * @route   PATCH /api/v1/users/:userId
+ * @route   PATCH /api/v2/users/:userId
  * @access  Private (Admin only)
  * @param   {string} userId - User ID from URL params
  * @body    { username, email, name, avatar }
@@ -57,24 +58,7 @@ export const updateUser = async (req, res, next) => {
       return res.status(403).json({ success: false, message: "Unauthorized access to update this user profile" });
     }
 
-    const data = req.body;
-    // Here we only check user exists or not
-    const user = await checkUser(userId, "false");
-
-    const allowedUpdates = {};
-    const safeFields = ["username", "email", "name", "avatar"];
-
-    safeFields.forEach((field) => {
-      if (data[field] !== undefined) {
-        allowedUpdates[field] = data[field];
-      }
-    });
-
-    const updatedUser = await User.findOneAndUpdate(
-      { _id: userId },
-      { $set: allowedUpdates },
-      { returnDocument: 'after', runValidators: true },
-    );
+    const updatedUser = await UserService.updateUser(userId, req.body);
 
     res.status(200).json({
       success: true,
@@ -82,13 +66,16 @@ export const updateUser = async (req, res, next) => {
       user: updatedUser,
     });
   } catch (err) {
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({ success: false, message: err.message });
+    }
     next(err);
   }
 };
 
 /**
  * @desc    Delete a user (with self-protection + last-admin protection)
- * @route   DELETE /api/v1/users/:userId
+ * @route   DELETE /api/v2/users/:userId
  * @access  Private (Admin only)
  * @param   {string} userId - User ID from URL params
  * @throws  400 - Cannot delete own account / Cannot delete last admin
@@ -98,32 +85,7 @@ export const deleteUser = async (req, res, next) => {
     const { userId } = req.params;
     const currentUserId = req.auth?.userId?.toString();
 
-    // SELF-PROTECTION: Admin cannot delete own account
-    if (userId === currentUserId) {
-      return res.status(400).json({
-        success: false,
-        message: "You cannot delete your own account"
-      });
-    }
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "User not found" 
-      });
-    }
-
-    // LAST-ADMIN PROTECTION: Cannot delete the only admin
-    if (user.role === 'admin') {
-      const adminCount = await User.countDocuments({ role: 'admin' });
-      if (adminCount <= 1) {
-        return res.status(400).json({
-          success: false,
-          message: "Cannot delete the only admin in the system"
-        });
-      }
-    }
+    const user = await UserService.deleteUser(userId, currentUserId);
 
     // Cascade deletion: attempts by user
     await QuizAttempt.deleteMany({ userId });
@@ -148,13 +110,16 @@ export const deleteUser = async (req, res, next) => {
       message: "User deleted successfully" 
     });
   } catch (err) {
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({ success: false, message: err.message });
+    }
     next(err);
   }
 };
 
 /**
  * @desc    Toggle user active/deactivated status
- * @route   PATCH /api/v1/users/:userId/active
+ * @route   PATCH /api/v2/users/:userId/active
  * @access  Private (Admin only)
  * @param   {string} userId - User ID from URL params
  * @throws  400 - Cannot deactivate own account / Cannot deactivate last admin
@@ -192,6 +157,13 @@ export const toggleUserActiveStatus = async (req, res, next) => {
     }
 
     user.active = !user.active;
+    if (!user.active) {
+      user.suspendedAt = new Date();
+      user.suspendedReason = "Account deactivated by administrator";
+    } else {
+      user.suspendedAt = null;
+      user.suspendedReason = null;
+    }
     await user.save();
 
     res.status(200).json({
@@ -206,12 +178,12 @@ export const toggleUserActiveStatus = async (req, res, next) => {
 
 /**
  * @desc    Update user avatar using ImageKit
- * @route   PATCH /api/v1/users/:userId/avatar
+ * @route   PATCH /api/v2/users/:userId/avatar
  * @access  Private (Admin only)
  * @param   {string} userId - User ID from URL params
  * @body    { file } - Multipart form-data with image file
  */
-export const upadteAvatar = async (req, res, next) => {
+export const updateAvatar = async (req, res, next) => {
   try {
     const { userId } = req.params;
     const currentUserId = req.auth?.userId?.toString();
@@ -245,7 +217,6 @@ export const upadteAvatar = async (req, res, next) => {
       fileId: uploadResponse.fileId,
     };
 
-
     await user.save();
 
     res.status(200).json({
@@ -260,7 +231,7 @@ export const upadteAvatar = async (req, res, next) => {
 
 /**
  * @desc    Change user role (Role Elevation / Demotion)
- * @route   PATCH /api/v1/users/:userId/role
+ * @route   PATCH /api/v2/users/:userId/role
  * @access  Private (Admin only)
  * @param   {string} userId - User ID from URL params
  * @body    { role } - Target role ('user' | 'instructor' | 'admin')
@@ -272,48 +243,11 @@ export const changeUserRole = async (req, res, next) => {
     const { role } = req.body;
     const currentUserId = req.auth?.userId?.toString();
 
-    if (!role || !["user", "instructor", "admin"].includes(role.toLowerCase())) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid role specified. Allowed roles: 'user', 'instructor', 'admin'",
-      });
-    }
-
-    const targetRole = role.toLowerCase();
-
-    // SELF-DEMOTION PROTECTION: Admin cannot demote own account
-    if (userId === currentUserId && targetRole !== "admin") {
-      return res.status(400).json({
-        success: false,
-        message: "You cannot demote your own admin account",
-      });
-    }
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    // LAST-ADMIN PROTECTION: Cannot demote the last admin
-    if (user.role === "admin" && targetRole !== "admin") {
-      const adminCount = await User.countDocuments({ role: "admin" });
-      if (adminCount <= 1) {
-        return res.status(400).json({
-          success: false,
-          message: "Cannot demote the last admin in the system",
-        });
-      }
-    }
-
-    user.role = targetRole;
-    await user.save();
+    const user = await UserService.changeUserRole(userId, role, currentUserId);
 
     res.status(200).json({
       success: true,
-      message: `User role changed to ${targetRole} successfully`,
+      message: `User role changed to ${user.role} successfully`,
       user: {
         _id: user._id,
         name: user.name,
@@ -322,6 +256,9 @@ export const changeUserRole = async (req, res, next) => {
       },
     });
   } catch (err) {
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({ success: false, message: err.message });
+    }
     next(err);
   }
 };

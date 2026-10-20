@@ -21,49 +21,49 @@ describe('👑 Module 4: Admin Role, Dashboard & User Management APIs', () => {
     tempUserId = tempUser._id;
   });
 
-  it('1. GET /api/v1/admin/stats - returns admin analytics dashboard stats', async () => {
+  it('1. GET /api/v2/admin/stats - returns admin analytics dashboard stats', async () => {
     const res = await request(app)
-      .get('/api/v1/admin/stats')
+      .get('/api/v2/admin/stats')
       .set('Authorization', `Bearer ${authData.admin.token}`);
     expect(res.statusCode).toBe(200);
     expect(res.body).toHaveProperty('success', true);
   });
 
-  it('2. GET /api/v1/users - admin lists all registered users', async () => {
+  it('2. GET /api/v2/users - admin lists all registered users', async () => {
     const res = await request(app)
-      .get('/api/v1/users')
+      .get('/api/v2/users')
       .set('Authorization', `Bearer ${authData.admin.token}`);
     expect(res.statusCode).toBe(200);
     expect(res.body).toHaveProperty('success', true);
     expect(Array.isArray(res.body.users || res.body.data || res.body)).toBe(true);
   });
 
-  it('3. GET /api/v1/users/:userId - fetches user profile by ID', async () => {
+  it('3. GET /api/v2/users/:userId - fetches user profile by ID', async () => {
     const res = await request(app)
-      .get(`/api/v1/users/${tempUserId}`)
+      .get(`/api/v2/users/${tempUserId}`)
       .set('Authorization', `Bearer ${authData.admin.token}`);
     expect(res.statusCode).toBe(200);
   });
 
-  it('4. PATCH /api/v1/users/:userId/active - admin toggles user active status', async () => {
+  it('4. PATCH /api/v2/users/:userId/active - admin toggles user active status', async () => {
     const res = await request(app)
-      .patch(`/api/v1/users/${tempUserId}/active`)
+      .patch(`/api/v2/users/${tempUserId}/active`)
       .set('Authorization', `Bearer ${authData.admin.token}`)
       .send({ active: true });
     expect(res.statusCode).toBe(200);
   });
 
-  it('5. GET /api/v1/admin/stats - rejects student token from accessing admin dashboard (403)', async () => {
+  it('5. GET /api/v2/admin/stats - rejects student token from accessing admin dashboard (403)', async () => {
     const res = await request(app)
-      .get('/api/v1/admin/stats')
+      .get('/api/v2/admin/stats')
       .set('Authorization', `Bearer ${authData.student.token}`);
     expect(res.statusCode).toBe(403);
     expect(res.body.message).toContain('Role not allowed');
   });
 
-  it('6. PATCH /api/v1/users/:userId/role - admin changes user role successfully', async () => {
+  it('6. PATCH /api/v2/users/:userId/role - admin changes user role successfully', async () => {
     const res = await request(app)
-      .patch(`/api/v1/users/${tempUserId}/role`)
+      .patch(`/api/v2/users/${tempUserId}/role`)
       .set('Authorization', `Bearer ${authData.admin.token}`)
       .send({ role: 'instructor' });
     expect(res.statusCode).toBe(200);

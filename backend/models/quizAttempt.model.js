@@ -128,6 +128,19 @@ const quizAttemptSchema = new mongoose.Schema(
     // Detailed mapping profile array of every question handled during the session
     answers: [answerSnapshotSchema],
 
+    // Elo rating audit trail tracking
+    eloChange: {
+      studentEloBefore: { type: Number, default: null },
+      studentEloAfter: { type: Number, default: null },
+      questionEloChanges: [
+        {
+          questionId: { type: mongoose.Schema.Types.ObjectId, ref: "Question" },
+          eloBefore: { type: Number },
+          eloAfter: { type: Number },
+        },
+      ],
+    },
+
     // Tracks total time taken to finish the entire exam (in seconds)
     timeTaken: {
       type: Number,

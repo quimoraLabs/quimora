@@ -1,9 +1,10 @@
 import { generateAIQuestionsService, generateAIDescriptionService } from "../services/aiQuestion.service.js";
 
 /**
- * Controller to generate multiple-choice questions via Groq AI
- * @route POST /api/v1/instructor/ai/generate-questions
- * @access Private (Instructor)
+ * @desc    Generate multiple-choice questions via Groq AI
+ * @route   POST /api/v2/instructor/ai/generate-questions
+ * @access  Private (Instructor)
+ * @returns {Object} List of generated AI questions
  */
 export const generateAIQuestions = async (req, res, next) => {
   try {
@@ -34,9 +35,10 @@ export const generateAIQuestions = async (req, res, next) => {
 };
 
 /**
- * Controller to generate quiz description via Groq AI
- * @route POST /api/v1/instructor/ai/generate-description
- * @access Private (Instructor)
+ * @desc    Generate quiz description via Groq AI
+ * @route   POST /api/v2/instructor/ai/generate-description
+ * @access  Private (Instructor)
+ * @returns {Object} Generated quiz description text
  */
 export const generateAIDescription = async (req, res, next) => {
   try {

@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import config from "../config/config.js";
 import User from "../models/user.model.js";
+import StudentProfile from "../models/studentProfile.model.js";
 
 const authMiddleware = async (req, res, next) => {
   try {
@@ -18,10 +19,19 @@ const authMiddleware = async (req, res, next) => {
       return res.status(401).json({ message: "Invalid token payload" });
     }
 
-    const user = await User.findById(decoded.id).select("role permissions");
+    const user = await User.findById(decoded.id).select(
+      "role permissions active suspendedAt suspendedReason"
+    );
 
     if (!user) {
       return res.status(401).json({ message: "User not found" });
+    }
+
+    if (!user.active || user.suspendedAt) {
+      return res.status(403).json({
+        code: "ACCOUNT_SUSPENDED",
+        message: `Account suspended: ${user.suspendedReason || "Contact support"}`,
+      });
     }
 
     req.auth = {
@@ -57,4 +67,30 @@ export const authorizeRoles = (...allowedRoles) => {
   };
 };
 
+/**
+ * Mandatory Onboarding Guard for Students
+ */
+export const checkStudentOnboarding = async (req, res, next) => {
+  try {
+    if (!req.auth) {
+      return res.status(401).json({ message: "No authentication data found" });
+    }
+
+    if (req.auth.role === "user") {
+      const profile = await StudentProfile.findOne({ userId: req.auth.userId });
+      if (!profile || !profile.onboardingCompleted) {
+        return res.status(403).json({
+          code: "ONBOARDING_REQUIRED",
+          message: "Please complete interest selection onboarding to continue",
+        });
+      }
+    }
+
+    next();
+  } catch (err) {
+    next(err);
+  }
+};
+
 export default authMiddleware;
+

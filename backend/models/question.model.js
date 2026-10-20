@@ -59,6 +59,12 @@ const questionSchema = new mongoose.Schema(
       url: { type: String, default: null },
       fileId: { type: String, default: null },
     },
+
+    eloRating: {
+      type: Number,
+      default: 1200,
+      min: 100,
+    },
   },
   {
     timestamps: true,
@@ -66,6 +72,7 @@ const questionSchema = new mongoose.Schema(
   },
 );
 
+questionSchema.index({ eloRating: 1 });
 
 const Question = mongoose.model("Question", questionSchema);
 export default Question;

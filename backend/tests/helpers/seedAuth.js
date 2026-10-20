@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import config from '../../config/config.js';
 import User from '../../models/user.model.js';
+import StudentProfile from '../../models/studentProfile.model.js';
 
 export const createTestUsersAndTokens = async () => {
   const timestamp = Date.now() + Math.floor(Math.random() * 100000);
@@ -24,7 +25,17 @@ export const createTestUsersAndTokens = async () => {
         throw err;
       }
     }
+  } else {
+    student.password = 'password123';
+    await student.save();
   }
+
+  // Ensure StudentProfile with onboardingCompleted exists
+  await StudentProfile.findOneAndUpdate(
+    { userId: student._id },
+    { $set: { onboardingCompleted: true } },
+    { upsert: true, new: true }
+  );
 
   // 2. Create or Find Instructor
   let instructor = await User.findOne({ email: 'instructor@test.com' });
@@ -45,6 +56,9 @@ export const createTestUsersAndTokens = async () => {
         throw err;
       }
     }
+  } else {
+    instructor.password = 'password123';
+    await instructor.save();
   }
 
   // 3. Create or Find Admin
@@ -66,6 +80,9 @@ export const createTestUsersAndTokens = async () => {
         throw err;
       }
     }
+  } else {
+    admin.password = 'password123';
+    await admin.save();
   }
 
   // Generate tokens

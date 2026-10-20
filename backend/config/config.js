@@ -18,5 +18,5 @@ export default {
   imagekitEndpoint: process.env.IMAGEKIT_URL_ENDPOINT || "https://ik.imagekit.io/dummy",
   nodeENV: process.env.NODE_ENV,
   groqApiKey: process.env.GROQ_API_KEY,
-  apiPrefix: process.env.API_PREFIX || "/api/v1"
+  apiPrefix: process.env.API_PREFIX || "/api/v2"
 };

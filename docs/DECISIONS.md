@@ -39,8 +39,9 @@
 ## 3. Role & Access Control Rules
 
 1. **Default Registration Role**: New users registering via `/api/auth/register` default to the `user` (Student) role unless explicitly specified as `instructor`.
-2. **Admin Privileges**: Only users with `role: 'admin'` can change user roles or suspend accounts.
-3. **Quiz Content Privacy**:
+2. **Protected Admin Role**: Registration endpoints (`/api/v1/auth/register`) strictly forbid `role: 'admin'`. Passing `role: 'admin'` will return `403 Forbidden`. Admin accounts can ONLY be created via CLI seed scripts (`seed_admin.js`) or promoted by existing admins.
+3. **Admin Privileges**: Only users with `role: 'admin'` can change user roles or suspend accounts.
+4. **Quiz Content Privacy**:
    - Students CANNOT view question answer keys (`isCorrect` flag) before or during an active quiz attempt.
    - Instructors can only edit or delete quizzes created by themselves unless the requester is an Admin.
 
@@ -48,12 +49,16 @@
 
 ## 4. V3 Business Rules (Adaptive Engine & Instructor Rules)
 
-1. **Interest-Based Quiz Discovery**:
+1. **V3 Fresh Start Decision**:
+   - V3 operates on a fresh dataset. V2 data is wiped using `reset_v3_data.js` and seeded using `seed_admin.js`, `seed_v3_levels.js`, and `seed_v3_interests.js`.
+   - Legacy V2 migration rules and scripts are deprecated and removed.
+
+2. **Interest-Based Quiz Discovery**:
    - Student selects zero or more interests/topic tags during onboarding or via settings.
    - Quizzes categorized under those interests are presented to the student on their dashboard.
    - The student voluntarily chooses which quiz to attempt (no forced or automatic enrollment).
 
-2. **Mathematical Elo Rating & Question Difficulty Formula**:
+3. **Mathematical Elo Rating & Question Difficulty Formula**:
    - Standard Elo rating algorithm with Development Factor ($K = 32$).
    - **Expected Student Score Calculation** ($E_S$) given student Elo rating ($R_S$) and question difficulty rating ($R_Q$):
      $$E_S = \frac{1}{1 + 10^{(R_Q - R_S)/400}}$$
@@ -64,7 +69,7 @@
      $$R_{Q, \text{new}} = \max\left(100, R_{Q, \text{old}} + K \times (E_S - S)\right)$$
      *(Correct answer $S=1$: student rating increases, question rating decreases; Wrong answer $S=0$: student rating decreases, question rating increases).*
 
-3. **Level Mapping Matrix & Threshold Rules**:
+4. **Level Mapping Matrix & Threshold Rules**:
    - Tier thresholds are **fixed platform-wide constants** stored in the database (`Level` collection) to ensure uniform badge criteria across all interest domains:
      - **Beginner**: $0 - 1000$ Elo
      - **Learner**: $1000 - 1200$ Elo
@@ -73,16 +78,16 @@
      - **Master**: $1600 - 1800$ Elo
      - **Expert**: $1800+$ Elo
 
-4. **Instructor Assignment Rule**:
+5. **Instructor Assignment Rule**:
    - Each quiz is assigned to **one primary instructor** via `QuizAssignment`.
    - An instructor can create and manage multiple quizzes.
    - Students see primary instructor details (name, bio, expertise, overall rating) on the pre-quiz preview screen.
 
-5. **Student Consent Rule**:
+6. **Student Consent Rule**:
    - Student MUST view instructor credentials and explicitly confirm consent via modal before initiating a quiz attempt (`POST /api/v1/student/quiz/:quizId/consent`).
    - Sessions initialized without recorded student consent will return `403 Forbidden`.
 
-6. **Instructor Data Visibility & "Enrolled Student" Definition**:
+7. **Instructor Data Visibility & "Enrolled Student" Definition**:
    - **Enrolled Student Definition**: A student who has explicitly completed the consent flow AND submitted at least one quiz attempt for a quiz owned by that primary instructor.
    - **Data Access Scope**:
      - **Primary Instructor**: Receives detailed student analytics (student names, emails, exact selected options, submission timestamps, and individual score reports).
@@ -90,7 +95,34 @@
 
 ---
 
-## 5. Soft Delete & Data Retention Rules
+## 5. V3 User Architecture & Profile Rules
 
-1. **User Account Deletion**: Soft deletion flags are preferred over hard deletion to maintain historical integrity of `QuizAttempt` analytics.
-2. **Quiz Deletion Impact**: Deleting a quiz removes all attached `Question` entities and marks associated `QuizAttempt` records as archived.
+1. **Student Interest Onboarding & Limits**:
+   - **Initial Onboarding**: Students must select 5–6 interests to flip `onboardingCompleted` to `true`. Once set, `onboardingCompleted` stays `true` permanently.
+   - **Mandatory Guard**: Students with `onboardingCompleted === false` receive `403 Forbidden` (`code: ONBOARDING_REQUIRED`) on dashboard/quiz APIs until onboarding is complete.
+   - **Hard Cap**: Maximum 10 interests per student, enforced via Mongoose schema validator.
+
+2. **Elo Archiving & Re-addition**:
+   - Removing an interest sets `isArchived: true` immediately on `EloRating`.
+   - Re-adding the interest toggles `isArchived: false` and preserves previous Elo score and `highestRating`.
+   - Peak tracking: `highestRating` updates whenever `newRating > highestRating`. Initial rating defaults to 1000.
+
+3. **Username Limits & Modification**:
+   - `username` can be changed once every 30 days (`lastUsernameChangedAt`). Attempting to change before 30 days returns `400 Bad Request`.
+
+4. **Account Suspension Coupling**:
+   - Admin account suspension sets `active: false`, `suspendedAt: new Date()`, and `suspendedReason`.
+   - Auth middleware blocks suspended accounts with `403 Forbidden`.
+
+5. **Interest Creation & Provenance Rules**:
+   - **Admin-created platform core interests**: `isCore: true`, `createdBy: adminId`.
+   - **System-seeded core interests**: `isCore: true`, `createdBy: null`.
+   - **Instructor-created custom interests**: `isCore: false`, `createdBy: instructorId`.
+   - **Student Access Scope**: Students can select and unselect active interests for personalized quiz discovery, but cannot create new interest entries.
+
+---
+
+## 6. Soft Delete & Data Retention Rules
+
+1. **User Account Deletion**: Soft deletion flags (`active: false`) are preferred over hard deletion to maintain historical integrity of `QuizAttempt` analytics.
+2. **Quiz Deletion Impact**: Soft-deleting a quiz removes all attached `Question` entities, decrements `InstructorProfile.totalQuizzes`, and marks associated `QuizAttempt` records as archived.

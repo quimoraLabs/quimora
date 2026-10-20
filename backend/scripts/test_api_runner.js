@@ -8,7 +8,7 @@ import Quiz from "../models/quiz.model.js";
 import Question from "../models/question.model.js";
 import QuizAttempt from "../models/quizAttempt.model.js";
 
-const BASE_URL = "http://localhost:5001/api/v1";
+const BASE_URL = "http://localhost:5001/api/v2";
 let server;
 
 async function request(endpoint, options = {}) {

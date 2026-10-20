@@ -11,7 +11,12 @@ import {
 import { formatUniversalResponse } from "../utils/universalFormatter.utils.js";
 import { isDuplicateQuiz } from "../utils/duplicate.utils.js";
 
-// Fetch Student Specific Active & Published Available Quizzes
+/**
+ * @desc    Fetch active and published available quizzes for students
+ * @route   GET /api/v2/quizzes/student
+ * @access  Private (Student)
+ * @returns {Object} Paginated list of student available quizzes
+ */
 export const getAvailableQuizzesForStudents = async (req, res, next) => {
   try {
     const now = new Date();
@@ -60,15 +65,18 @@ export const getAvailableQuizzesForStudents = async (req, res, next) => {
   }
 };
 
-
-// Create a new quiz (Allows empty question sets to add later)
+/**
+ * @desc    Create a new quiz
+ * @route   POST /api/v2/quizzes
+ * @access  Private (Instructor/Admin)
+ * @returns {Object} Created quiz details
+ */
 export const createQuiz = async (req, res, next) => {
   try {
-    const { title, description, timeLimit, maxAttempts, startDate, endDate, tags = [] } = req.body;
+    const { title, description, timeLimit, maxAttempts, startDate, endDate, tags = [], interestIds = [] } = req.body;
     const userId = req.auth.userId;
     await assertUserExists(userId, false);
 
-    // Check for duplicate quiz title for this user
     const isDuplicate = await isDuplicateQuiz(title, userId);
     if (isDuplicate) {
       return res.status(409).json({
@@ -86,22 +94,26 @@ export const createQuiz = async (req, res, next) => {
       endDate,
       createdBy: userId,
       tags,
+      interestIds,
     });
     await quiz.save();
-    // next();
+
     res.status(201).json({
       success: true,
       message: "Quiz created successfully",
       data: quiz,
     });
   } catch (error) {
-    // console.error("Create Quiz Error:", error);
     next(error);
   }
 };
 
-
-// Fetch single quiz high-level details for tracking
+/**
+ * @desc    Fetch quizzes created by the logged-in instructor
+ * @route   GET /api/v2/quizzes/instructor
+ * @access  Private (Instructor)
+ * @returns {Object} Paginated list of instructor quizzes
+ */
 export const getQuizzesByInstructor = async (req, res, next) => {
   try {
     let { page = 1, limit = 10 } = req.query;
@@ -115,8 +127,10 @@ export const getQuizzesByInstructor = async (req, res, next) => {
 
     const quizzes = await Quiz.find({
       createdBy: req.auth.userId.toString(),
-    }).skip((page - 1) * limit)
+    })
+      .skip((page - 1) * limit)
       .limit(limit);
+
     if (!quizzes) {
       return res.status(404).json({
         message: "Quizzes not found",
@@ -135,28 +149,30 @@ export const getQuizzesByInstructor = async (req, res, next) => {
       data: formattedQuizzes,
     });
   } catch (error) {
-    // console.error("Get Quizzes Error:", error);
     next(error);
   }
 };
 
+/**
+ * @desc    Get all quizzes system-wide (Admin list)
+ * @route   GET /api/v2/quizzes
+ * @access  Private (Admin)
+ * @returns {Object} Paginated list of system quizzes
+ */
 export const getQuizzes = async (req, res, next) => {
   try {
     let { page = 1, limit = 10 } = req.query;
     page = Math.max(1, parseInt(page, 10));
     limit = Math.max(1, parseInt(limit, 10));
 
-    // Total count of ALL quizzes in the database
     const totalItems = await Quiz.countDocuments();
 
-    // Fetch all quizzes sorted by newest first
     const quizzes = await Quiz.find()
       .populate("createdBy", "name email")
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit);
 
-    // Universal formatting
     const formattedQuizzes = quizzes.length
       ? formatUniversalResponse(quizzes, "createdBy", ["name", "email"])
       : [];
@@ -176,11 +192,16 @@ export const getQuizzes = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Get single quiz details by ID with stats
+ * @route   GET /api/v2/quizzes/:quizId
+ * @access  Public / Authenticated
+ * @returns {Object} Detailed quiz metadata and statistics
+ */
 export const getQuizById = async (req, res, next) => {
   try {
     const { quizId } = req.params;
 
-    // 1. Fetch quiz with clean populated fields (.lean() for lightweight plain object)
     const quiz = await Quiz.findById(quizId)
       .populate("createdBy", "name email")
       .lean();
@@ -189,13 +210,11 @@ export const getQuizById = async (req, res, next) => {
       return res.status(404).json({ error: "Quiz not found" });
     }
 
-    // 2. Format response cleanly
     const result = formatUniversalResponse(quiz, "createdBy", [
       "name",
       "email",
     ]);
 
-    // 3. Attach live attempt statistics
     const totalAttempts = await QuizAttempt.countDocuments({
       quizId,
       status: "completed",
@@ -214,24 +233,27 @@ export const getQuizById = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Update existing quiz details
+ * @route   PATCH /api/v2/quizzes/:quizId
+ * @access  Private (Instructor/Admin)
+ * @returns {Object} Updated quiz object
+ */
 export const updateQuiz = async (req, res, next) => {
   try {
     const { quizId } = req.params;
     const userId = req.auth.userId.toString();
     const data = req.body;
 
-    // 1. Ownership & Existence Check (Single DB lookup)
     const quiz = await assertQuizExists(quizId);
     if (quiz.createdBy.toString() !== userId) {
       return res.status(403).json({ error: "Unauthorized access to update this quiz" });
     }
 
-    // 2. Validate essential title
     if (data.title !== undefined) {
       if (!data.title.trim()) {
         return res.status(400).json({ error: "Title cannot be empty" });
       }
-      // Duplicate title check only if title is actually changing
       if (data.title.trim() !== quiz.title) {
         const isDuplicate = await isDuplicateQuiz(data.title.trim(), userId, quizId);
         if (isDuplicate) {
@@ -240,11 +262,11 @@ export const updateQuiz = async (req, res, next) => {
       }
     }
 
-    // 3. Filter allowed updating fields
     const allowedFields = [
       "title",
       "description",
       "tags",
+      "interestIds",
       "timeLimit",
       "startDate",
       "endDate",
@@ -264,7 +286,6 @@ export const updateQuiz = async (req, res, next) => {
       return res.status(400).json({ error: "No valid fields provided for update" });
     }
 
-    // Example Backend Check
     const hasChanges = Object.keys(filteredData).some(
       (key) => JSON.stringify(filteredData[key]) !== JSON.stringify(quiz[key])
     );
@@ -275,7 +296,6 @@ export const updateQuiz = async (req, res, next) => {
       });
     }
 
-    // 4. Validate Start Date vs End Date logic
     const finalStartDate = filteredData.startDate ? new Date(filteredData.startDate) : quiz.startDate;
     const finalEndDate = filteredData.endDate ? new Date(filteredData.endDate) : quiz.endDate;
 
@@ -283,10 +303,7 @@ export const updateQuiz = async (req, res, next) => {
       return res.status(400).json({ error: "End date must be after start date" });
     }
 
-    // 5. Direct Document Modification & Save (Triggers Mongoose Virtuals & Schema Hooks Properly)
     Object.assign(quiz, filteredData);
-
-    // Save document (runValidators: true works natively on .save())
     const updatedQuiz = await quiz.save();
 
     res.status(200).json({
@@ -299,24 +316,26 @@ export const updateQuiz = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Delete quiz and cascading questions/attempts
+ * @route   DELETE /api/v2/quizzes/:quizId
+ * @access  Private (Instructor/Admin)
+ * @returns {Object} Success message
+ */
 export const deleteQuiz = async (req, res, next) => {
   try {
     const { quizId } = req.params;
     const userId = req.auth.userId.toString();
     const role = req.auth.role;
 
-    // 1. Existence Check
     const quiz = await assertQuizExists(quizId);
 
-    // 2. Authorization Check (Creator or Admin can delete)
     if (quiz.createdBy.toString() !== userId && role !== "admin") {
       return res.status(403).json({ error: "Unauthorized access to delete this quiz" });
     }
 
-    // 3. Delete the Quiz
     await quiz.deleteOne();
 
-    // 4. CASCADING DELETE: Remove all linked questions and attempts to prevent database junk
     await Question.deleteMany({ quizId });
     await QuizAttempt.deleteMany({ quizId });
 
@@ -329,31 +348,32 @@ export const deleteQuiz = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Change publishing status of a quiz ('draft' | 'published')
+ * @route   PATCH /api/v2/quizzes/:quizId/status
+ * @access  Private (Instructor/Admin)
+ * @returns {Object} Updated quiz status
+ */
 export const changeQuizStatus = async (req, res, next) => {
   try {
     const { status } = req.body;
     const { quizId } = req.params;
     const userId = req.auth.userId.toString();
 
-    // 1. Direct status validation (No unnecessary array declaration)
     if (status !== "draft" && status !== "published") {
       return res.status(400).json({ error: "Invalid status" });
     }
 
-    // 2. Fetch Quiz
     const quiz = await assertQuizExists(quizId);
 
-    // 3. Authorization Check
     if (quiz.createdBy.toString() !== userId) {
       return res.status(403).json({ error: "Unauthorized access to this resource" });
     }
 
-    // 4. Idempotency Check
     if (quiz.status === status) {
       return res.status(400).json({ error: `Quiz is already ${status}` });
     }
 
-    // 5. Correct Count Check for Separated Question Collection
     if (status === "published") {
       const questionCount = await Question.countDocuments({ quizId });
       if (questionCount === 0) {
@@ -363,7 +383,6 @@ export const changeQuizStatus = async (req, res, next) => {
       }
     }
 
-    // 6. Save Updated Status
     quiz.status = status;
     await quiz.save();
 
@@ -377,20 +396,23 @@ export const changeQuizStatus = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Toggle quiz active status (true / false)
+ * @route   PATCH /api/v2/quizzes/:quizId/active
+ * @access  Private (Instructor/Admin)
+ * @returns {Object} Updated active state
+ */
 export const toggleQuizActiveStatus = async (req, res, next) => {
   try {
     const { quizId } = req.params;
     const userId = req.auth.userId.toString();
 
-    // 1. Fetch & Existence Check
     const quiz = await assertQuizExists(quizId);
 
-    // 2. Authorization Check
     if (quiz.createdBy.toString() !== userId) {
       return res.status(403).json({ error: "Unauthorized access" });
     }
 
-    // 3. Simple Boolean Flip
     quiz.isActive = !quiz.isActive;
     await quiz.save();
 
@@ -404,28 +426,29 @@ export const toggleQuizActiveStatus = async (req, res, next) => {
   }
 };
 
-// 1-Click Quiz Clone / Duplication
+/**
+ * @desc    Clone/duplicate an existing quiz and its questions
+ * @route   POST /api/v2/quizzes/:quizId/clone
+ * @access  Private (Instructor/Admin)
+ * @returns {Object} Cloned quiz payload and question count
+ */
 export const cloneQuiz = async (req, res, next) => {
   try {
     const quizId = req.params.quizId || req.params.id;
     const userId = req.auth.userId.toString();
 
-    // 1. Assert source quiz exists
     const sourceQuiz = await assertQuizExists(quizId);
 
-    // 2. Authorization check (creator or admin)
     if (sourceQuiz.createdBy.toString() !== userId && req.auth.role !== "admin") {
       return res.status(403).json({ success: false, message: "Unauthorized to clone this quiz" });
     }
 
-    // 3. Create cloned quiz title
     let clonedTitle = `${sourceQuiz.title} (Copy)`;
     let isDuplicate = await isDuplicateQuiz(clonedTitle, userId);
     if (isDuplicate) {
       clonedTitle = `${sourceQuiz.title} (Copy ${Date.now().toString().slice(-4)})`;
     }
 
-    // 4. Save new quiz document
     const clonedQuiz = new Quiz({
       title: clonedTitle,
       description: sourceQuiz.description,
@@ -436,10 +459,10 @@ export const cloneQuiz = async (req, res, next) => {
       isActive: true,
       createdBy: userId,
       tags: sourceQuiz.tags || [],
+      interestIds: sourceQuiz.interestIds || [],
     });
     await clonedQuiz.save();
 
-    // 5. Duplicate all associated questions
     const sourceQuestions = await Question.find({ quizId: sourceQuiz._id }).lean();
     if (sourceQuestions.length > 0) {
       const clonedQuestions = sourceQuestions.map((q) => {
@@ -464,4 +487,3 @@ export const cloneQuiz = async (req, res, next) => {
     next(error);
   }
 };
-

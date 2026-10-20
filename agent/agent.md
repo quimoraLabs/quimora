@@ -44,21 +44,33 @@ All technical specifications, schemas, business rules, and roadmaps are maintain
 
 ---
 
-## 🟡 V3 PHASE 1: INTEREST MODEL & ELO ENGINE (Pending Code Start)
+## 🟡 V3 PHASE 1: USER ARCHITECTURE REFACTOR & ELO ENGINE (Active Sprint)
 
-- [ ] **Interest Schema & Selection API**:
-  - Implement `Interest` model (`backend/models/interest.model.js`) and `/api/v1/interests` endpoints.
-- [ ] **Elo Rating Engine & Service**:
-  - Implement `EloEngineService` with mathematical Elo formula ($K=32$) and `EloRating` model.
-- [ ] **Frontend Interest UI**:
-  - Build interest selection modal and category filter bar on student dashboard.
+- [x] **V3 Documentation Alignment**:
+  - Defined V3 Fresh Start policy, Protected Admin Role rule, and V3 User Architecture specifications in `DECISIONS.md`, `DATA_MODEL.md`, and `ARCHITECTURE.md`.
+- [ ] **V3 User & Role Profile Models**:
+  - Update `User` model (`backend/models/user.model.js`) with `suspendedAt`, `suspendedReason`, `lastLoginAt`, `lastUsernameChangedAt`.
+  - Create `StudentProfile` model (`backend/models/studentProfile.model.js`) with max 10 interests validator.
+  - Create `InstructorProfile` model (`backend/models/instructorProfile.model.js`) with min 1 expertise validator.
+  - Create `EloRating` model (`backend/models/eloRating.model.js`) with `isArchived` flag and `highestRating`.
+- [ ] **V3 Seed & Data Reset Scripts**:
+  - Implement `backend/scripts/reset_v3_data.js` to wipe all V3 database collections cleanly.
+  - Implement `backend/scripts/seed_admin.js` to seed admin user via `ADMIN_PASSWORD` env var.
+  - Implement `backend/scripts/seed_v3_levels.js` to seed 6 level tiers (`bulkWrite` + `upsert`).
+  - Implement `backend/scripts/seed_v3_interests.js` to seed 8 default interest topics (`bulkWrite` + `upsert`).
+- [ ] **V3 Service Layer Refactoring**:
+  - Implement `user.service.js` for auth/user lifecycle and account suspension.
+  - Implement `studentProfile.service.js` for interest selection (5-6 initial, max 10 cap) and counter tracking.
+  - Implement `instructorProfile.service.js` for bio/expertise management and dynamic count calculations.
+  - Implement `eloEngine.service.js` for Elo math ($K=32$), peak rating updates, and archiving.
+  - Implement `levelMapping.service.js` for Elo → Level tier mapping with Redis caching.
+- [ ] **Middleware Updates**:
+  - Update `auth.middleware.js` to enforce suspension checks (`suspendedAt`) and student onboarding guard (`403 ONBOARDING_REQUIRED`).
 
 ---
 
 ## ⏳ V3 PHASE 2 & PHASE 3 (Pending Next)
 
-- [ ] **Level Mapping Matrix (Beginner → Expert)**:
-  - Implement `Level` schema and `LevelMappingService` tier mapping.
 - [ ] **Instructor Assignment & Consent Flow**:
   - Implement `QuizAssignment` model, pre-quiz consent modal, and consent check middleware.
 - [ ] **Instructor Privacy-Preserving Analytics**:

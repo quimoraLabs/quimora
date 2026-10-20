@@ -24,10 +24,26 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin", "instructor"],
       default: "user",
     },
-    // ADDED: active boolean field as per plan (Feature 2 & 3)
+    // Auth & Status fields
     active: {
       type: Boolean,
       default: true,
+    },
+    suspendedAt: {
+      type: Date,
+      default: null,
+    },
+    suspendedReason: {
+      type: String,
+      default: null,
+    },
+    lastLoginAt: {
+      type: Date,
+      default: null,
+    },
+    lastUsernameChangedAt: {
+      type: Date,
+      default: null,
     },
     otp: {
       code: { type: String, select: false },
