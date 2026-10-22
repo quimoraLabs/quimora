@@ -39,7 +39,7 @@ const quizSchema = new mongoose.Schema(
     },
     maxAttempts: {
       type: Number,
-      default: 1,
+      default: 3,
       min: 1,
     },
     passingScore: {

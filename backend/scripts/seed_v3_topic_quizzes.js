@@ -472,7 +472,7 @@ async function seedTopicQuizzes() {
           tags: interest.topicTags,
           status: "published",
           isActive: true,
-          maxAttempts: 10, // practice attempts allowed
+          maxAttempts: 3, // strictly 3 attempts allowed
           passingScore: 60,
           negativeMarking: 25,
         });
@@ -485,6 +485,7 @@ async function seedTopicQuizzes() {
         quiz.tags = interest.topicTags;
         quiz.status = "published";
         quiz.isActive = true;
+        quiz.maxAttempts = 3;
         await quiz.save();
       }
 

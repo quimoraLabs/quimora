@@ -70,7 +70,7 @@ const AiGeneratorBanner = ({ onQuizGenerated }) => {
         title: quizTitle,
         description: `Auto-generated quiz on "${topic.trim()}" powered by Quimora AI.`,
         timeLimit: 15,
-        maxAttempts: 1,
+        maxAttempts: 3,
       };
 
       const createdQuiz = await createQuiz(quizPayload);

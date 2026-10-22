@@ -22,7 +22,7 @@ const INITIAL_FORM_STATE = {
   title: "",
   description: "",
   timeLimit: 20,
-  maxAttempts: 1,
+  maxAttempts: 3,
   startDate: "",
   endDate: "",
 };
