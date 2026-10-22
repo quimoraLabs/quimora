@@ -163,7 +163,7 @@ export default function TakeExamPage() {
   const optionLetters = ["A", "B", "C", "D", "E", "F"];
 
   return (
-    <div className="relative min-h-screen bg-main text-main select-none flex flex-col font-sans">
+    <div className="relative min-h-screen w-full max-w-full overflow-x-hidden bg-main text-main select-none flex flex-col font-sans">
       {/* Background Security Watermark */}
       <Watermark />
 
@@ -175,18 +175,18 @@ export default function TakeExamPage() {
       />
 
       {/* ===== TOP NAVBAR HEADER ===== */}
-      <header className="sticky top-0 z-30 bg-surface/90 backdrop-blur-md border-b border-main px-4 py-3 shadow-sm">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+      <header className="sticky top-0 z-30 bg-surface/90 backdrop-blur-md border-b border-main px-3 sm:px-4 py-2 sm:py-3 shadow-sm w-full">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
           {/* Quiz Title & Security Pill */}
-          <div className="flex items-center gap-3">
-            <div>
-              <h1 className="text-base md:text-lg font-bold text-main tracking-tight line-clamp-1">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 sm:flex-initial">
+            <div className="min-w-0">
+              <h1 className="text-xs sm:text-base md:text-lg font-bold text-main tracking-tight truncate max-w-[130px] sm:max-w-xs md:max-w-md">
                 {attemptQuiz.title || "Examination Session"}
               </h1>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                  <ShieldCheck className="w-3 h-3" />
-                  PROCTORED LIVE
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-1.5 sm:px-2 py-0.5 rounded-full border border-emerald-500/20 whitespace-nowrap">
+                  <ShieldCheck className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                  <span className="hidden xs:inline">PROCTORED</span> LIVE
                 </span>
               </div>
             </div>
@@ -196,34 +196,34 @@ export default function TakeExamPage() {
           <ExamTimer timer={timer} />
 
           {/* Actions & Grid Toggle */}
-          <div className="flex items-center gap-3">
-            <span className="hidden sm:inline-flex text-xs font-semibold text-muted bg-elevated px-3 py-1.5 rounded-xl border border-main">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+            <span className="hidden lg:inline-flex text-xs font-semibold text-muted bg-elevated px-3 py-1.5 rounded-xl border border-main whitespace-nowrap">
               {answeredCount}/{totalQuestions} Answered
             </span>
 
             <button
               onClick={() => setShowQuestionGrid(!showQuestionGrid)}
-              className="flex items-center gap-2 px-3 py-1.5 bg-surface border border-main rounded-xl text-xs font-semibold text-main hover:bg-elevated transition-all shadow-sm"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-surface border border-main rounded-xl text-xs font-semibold text-main hover:bg-elevated transition-all shadow-sm"
               title="Question Navigator"
             >
-              <LayoutGrid className="w-4 h-4 text-brand-mid" />
-              <span className="hidden md:inline">Navigator</span>
+              <LayoutGrid className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-brand-mid" />
+              <span className="hidden sm:inline">Grid</span>
             </button>
 
             <button
               onClick={() => setShowSubmitModal(true)}
-              className="flex items-center gap-1.5 px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-md transition-all"
+              className="flex items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-md transition-all whitespace-nowrap"
             >
-              <Send className="w-3.5 h-3.5" />
+              <Send className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               <span>Submit</span>
             </button>
           </div>
         </div>
 
         {/* Animated Progress Bar */}
-        <div className="w-full bg-elevated h-1.5 mt-3 rounded-full overflow-hidden border-t border-main/20">
+        <div className="w-full bg-elevated h-1 sm:h-1.5 mt-2 sm:mt-3 rounded-full overflow-hidden border-t border-main/20">
           <motion.div
-            className="h-full bg-gradient-to-r from-brand-mid via-indigo-500 to-emerald-400"
+            className="h-full bg-linear-to-r from-brand-mid via-indigo-500 to-emerald-400"
             initial={{ width: 0 }}
             animate={{ width: `${progressPercentage}%` }}
             transition={{ duration: 0.3 }}
@@ -232,42 +232,42 @@ export default function TakeExamPage() {
       </header>
 
       {/* ===== MAIN EXAM AREA ===== */}
-      <main className="flex-1 max-w-4xl w-full mx-auto p-4 md:p-6 flex flex-col justify-center my-auto">
+      <main className="flex-1 max-w-4xl w-full mx-auto px-3 sm:px-6 py-4 sm:py-6 flex flex-col justify-center">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentIndex}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.25 }}
-            className="w-full bg-surface border border-main rounded-3xl p-6 md:p-8 shadow-xl relative overflow-hidden"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="w-full bg-surface border border-main rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 shadow-xl relative overflow-hidden"
           >
             {/* Header Badge */}
-            <div className="flex items-center justify-between border-b border-main pb-4 mb-6">
-              <div className="flex items-center gap-2">
-                <span className="px-3 py-1 rounded-xl bg-brand-mid/10 text-brand-mid font-mono font-bold text-xs border border-brand-mid/20">
-                  QUESTION {String(currentIndex + 1).padStart(2, "0")} / {String(totalQuestions).padStart(2, "0")}
+            <div className="flex items-center justify-between border-b border-main pb-3 sm:pb-4 mb-4 sm:mb-6 gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                <span className="px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-xl bg-brand-mid/10 text-brand-mid font-mono font-bold text-[11px] sm:text-xs border border-brand-mid/20 whitespace-nowrap">
+                  Q {String(currentIndex + 1).padStart(2, "0")} / {String(totalQuestions).padStart(2, "0")}
                 </span>
                 {currentQuestion.marks && (
-                  <span className="text-xs text-muted font-medium bg-elevated px-2.5 py-1 rounded-xl border border-main">
+                  <span className="text-[11px] sm:text-xs text-muted font-medium bg-elevated px-2 py-0.5 sm:py-1 rounded-xl border border-main whitespace-nowrap">
                     +{currentQuestion.marks} Mark{currentQuestion.marks > 1 ? "s" : ""}
                   </span>
                 )}
               </div>
 
-              <span className="text-xs font-semibold text-muted">
+              <span className="text-[11px] sm:text-xs font-semibold text-muted whitespace-nowrap">
                 {answers[currentQuestion._id] ? "Saved" : "Not Answered"}
               </span>
             </div>
 
             {/* Question Text */}
-            <h2 className="text-xl md:text-2xl font-bold text-main leading-relaxed mb-6">
+            <h2 className="text-base sm:text-xl md:text-2xl font-bold text-main leading-snug sm:leading-relaxed mb-4 sm:mb-6 break-words" style={{ overflowWrap: "anywhere" }}>
               {currentQuestion.questionText}
             </h2>
 
             {/* Question Diagram / Image Attachment */}
             {currentQuestion.image?.url && (
-              <div className="mb-6 rounded-2xl overflow-hidden border border-main max-h-64 flex justify-center bg-elevated/50 p-2">
+              <div className="mb-4 sm:mb-6 rounded-2xl overflow-hidden border border-main max-h-64 flex justify-center bg-elevated/50 p-2">
                 <img
                   src={currentQuestion.image.url}
                   alt="Question Diagram"
@@ -277,7 +277,7 @@ export default function TakeExamPage() {
             )}
 
             {/* Options List with KBC-Style Selection Animation */}
-            <div className="space-y-3.5">
+            <div className="space-y-2.5 sm:space-y-3.5 w-full">
               {currentQuestion.options?.map((option, idx) => {
                 const storedSelections = answers[currentQuestion._id];
                 const isSelected =
@@ -288,24 +288,23 @@ export default function TakeExamPage() {
                 return (
                   <motion.div
                     key={option._id || idx}
-                    whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.99 }}
                     onClick={() => handleSelectOptionIndex(idx)}
-                    className={`relative p-4 rounded-2xl cursor-pointer transition-all flex items-center justify-between border-2 ${
+                    className={`relative p-3 sm:p-4 rounded-xl sm:rounded-2xl cursor-pointer transition-all flex items-center justify-between gap-2.5 sm:gap-4 border-2 w-full ${
                       isSelected
-                        ? "border-brand-mid bg-gradient-to-r from-brand-mid/15 via-surface to-brand-mid/5 shadow-[0_0_25px_rgba(99,102,241,0.25)] text-main"
+                        ? "border-brand-mid bg-linear-to-r from-brand-mid/15 via-surface to-brand-mid/5 shadow-[0_0_20px_rgba(99,102,241,0.2)] text-main"
                         : "border-main bg-surface hover:bg-elevated hover:border-brand-mid/40 text-muted"
                     }`}
                   >
                     {/* Pulsing Lock-In Glow Ring for Selected State */}
                     {isSelected && (
-                      <span className="absolute inset-0 rounded-2xl border-2 border-brand-mid/60 animate-pulse pointer-events-none" />
+                      <span className="absolute inset-0 rounded-xl sm:rounded-2xl border-2 border-brand-mid/60 animate-pulse pointer-events-none" />
                     )}
 
-                    <div className="flex items-center gap-4 relative z-10">
+                    <div className="flex items-center gap-2.5 sm:gap-4 relative z-10 flex-1 min-w-0">
                       {/* Letter Badge (A, B, C, D) */}
                       <div
-                        className={`relative w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm transition-all ${
+                        className={`relative w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl flex items-center justify-center font-bold text-xs sm:text-sm shrink-0 transition-all ${
                           isSelected
                             ? "bg-brand-mid text-white shadow-md"
                             : "bg-elevated border border-main text-muted"
@@ -313,20 +312,20 @@ export default function TakeExamPage() {
                       >
                         {optionLetters[idx] || idx + 1}
                         {isSelected && (
-                          <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full border-2 border-surface animate-ping" />
+                          <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-surface animate-ping" />
                         )}
                       </div>
 
                       {/* Option Text */}
-                      <span className={`text-sm md:text-base font-medium ${isSelected ? "font-semibold text-main" : ""}`}>
+                      <span className={`text-xs sm:text-sm md:text-base font-medium break-words flex-1 min-w-0 leading-snug ${isSelected ? "font-semibold text-main" : ""}`} style={{ overflowWrap: "anywhere" }}>
                         {option.optionText}
                       </span>
                     </div>
 
                     {/* Selected Checkmark Indicator */}
                     {isSelected && (
-                      <div className="relative z-10 flex items-center gap-1.5 text-xs font-bold text-brand-mid bg-brand-mid/10 px-3 py-1 rounded-full border border-brand-mid/20">
-                        <CheckCircle2 className="w-4 h-4 text-brand-mid" />
+                      <div className="relative z-10 flex items-center gap-1 text-[11px] sm:text-xs font-bold text-brand-mid bg-brand-mid/10 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full border border-brand-mid/20 shrink-0">
+                        <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-brand-mid" />
                         <span className="hidden sm:inline">SELECTED</span>
                       </div>
                     )}
@@ -336,32 +335,32 @@ export default function TakeExamPage() {
             </div>
 
             {/* Navigation Footer */}
-            <div className="flex items-center justify-between mt-10 pt-6 border-t border-main">
+            <div className="flex items-center justify-between mt-6 sm:mt-10 pt-4 sm:pt-6 border-t border-main gap-2">
               <button
                 onClick={goToPreviousQuestion}
                 disabled={currentIndex === 0}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-main text-sm font-semibold text-main hover:bg-elevated disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                className="flex items-center gap-1 sm:gap-2 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl border border-main text-xs sm:text-sm font-semibold text-main hover:bg-elevated disabled:opacity-30 disabled:cursor-not-allowed transition-all"
               >
-                <ChevronLeft className="w-4 h-4" />
-                Previous
+                <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span>Previous</span>
               </button>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
                 {currentIndex === totalQuestions - 1 ? (
                   <button
                     onClick={() => setShowSubmitModal(true)}
-                    className="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold shadow-lg transition-all"
+                    className="flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs sm:text-sm font-bold shadow-lg transition-all"
                   >
                     <span>Final Submit</span>
-                    <Send className="w-4 h-4" />
+                    <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </button>
                 ) : (
                   <button
                     onClick={goToNextQuestion}
-                    className="flex items-center gap-2 px-6 py-2.5 bg-brand-mid hover:bg-brand-primary text-white rounded-xl text-sm font-bold shadow-md transition-all"
+                    className="flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-2.5 bg-brand-mid hover:bg-brand-primary text-white rounded-xl text-xs sm:text-sm font-bold shadow-md transition-all"
                   >
-                    <span>Next Question</span>
-                    <ChevronRight className="w-4 h-4" />
+                    <span>Next</span>
+                    <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </button>
                 )}
               </div>
@@ -386,23 +385,23 @@ export default function TakeExamPage() {
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="relative w-full max-w-2xl bg-surface border border-main rounded-3xl p-6 shadow-2xl z-10 max-h-[85vh] flex flex-col"
+              className="relative w-full max-w-2xl bg-surface border border-main rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl z-10 max-h-[85vh] flex flex-col"
             >
-              <div className="flex items-center justify-between border-b border-main pb-4 mb-4">
+              <div className="flex items-center justify-between border-b border-main pb-3 sm:pb-4 mb-3 sm:mb-4">
                 <div>
-                  <h3 className="text-lg font-bold text-main">Question Palette Navigator</h3>
-                  <p className="text-xs text-muted">Jump directly to any question</p>
+                  <h3 className="text-base sm:text-lg font-bold text-main">Question Palette</h3>
+                  <p className="text-[11px] sm:text-xs text-muted">Jump directly to any question</p>
                 </div>
                 <button
                   onClick={() => setShowQuestionGrid(false)}
-                  className="p-2 text-muted hover:text-main rounded-full hover:bg-elevated transition-colors"
+                  className="p-1.5 sm:p-2 text-muted hover:text-main rounded-full hover:bg-elevated transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               {/* Grid Items */}
-              <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2.5 overflow-y-auto p-1 max-h-96">
+              <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2 sm:gap-2.5 overflow-y-auto p-1 max-h-96">
                 {attemptQuiz.questions.map((q, idx) => {
                   const isAnswered = Boolean(answers[q._id]);
                   const isCurrent = idx === currentIndex;
@@ -414,7 +413,7 @@ export default function TakeExamPage() {
                         useStudentQuizStore.setState({ currentIndex: idx });
                         setShowQuestionGrid(false);
                       }}
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xs transition-all ${
+                      className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-bold text-xs transition-all ${
                         isCurrent
                           ? "ring-2 ring-brand-mid ring-offset-2 ring-offset-surface bg-brand-mid text-white shadow-md"
                           : isAnswered
@@ -429,16 +428,16 @@ export default function TakeExamPage() {
               </div>
 
               {/* Legend */}
-              <div className="flex items-center justify-center gap-6 border-t border-main pt-4 mt-6 text-xs text-muted font-medium">
-                <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center gap-4 sm:gap-6 border-t border-main pt-3 sm:pt-4 mt-4 sm:mt-6 text-[11px] sm:text-xs text-muted font-medium flex-wrap">
+                <div className="flex items-center gap-1.5 sm:gap-2">
                   <div className="w-3.5 h-3.5 rounded-lg bg-emerald-500/20 border border-emerald-500/40" />
                   <span>Answered</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2">
                   <div className="w-3.5 h-3.5 rounded-lg bg-elevated border border-main" />
                   <span>Unanswered</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2">
                   <div className="w-3.5 h-3.5 rounded-lg bg-brand-mid text-white ring-2 ring-brand-mid" />
                   <span>Current</span>
                 </div>
@@ -451,7 +450,7 @@ export default function TakeExamPage() {
       {/* ===== SUBMIT CONFIRMATION MODAL ===== */}
       <AnimatePresence>
         {showSubmitModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -464,7 +463,7 @@ export default function TakeExamPage() {
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="relative w-full max-w-md bg-surface border border-main rounded-3xl p-6 shadow-2xl text-center z-10"
+              className="relative w-full max-w-md bg-surface border border-main rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl text-center z-10"
             >
               <div className="w-14 h-14 bg-amber-500/10 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-amber-500/20">
                 <AlertTriangle className="w-7 h-7" />

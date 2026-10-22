@@ -47,7 +47,7 @@ export default function AttemptReviewModal({
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-3xl transform overflow-hidden rounded-2xl bg-surface p-6 text-left align-middle shadow-2xl transition-all border border-main">
+              <Dialog.Panel className="w-full max-w-3xl overflow-hidden rounded-2xl bg-surface p-6 text-left align-middle shadow-2xl transition-all border border-main">
                 {/* Header */}
                 <div className="flex items-start justify-between pb-4 border-b border-main">
                   <div>

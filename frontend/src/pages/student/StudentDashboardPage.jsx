@@ -171,7 +171,7 @@ function StudentDashboardPage() {
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        className="p-6 bg-gradient-to-r from-indigo-900/10 via-purple-900/10 to-transparent border border-indigo-200/60 dark:border-indigo-900/40 rounded-3xl backdrop-blur-md shadow-sm"
+        className="p-6 bg-linear-to-r from-indigo-900/10 via-purple-900/10 to-transparent border border-indigo-200/60 dark:border-indigo-900/40 rounded-3xl backdrop-blur-md shadow-sm"
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
           <div>

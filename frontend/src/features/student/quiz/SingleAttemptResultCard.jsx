@@ -7,6 +7,10 @@ import {
   CheckCircle2,
   XCircle,
   Award,
+  TrendingUp,
+  TrendingDown,
+  Sparkles,
+  AlertTriangle,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import useStudentQuizStore from "../exam/store/useStudentQuizStore";
@@ -145,6 +149,84 @@ export const SingleAttemptResultCard = () => {
               </span>
             </div>
           </div>
+
+          {/* Experience Points & Student Rank Calibration Card */}
+          {quizResults?.eloChange && (
+            <div
+              className={`p-4 rounded-2xl border transition-all ${
+                quizResults.eloChange.isDemoted
+                  ? "border-red-500/40 bg-red-500/10 dark:bg-red-950/20"
+                  : quizResults.eloChange.delta >= 0
+                  ? "border-emerald-500/30 bg-emerald-50/40 dark:bg-emerald-950/20"
+                  : "border-amber-500/30 bg-amber-50/40 dark:bg-amber-950/20"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  {quizResults.eloChange.delta >= 0 ? (
+                    <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                  ) : (
+                    <TrendingDown className="w-5 h-5 text-red-600 dark:text-red-400" />
+                  )}
+                  <span className="text-xs font-bold text-main">
+                    Experience Points & Student Rank
+                  </span>
+                </div>
+                <span
+                  className={`text-xs font-extrabold px-2.5 py-0.5 rounded-full ${
+                    quizResults.eloChange.delta >= 0
+                      ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300"
+                      : "bg-red-500/20 text-red-700 dark:text-red-300"
+                  }`}
+                >
+                  {quizResults.eloChange.delta >= 0
+                    ? `+${quizResults.eloChange.delta}`
+                    : quizResults.eloChange.delta}{" "}
+                  Elo Points
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between text-xs pt-1">
+                <span className="text-muted">
+                  Elo Rating:{" "}
+                  <strong className="text-main">
+                    {quizResults.eloChange.studentEloBefore}
+                  </strong>{" "}
+                  &rarr;{" "}
+                  <strong className="text-main">
+                    {quizResults.eloChange.studentEloAfter}
+                  </strong>
+                </span>
+                <span className="font-extrabold text-main">
+                  Tier:{" "}
+                  <span className="text-indigo-600 dark:text-indigo-400">
+                    {quizResults.eloChange.newTier}
+                  </span>
+                </span>
+              </div>
+
+              {quizResults.eloChange.isDemoted && (
+                <div className="mt-2.5 p-2 rounded-xl bg-red-500/20 border border-red-500/30 flex items-center gap-2 text-xs text-red-700 dark:text-red-300 font-semibold">
+                  <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+                  <span>
+                    Rank Demoted from {quizResults.eloChange.oldTier} to{" "}
+                    {quizResults.eloChange.newTier} due to poor performance on
+                    this challenge.
+                  </span>
+                </div>
+              )}
+
+              {quizResults.eloChange.isPromoted && (
+                <div className="mt-2.5 p-2 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-300 font-semibold">
+                  <Sparkles className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span>
+                    Congratulations! You leveled up to{" "}
+                    {quizResults.eloChange.newTier} rank!
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="space-y-4">
             <h3 className="text-xs font-black text-muted uppercase tracking-widest px-1">

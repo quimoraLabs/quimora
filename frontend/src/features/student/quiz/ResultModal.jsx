@@ -44,7 +44,7 @@ function ResultModal({ selectedAttempt, closeModal }) {
       <div className="bg-surface border border-main w-full max-w-md rounded-2xl shadow-2xl relative z-10 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         
         {/* Header */}
-        <div className="p-5 border-b border-main flex items-center justify-between bg-opacity-50">
+        <div className="p-5 border-b border-main flex items-center justify-between bg-surface/50">
           <div className="flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-brand-start" />
             <h3 className="text-lg font-bold text-brand-start">

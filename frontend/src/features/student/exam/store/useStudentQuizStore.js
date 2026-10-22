@@ -102,6 +102,9 @@ const useStudentQuizStore = create((set, get) => ({
       if (options.questionLimit) {
         payload.questionLimit = options.questionLimit;
       }
+      if (options.difficulty) {
+        payload.difficulty = options.difficulty;
+      }
       const response = await axiosClient.post(`/student/quiz/start`, payload);
       if (response.data.success) {
         const { attemptId, quiz, startedAt, answers: backendAnswers } = response.data.data;

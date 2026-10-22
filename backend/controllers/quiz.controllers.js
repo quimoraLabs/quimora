@@ -4,6 +4,7 @@ import Question from "../models/question.model.js";
 import QuizAttempt from "../models/quizAttempt.model.js";
 import StudentProfile from "../models/studentProfile.model.js";
 import StudentQuizProgress from "../models/studentQuizProgress.model.js";
+import Interest from "../models/interest.model.js";
 import { autoGenerateTopicQuiz } from "../services/aiQuizGenerator.service.js";
 import mongoose from "mongoose";
 import { redisCache } from "../config/redis.js";
@@ -47,14 +48,31 @@ export const getAvailableQuizzesForStudents = async (req, res, next) => {
       ],
     };
 
-    // V3 Interest-Driven Filter: only return quizzes matching the student's selected interests
+    // V3 Interest-Driven Filter: match student's selected interests, tags, or general instructor quizzes
     if (userId) {
       const profile = await StudentProfile.findOne({ userId });
       if (profile && Array.isArray(profile.interests) && profile.interests.length > 0) {
-        query.interestIds = { $in: profile.interests };
-      } else {
-        query.interestIds = { $in: [] };
+        const userInterests = await Interest.find({ _id: { $in: profile.interests } }).lean();
+        const keywords = userInterests.flatMap((i) => [
+          i.name,
+          i.slug,
+          ...(i.topicTags || []),
+        ]).filter(Boolean);
+
+        const regexTerms = keywords.map(
+          (k) => new RegExp(k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")
+        );
+
+        query.$or = [
+          { interestIds: { $in: profile.interests } },
+          { interestIds: { $size: 0 } },
+          { interestIds: { $exists: false } },
+          { tags: { $in: keywords.map((k) => k.toLowerCase()) } },
+          { title: { $in: regexTerms } },
+          { description: { $in: regexTerms } },
+        ];
       }
+      // If student hasn't selected interests yet, they see all active published quizzes
     }
 
     let totalItems = await Quiz.countDocuments(query);
@@ -197,6 +215,31 @@ export const createQuiz = async (req, res, next) => {
       });
     }
 
+    // Auto-map interestIds if not provided by inspecting matching Interests in DB
+    let finalInterestIds = Array.isArray(interestIds) ? [...interestIds] : [];
+    if (finalInterestIds.length === 0) {
+      const searchTerms = [title, description, ...(Array.isArray(tags) ? tags : [])]
+        .filter(Boolean)
+        .map((t) => t.toString().trim().toLowerCase());
+
+      const allInterests = await Interest.find({ isActive: true }).lean();
+      for (const interest of allInterests) {
+        const iName = (interest.name || "").toLowerCase();
+        const iSlug = (interest.slug || "").toLowerCase();
+        const iTags = (interest.topicTags || []).map((t) => t.toLowerCase());
+
+        const isMatch = searchTerms.some((term) =>
+          term.includes(iName) || iName.includes(term) ||
+          term.includes(iSlug) || iSlug.includes(term) ||
+          iTags.some((t) => term.includes(t) || t.includes(term))
+        );
+
+        if (isMatch) {
+          finalInterestIds.push(interest._id);
+        }
+      }
+    }
+
     const quiz = new Quiz({
       title,
       description,
@@ -206,9 +249,13 @@ export const createQuiz = async (req, res, next) => {
       endDate,
       createdBy: userId,
       tags,
-      interestIds,
+      interestIds: finalInterestIds,
+      status: req.body.status || "published",
+      isActive: true,
     });
     await quiz.save();
+
+    await redisCache.delPattern("quizzes:student:*");
 
     res.status(201).json({
       success: true,
@@ -417,6 +464,7 @@ export const updateQuiz = async (req, res, next) => {
 
     Object.assign(quiz, filteredData);
     const updatedQuiz = await quiz.save();
+    await redisCache.delPattern("quizzes:student:*");
 
     res.status(200).json({
       success: true,
@@ -450,6 +498,7 @@ export const deleteQuiz = async (req, res, next) => {
 
     await Question.deleteMany({ quizId });
     await QuizAttempt.deleteMany({ quizId });
+    await redisCache.delPattern("quizzes:student:*");
 
     res.status(200).json({
       success: true,
@@ -497,6 +546,7 @@ export const changeQuizStatus = async (req, res, next) => {
 
     quiz.status = status;
     await quiz.save();
+    await redisCache.delPattern("quizzes:student:*");
 
     res.status(200).json({
       success: true,
@@ -527,6 +577,7 @@ export const toggleQuizActiveStatus = async (req, res, next) => {
 
     quiz.isActive = !quiz.isActive;
     await quiz.save();
+    await redisCache.delPattern("quizzes:student:*");
 
     res.status(200).json({
       success: true,

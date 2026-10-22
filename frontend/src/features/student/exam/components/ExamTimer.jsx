@@ -19,17 +19,16 @@ export function ExamTimer({ timer }) {
   };
 
   return (
-    <div className="flex items-center justify-center">
+    <div className="flex items-center justify-center shrink-0">
       <div
-        className={`flex items-center gap-3 px-5 py-2.5 rounded-2xl border transition-all duration-300 ${getStatusClasses()}`}
+        className={`flex items-center gap-1.5 sm:gap-2.5 px-2.5 sm:px-4 py-1 sm:py-2 rounded-xl sm:rounded-2xl border transition-all duration-300 ${getStatusClasses()}`}
       >
-        <Clock className={`w-5 h-5 ${isUrgentTime ? "animate-spin text-red-400" : isLowTime ? "text-amber-400" : "text-brand-mid"}`} />
-        <div className="font-mono text-2xl md:text-3xl font-black tabular-nums tracking-tight">
-          {minutes.toString().padStart(2, "0")}:
-          {seconds.toString().padStart(2, "0")}
+        <Clock className={`w-3.5 h-3.5 sm:w-4.5 sm:h-4.5 shrink-0 ${isUrgentTime ? "animate-spin text-red-400" : isLowTime ? "text-amber-400" : "text-brand-mid"}`} />
+        <div className="font-mono text-sm sm:text-xl md:text-2xl font-black tabular-nums tracking-tight">
+          {minutes.toString().padStart(2, "0")}:{seconds.toString().padStart(2, "0")}
         </div>
-        <span className="text-[10px] uppercase tracking-widest font-bold text-muted bg-elevated px-2 py-0.5 rounded-full border border-main">
-          {isUrgentTime ? "URGENT" : isLowTime ? "TIME LOW" : "REMAINING"}
+        <span className="hidden md:inline-block text-[9px] uppercase tracking-wider font-bold text-muted bg-elevated px-1.5 py-0.5 rounded-full border border-main whitespace-nowrap">
+          {isUrgentTime ? "URGENT" : isLowTime ? "LOW" : "LEFT"}
         </span>
       </div>
     </div>

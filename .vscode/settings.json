@@ -1,3 +1,12 @@
 {
-    "terminal.integrated.defaultProfile.windows": "Git Bash"
+  "terminal.integrated.defaultProfile.windows": "Git Bash",
+  "css.validate": false,
+  "less.validate": false,
+  "scss.validate": false,
+  "css.lint.unknownAtRules": "ignore",
+  "scss.lint.unknownAtRules": "ignore",
+  "tailwindCSS.lint.unknownClasses": "ignore",
+  "files.associations": {
+    "*.css": "tailwindcss"
+  }
 }

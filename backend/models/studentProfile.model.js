@@ -79,6 +79,21 @@ const studentProfileSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    overallElo: {
+      type: Number,
+      default: 1000,
+      min: 0,
+    },
+    experiencePoints: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    levelName: {
+      type: String,
+      enum: ["Beginner", "Learner", "Intermediate", "Advanced", "Master", "Expert"],
+      default: "Beginner",
+    },
     coinsBalance: {
       type: Number,
       default: 100, // Starter welcome gift

@@ -87,7 +87,7 @@ function QuestionFormModal({
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-2xl bg-surface p-6 text-left align-middle shadow-xl transition-all border border-main">
+              <Dialog.Panel className="w-full max-w-2xl overflow-hidden rounded-2xl bg-surface p-6 text-left align-middle shadow-xl transition-all border border-main">
                 <Dialog.Title
                   as="h3"
                   className="text-lg font-bold leading-6 text-main pb-4 border-b border-main flex justify-between items-center"

@@ -4,6 +4,14 @@ import config from "./config/config.js";
 
 const PORT = config.port || 5000;
 
+process.on("unhandledRejection", (err) => {
+  console.error("💥 Unhandled Rejection:", err);
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("💥 Uncaught Exception:", err);
+});
+
 app.listen(PORT, async () => {
   console.log(`🚀 Server is running on port ${PORT}`);
   console.log(`🌍 Environment: ${config.nodeENV}`);

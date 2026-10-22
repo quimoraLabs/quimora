@@ -12,13 +12,13 @@ import InstructorProfileService from "../services/instructorProfile.service.js";
 export const assignQuizToInstructor = async (req, res, next) => {
   try {
     const { quizId } = req.params;
-    const { instructorId, role = "primary" } = req.body;
+    const { instructorId, role = "primary", force = false } = req.body;
 
     if (!instructorId) {
       return res.status(400).json({ success: false, message: "instructorId is required" });
     }
 
-    const quiz = await Quiz.findById(quizId);
+    const quiz = await Quiz.findById(quizId).populate("interestIds");
     if (!quiz) {
       return res.status(404).json({ success: false, message: "Quiz not found" });
     }
@@ -42,6 +42,83 @@ export const assignQuizToInstructor = async (req, res, next) => {
       });
     }
 
+    // 1. Strict Check: Ensure instructor has configured their expertise
+    let instructorProfile = await InstructorProfile.findOne({ userId: instructorId });
+    if (!instructorProfile) {
+      instructorProfile = await InstructorProfile.create({ userId: instructorId });
+    }
+
+    const cleanExpertise = (instructorProfile.expertise || []).filter(
+      (e) => typeof e === "string" && e.trim().length > 0
+    );
+
+    // Rule 1: Empty expertise blocks assignment
+    if (cleanExpertise.length === 0) {
+      return res.status(400).json({
+        success: false,
+        code: "EXPERTISE_REQUIRED",
+        message:
+          "Instructor has not added any areas of expertise to their profile. Please instruct them to complete their profile before assigning quizzes.",
+      });
+    }
+
+    // 2. Strict Check: Case-insensitive & partial match between quiz topics/tags and instructor expertise
+    const quizTopics = [];
+    if (quiz.title) quizTopics.push(quiz.title);
+    if (Array.isArray(quiz.tags)) quizTopics.push(...quiz.tags);
+    if (Array.isArray(quiz.interestIds)) {
+      quiz.interestIds.forEach((i) => {
+        if (i && i.name) quizTopics.push(i.name);
+      });
+    }
+
+    const isTopicMatching = (topics, expertiseList) => {
+      // Broad baseline catch
+      if (expertiseList.some((e) => ["general", "all", "computer science"].includes(e.toLowerCase().trim()))) {
+        return true;
+      }
+
+      return topics.some((topic) => {
+        const tLower = topic.toLowerCase().trim();
+        return expertiseList.some((exp) => {
+          const eLower = exp.toLowerCase().trim();
+          if (tLower.includes(eLower) || eLower.includes(tLower)) return true;
+
+          const acronyms = [
+            ["js", "javascript"],
+            ["ts", "typescript"],
+            ["py", "python"],
+            ["ml", "machine learning"],
+            ["ai", "artificial intelligence"],
+            ["dbms", "database"],
+            ["web dev", "web development"],
+            ["os", "operating system"],
+            ["dsa", "data structures"],
+          ];
+
+          return acronyms.some(
+            ([abbr, full]) =>
+              (tLower.includes(abbr) && eLower.includes(full)) ||
+              (tLower.includes(full) && eLower.includes(abbr))
+          );
+        });
+      });
+    };
+
+    const hasMatchingExpertise = isTopicMatching(quizTopics, cleanExpertise);
+
+    // Rule 2: If expertise doesn't match and force is not set, return warning requiring confirmation
+    if (!hasMatchingExpertise && !force) {
+      return res.status(422).json({
+        success: false,
+        code: "EXPERTISE_MISMATCH",
+        requiresConfirmation: true,
+        message: `Instructor's expertise (${cleanExpertise.join(", ")}) does not match this quiz's topic or tags. Assign anyway?`,
+        quizTopics,
+        instructorExpertise: cleanExpertise,
+      });
+    }
+
     const assignment = await QuizAssignment.findOneAndUpdate(
       { quizId },
       { instructorId, role, assignedAt: new Date() },
@@ -52,8 +129,11 @@ export const assignQuizToInstructor = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: "Quiz assigned to instructor successfully",
+      message: hasMatchingExpertise
+        ? "Quiz assigned to instructor successfully (Expertise verified)"
+        : "Quiz assigned to instructor with forced confirmation",
       data: assignment,
+      matched: hasMatchingExpertise,
     });
   } catch (err) {
     next(err);
@@ -115,6 +195,10 @@ export const getQuizAssignedInstructor = async (req, res, next) => {
 
     // Fetch instructor profile (bio, expertise, stats)
     let instructorProfile = await InstructorProfile.findOne({ userId: instructorUser._id });
+    const cleanExpertise = (instructorProfile?.expertise || []).filter(
+      (e) => typeof e === "string" && e.trim().length > 0
+    );
+    const hasExpertise = cleanExpertise.length > 0;
 
     res.status(200).json({
       success: true,
@@ -124,9 +208,9 @@ export const getQuizAssignedInstructor = async (req, res, next) => {
         email: instructorUser.email,
         avatar: instructorUser.avatar || null,
         bio: instructorProfile?.bio || "Verified Quimora Assessment Instructor",
-        expertise: instructorProfile?.expertise || ["Computer Science", "Engineering"],
+        expertise: hasExpertise ? cleanExpertise : ["Expertise not specified yet"],
         role,
-        isVerified: true,
+        isVerified: hasExpertise,
       },
     });
   } catch (err) {

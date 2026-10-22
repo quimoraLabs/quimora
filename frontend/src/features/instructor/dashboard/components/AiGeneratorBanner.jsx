@@ -101,7 +101,7 @@ const AiGeneratorBanner = ({ onQuizGenerated }) => {
     <>
       <motion.div
         whileHover={{ scale: 1.01 }}
-        className="relative overflow-hidden bg-gradient-to-br from-purple-900/40 via-blue-900/30 to-surface border border-purple-500/30 rounded-2xl p-5 shadow-card"
+        className="relative overflow-hidden bg-linear-to-br from-purple-900/40 via-blue-900/30 to-surface border border-purple-500/30 rounded-2xl p-5 shadow-card"
       >
         <div className="flex items-center gap-2 text-purple-400 mb-2">
           <Sparkles className="w-5 h-5 animate-pulse" />
@@ -147,7 +147,7 @@ const AiGeneratorBanner = ({ onQuizGenerated }) => {
 
               {/* Sample Prompt Suggestions */}
               <div>
-                <label className="block text-xs font-semibold text-purple-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <label className="text-xs font-semibold text-purple-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5" /> Sample Prompt Suggestions (Click to use)
                 </label>
                 <div className="grid grid-cols-2 gap-2">

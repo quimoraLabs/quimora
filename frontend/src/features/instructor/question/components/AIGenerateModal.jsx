@@ -68,7 +68,7 @@ export default function AIGenerateModal({ isOpen, onClose, quizId, initialTopic 
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
       <div className="relative w-full max-w-2xl bg-surface border border-main rounded-2xl shadow-2xl overflow-hidden my-8 transition-all">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-main bg-gradient-to-r from-purple-950/40 via-surface to-surface">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-main bg-linear-to-r from-purple-950/40 via-surface to-surface">
           <div className="flex items-center gap-2.5">
             <div className="p-2 bg-purple-500/10 text-purple-400 rounded-xl border border-purple-500/20">
               <Sparkles className="w-5 h-5 animate-pulse" />
@@ -112,7 +112,7 @@ export default function AIGenerateModal({ isOpen, onClose, quizId, initialTopic 
 
               {/* Sample Prompt Suggestions */}
               <div>
-                <label className="block text-[11px] font-semibold text-purple-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <label className="text-[11px] font-semibold text-purple-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5" /> Sample Prompt Suggestions (Click to fill)
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -300,7 +300,7 @@ export default function AIGenerateModal({ isOpen, onClose, quizId, initialTopic 
             <div className="space-y-4">
               <div className="flex items-center justify-between bg-purple-500/10 border border-purple-500/20 p-3.5 rounded-xl">
                 <div className="flex items-center gap-2 text-purple-300 text-xs font-medium">
-                  <CheckCircle2 className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                  <CheckCircle2 className="w-4 h-4 text-purple-400 shrink-0" />
                   Generated {generatedQuestions.length} AI question(s) for &quot;{topic}&quot;. Review before importing.
                 </div>
                 <button
@@ -330,7 +330,7 @@ export default function AIGenerateModal({ isOpen, onClose, quizId, initialTopic 
                       <button
                         type="button"
                         onClick={() => handleRemoveQuestion(idx)}
-                        className="p-1.5 text-muted hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer flex-shrink-0"
+                        className="p-1.5 text-muted hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer shrink-0"
                         title="Remove question from batch"
                       >
                         <Trash2 className="w-4 h-4" />

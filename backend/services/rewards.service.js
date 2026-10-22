@@ -30,7 +30,10 @@ export const recordAttemptRewards = async (userId, quizId, scorePercentage) => {
 
   if (isPass) {
     // Check if student already exhausted their allowed passes
-    if (progress.passAttemptsCount >= progress.maxPassAllowed) {
+    if (progress.passAttemptsCount >= progress.maxPassAllowed || (progress.isLocked && progress.lockReason === "PASS_LIMIT_REACHED")) {
+      progress.isLocked = true;
+      progress.lockReason = "PASS_LIMIT_REACHED";
+      await progress.save();
       const err = new Error(
         `Pass attempt limit (${progress.maxPassAllowed}) reached for this quiz.`
       );
@@ -38,8 +41,8 @@ export const recordAttemptRewards = async (userId, quizId, scorePercentage) => {
       throw err;
     }
 
-    // 1. Increment pass counter (Fail count remains untouched)
-    progress.passAttemptsCount += 1;
+    // 1. Increment pass counter strictly capped at maxPassAllowed (never exceeds)
+    progress.passAttemptsCount = Math.min(progress.passAttemptsCount + 1, progress.maxPassAllowed);
     progress.hasPassedOnce = true;
 
     // 2. Base Coins calculation based on score percentage
@@ -66,21 +69,31 @@ export const recordAttemptRewards = async (userId, quizId, scorePercentage) => {
       breakdown.push({ label: "First Try Pass Bonus", amount: firstTryBonus });
     }
 
-    // Lock if maximum allowed passes reached
+    // Lock immediately once maximum allowed passes reached
     if (progress.passAttemptsCount >= progress.maxPassAllowed) {
       progress.isLocked = true;
       progress.lockReason = "PASS_LIMIT_REACHED";
     }
   } else {
-    // FAIL: STRICTLY increment fail counter only (Pass counter remains untouched)
-    progress.failAttemptsCount += 1;
+    // FAIL: Check if student already exhausted their 6 allowed fail attempts
+    if (progress.failAttemptsCount >= 6 || (progress.isLocked && progress.lockReason === "FAIL_LIMIT_EXCEEDED")) {
+      progress.isLocked = true;
+      progress.lockReason = "FAIL_LIMIT_EXCEEDED";
+      await progress.save();
+      const err = new Error("Quiz is locked due to reaching 6 failed attempts. Please submit an Admin Appeal to proceed.");
+      err.statusCode = 403;
+      throw err;
+    }
+
+    // STRICTLY increment fail counter only, capped at 6 (never exceeds 6)
+    progress.failAttemptsCount = Math.min(progress.failAttemptsCount + 1, 6);
 
     // Modest participation coins
     const participation = Math.max(5, Math.round(scorePercentage * 0.5));
     coinsAwarded += participation;
     breakdown.push({ label: "Attempt Participation", amount: participation });
 
-    // Lock if 6 failed attempts reached
+    // Lock immediately if 6 failed attempts reached
     if (progress.failAttemptsCount >= 6) {
       progress.isLocked = true;
       progress.lockReason = "FAIL_LIMIT_EXCEEDED";

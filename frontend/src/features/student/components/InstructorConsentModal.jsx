@@ -78,7 +78,7 @@ export default function InstructorConsentModal({
           className="relative w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col"
         >
           {/* Header */}
-          <div className="p-6 bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-transparent border-b border-slate-200 dark:border-slate-800 flex items-start justify-between">
+          <div className="p-6 bg-linear-to-r from-blue-500/10 via-indigo-500/10 to-transparent border-b border-slate-200 dark:border-slate-800 flex items-start justify-between">
             <div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-400 text-xs font-bold uppercase tracking-wider mb-2">
                 <ShieldCheck className="w-3.5 h-3.5" />

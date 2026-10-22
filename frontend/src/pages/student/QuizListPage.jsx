@@ -61,16 +61,26 @@ function QuizListPage() {
 
   // Strictly filter quizzes by the student's selected profile interests
   const filteredQuizzes = useMemo(() => {
-    if (!quizzes || quizzes.length === 0 || !interests || interests.length === 0) {
+    if (!quizzes || quizzes.length === 0) {
       return [];
+    }
+
+    // If student has no selected interests yet, show all available published quizzes
+    if (!interests || interests.length === 0) {
+      return quizzes;
     }
 
     const studentInterestIdStrings = new Set(
       interests.map((i) => (i._id?.toString() || i.id?.toString() || "").trim())
     );
 
-    // 1. Base filter: Quiz MUST belong to at least one of the student's chosen profile topics
+    // 1. Base filter: Quiz belongs to student's chosen topics OR is a general instructor quiz
     const allowedQuizzes = quizzes.filter((q) => {
+      // General quizzes without specific interest restrictions are accessible to all students
+      if (!q.interestIds || q.interestIds.length === 0) {
+        return true;
+      }
+
       // Direct ID check
       const matchesId = (q.interestIds || []).some((item) => {
         const idStr = (typeof item === "object" ? item?._id : item)?.toString() || "";

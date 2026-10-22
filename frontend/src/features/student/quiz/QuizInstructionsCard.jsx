@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import {
   ShieldCheck,
   AlertCircle,
+  AlertTriangle,
   Play,
   X,
   Clock,
@@ -10,6 +11,11 @@ import {
   CheckCircle2,
   SlidersHorizontal,
   Award,
+  Sparkles,
+  Target,
+  Zap,
+  Flame,
+  Layers,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -20,9 +26,58 @@ import axiosClient from "../../../api/axiosClient";
 
 const ALLOWED_OPTIONS = [10, 20, 25, 30, 40, 50];
 
+const DIFFICULTY_LEVELS = [
+  {
+    id: "beginner",
+    label: "Beginner",
+    tag: "Foundations",
+    icon: Sparkles,
+    color: "from-emerald-500 to-teal-600",
+    badge: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+    activeClass: "bg-emerald-600 text-white shadow-md shadow-emerald-500/30 ring-2 ring-emerald-500",
+  },
+  {
+    id: "intermediate",
+    label: "Intermediate",
+    tag: "Application",
+    icon: Target,
+    color: "from-blue-500 to-indigo-600",
+    badge: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
+    activeClass: "bg-blue-600 text-white shadow-md shadow-blue-500/30 ring-2 ring-blue-500",
+  },
+  {
+    id: "hard",
+    label: "Hard",
+    tag: "Advanced",
+    icon: Zap,
+    color: "from-amber-500 to-orange-600",
+    badge: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+    activeClass: "bg-amber-600 text-white shadow-md shadow-amber-500/30 ring-2 ring-amber-500",
+  },
+  {
+    id: "expert",
+    label: "Expert",
+    tag: "Mastery",
+    icon: Flame,
+    color: "from-rose-500 to-red-600",
+    badge: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
+    activeClass: "bg-rose-600 text-white shadow-md shadow-rose-500/30 ring-2 ring-rose-500",
+  },
+  {
+    id: "mixed",
+    label: "Mixed",
+    tag: "All Levels",
+    icon: Layers,
+    color: "from-purple-500 to-fuchsia-600",
+    badge: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20",
+    activeClass: "bg-purple-600 text-white shadow-md shadow-purple-500/30 ring-2 ring-purple-500",
+  },
+];
+
 export const QuizInstructionsCard = () => {
   const [assignedInstructor, setAssignedInstructor] = useState(null);
   const [selectedQuestionLimit, setSelectedQuestionLimit] = useState(50);
+  const [selectedDifficulty, setSelectedDifficulty] = useState("beginner");
   const rules = [
     "Do not switch tabs or windows during the test. Doing so will be flagged.",
     "Multiple tab switches will result in automatic submission.",
@@ -93,6 +148,7 @@ export const QuizInstructionsCard = () => {
       enterFullScreen();
       await startAttempt(quizId, navigate, {
         questionLimit: selectedQuestionLimit || 50,
+        difficulty: selectedDifficulty || "beginner",
       });
     } catch (error) {
       console.error("Initialization Failed: ", error);
@@ -104,11 +160,11 @@ export const QuizInstructionsCard = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 md:p-6 bg-surface">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden flex items-center justify-center p-3 sm:p-4 md:p-6 bg-surface">
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-5xl w-full bg-surface rounded-3xl shadow-2xl border border-main p-6 md:p-8 space-y-6"
+        className="max-w-5xl w-full bg-surface rounded-2xl sm:rounded-3xl shadow-2xl border border-main p-4 sm:p-6 md:p-8 space-y-5 sm:space-y-6"
       >
         {/* Header Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-main">
@@ -171,7 +227,7 @@ export const QuizInstructionsCard = () => {
             {assignedInstructor && (
               <div className="p-3.5 rounded-2xl border border-emerald-500/20 bg-emerald-50/30 dark:bg-emerald-950/20 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
+                  <div className="w-9 h-9 rounded-xl bg-linear-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
                     {assignedInstructor.name ? assignedInstructor.name.charAt(0).toUpperCase() : "Q"}
                   </div>
                   <div>
@@ -193,9 +249,56 @@ export const QuizInstructionsCard = () => {
             )}
           </div>
 
-          {/* Right Column: Session Length Selector, Stats & Actions (5 cols) */}
+          {/* Right Column: Difficulty Selector, Session Length, Stats & Warning (5 cols) */}
           <div className="lg:col-span-5 space-y-4">
-            {/* Session Length Selector */}
+            {/* 1. Difficulty Level Selector (5 Options: Beginner, Intermediate, Hard, Expert, Mixed) */}
+            <div className="p-4 rounded-2xl border border-indigo-500/20 bg-indigo-50/30 dark:bg-indigo-950/20 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-bold text-main">
+                  <SlidersHorizontal className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                  <span>Choose Difficulty Level</span>
+                </div>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 capitalize">
+                  {selectedDifficulty}
+                </span>
+              </div>
+
+              {/* 5 Difficulty Options: Beginner, Intermediate, Hard, Expert, Mixed */}
+              <div className="grid grid-cols-5 gap-1.5">
+                {DIFFICULTY_LEVELS.map((lvl) => {
+                  const isSelected = selectedDifficulty === lvl.id;
+                  const Icon = lvl.icon;
+                  return (
+                    <button
+                      key={lvl.id}
+                      type="button"
+                      onClick={() => setSelectedDifficulty(lvl.id)}
+                      className={`py-2 px-1 rounded-xl text-center flex flex-col items-center justify-center gap-1 transition-all cursor-pointer relative ${
+                        isSelected
+                          ? lvl.activeClass
+                          : "bg-surface border border-main text-muted hover:border-indigo-400 hover:text-main"
+                      }`}
+                    >
+                      <Icon className={`w-3.5 h-3.5 ${isSelected ? "text-white" : "text-muted"}`} />
+                      <span className="text-[11px] font-bold leading-none">{lvl.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center justify-between text-[11px] text-muted px-1">
+                <span>Selected: <strong className="text-main capitalize">{selectedDifficulty}</strong></span>
+                <span className="text-[10px]">
+                  {selectedDifficulty === "beginner" && "🟢 Foundational • Safe XP"}
+                  {selectedDifficulty === "intermediate" && "🟡 Applied • Moderate risk"}
+                  {selectedDifficulty === "hard" && "🟠 Complex • Rank sensitive"}
+                  {selectedDifficulty === "expert" && "🔴 Architecture & high risk"}
+                  {selectedDifficulty === "mixed" && "🟣 Progressive (Easy → Hard)"}
+                </span>
+              </div>
+            </div>
+
+            {/* 2. Session Length Selector */}
             <div className="p-4 rounded-2xl border border-indigo-500/20 bg-indigo-50/30 dark:bg-indigo-950/20 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs font-bold text-main">
@@ -265,6 +368,17 @@ export const QuizInstructionsCard = () => {
                   {effectiveQuestionsCount} Items
                 </span>
               </div>
+            </div>
+
+            {/* 3. PROMINENT RED WARNING NOTE DIRECTLY ABOVE START BUTTON */}
+            <div className="p-3.5 rounded-2xl border-2 border-red-500/40 bg-red-500/10 dark:bg-red-950/30 text-red-700 dark:text-red-300 space-y-1.5 shadow-sm">
+              <div className="flex items-center gap-1.5 font-bold text-xs text-red-600 dark:text-red-400">
+                <AlertTriangle className="w-4 h-4 text-red-500 shrink-0 animate-bounce" />
+                <span>NOTE / RANK WARNING</span>
+              </div>
+              <p className="text-[11px] leading-relaxed text-red-800/90 dark:text-red-300/90">
+                You may select any difficulty level (including <strong>Intermediate</strong>, <strong>Hard</strong>, or <strong>Expert</strong>). However, higher difficulty carries rank penalty risk: <strong>poor performance or failing (&lt; 50%) will deduct Experience Points (Elo) and degrade your grade/rank!</strong> Choose your tier carefully.
+              </p>
             </div>
 
             {/* Action Buttons */}

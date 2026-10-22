@@ -84,7 +84,7 @@ export const checkStudentQuizEligibility = async (req, res, next) => {
 
 export const startQuizAttempt = async (req, res, next) => {
   try {
-    const { quizId, questionLimit } = req.body;
+    const { quizId, questionLimit, difficulty } = req.body;
     const userId = req.auth.userId.toString();
 
     // 1. Validate Question Limit (Strict options: 10, 20, 25, 30, 40, 50)
@@ -95,6 +95,12 @@ export const startQuizAttempt = async (req, res, next) => {
       });
     }
 
+    // 1.1 Validate Difficulty Level (beginner, intermediate, hard, expert, mixed)
+    const ALLOWED_DIFFICULTIES = ["beginner", "intermediate", "hard", "expert", "mixed"];
+    const chosenDifficulty = difficulty && ALLOWED_DIFFICULTIES.includes(String(difficulty).toLowerCase())
+      ? String(difficulty).toLowerCase()
+      : "beginner";
+
     // 2. Fetch & Validate Quiz Availability
     const quiz = await assertQuizExists(quizId);
     if (quiz.status !== "published" || !quiz.isActive) {
@@ -104,7 +110,12 @@ export const startQuizAttempt = async (req, res, next) => {
     // 3. Check Decoupled Fail & Pass Limits (StudentQuizProgress)
     const progress = await StudentQuizProgress.findOne({ userId, quizId });
     if (progress) {
-      if (progress.failAttemptsCount >= 6) {
+      if (progress.isLocked || progress.failAttemptsCount >= 6) {
+        if (progress.failAttemptsCount >= 6 && !progress.isLocked) {
+          progress.isLocked = true;
+          progress.lockReason = "FAIL_LIMIT_EXCEEDED";
+          await progress.save();
+        }
         return res.status(403).json({
           success: false,
           error: "Quiz is locked due to reaching 6 failed attempts. Please submit an Admin Appeal to proceed.",
@@ -113,14 +124,19 @@ export const startQuizAttempt = async (req, res, next) => {
           failAttemptsCount: progress.failAttemptsCount,
         });
       }
-      if (progress.passAttemptsCount >= progress.maxPassAllowed) {
+      if (progress.passAttemptsCount >= (progress.maxPassAllowed || 3)) {
+        if (!progress.isLocked) {
+          progress.isLocked = true;
+          progress.lockReason = "PASS_LIMIT_REACHED";
+          await progress.save();
+        }
         return res.status(403).json({
           success: false,
-          error: `You have reached the maximum allowed pass attempts (${progress.maxPassAllowed}) for this quiz. Unlock an extra pass attempt in the Reward Store.`,
+          error: `You have reached the maximum allowed pass attempts (${progress.maxPassAllowed || 3}) for this quiz. Unlock an extra pass attempt in the Reward Store.`,
           isLocked: true,
           lockReason: "PASS_LIMIT_REACHED",
           passAttemptsCount: progress.passAttemptsCount,
-          maxPassAllowed: progress.maxPassAllowed,
+          maxPassAllowed: progress.maxPassAllowed || 3,
         });
       }
     }
@@ -149,7 +165,7 @@ export const startQuizAttempt = async (req, res, next) => {
     let questionsForResponse;
 
     if (!attempt) {
-      const sessionData = await createAttemptSession(userId, quizId, questionLimit);
+      const sessionData = await createAttemptSession(userId, quizId, questionLimit, chosenDifficulty);
       attempt = sessionData.attempt;
       questionsForResponse = sessionData.rawQuestions;
     } else {
@@ -236,6 +252,33 @@ export const submitQuizAttempt = async (req, res, next) => {
     // 1. Input Validation Check
     if (!attemptId || !Array.isArray(answers)) {
       return res.status(400).json({ error: "Invalid submission request payload" });
+    }
+
+    // 1.5 Strict Lockout Pre-check
+    const currentAttempt = await QuizAttempt.findOne({ _id: attemptId, userId }).select("quizId status").lean();
+    if (!currentAttempt) {
+      return res.status(404).json({ error: "Active quiz session not found or already submitted" });
+    }
+    if (currentAttempt.quizId) {
+      const progress = await StudentQuizProgress.findOne({ userId, quizId: currentAttempt.quizId }).lean();
+      if (progress) {
+        if (progress.failAttemptsCount >= 6 || (progress.isLocked && progress.lockReason === "FAIL_LIMIT_EXCEEDED")) {
+          return res.status(403).json({
+            success: false,
+            error: "Quiz is locked due to reaching 6 failed attempts. Please submit an Admin Appeal to proceed.",
+            isLocked: true,
+            lockReason: "FAIL_LIMIT_EXCEEDED",
+          });
+        }
+        if (progress.passAttemptsCount >= (progress.maxPassAllowed || 3) || (progress.isLocked && progress.lockReason === "PASS_LIMIT_REACHED")) {
+          return res.status(403).json({
+            success: false,
+            error: `You have reached the maximum allowed pass attempts (${progress.maxPassAllowed || 3}) for this quiz.`,
+            isLocked: true,
+            lockReason: "PASS_LIMIT_REACHED",
+          });
+        }
+      }
     }
 
     // 2. Execute Submission Logic via Service Layer

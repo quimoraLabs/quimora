@@ -128,10 +128,21 @@ const quizAttemptSchema = new mongoose.Schema(
     // Detailed mapping profile array of every question handled during the session
     answers: [answerSnapshotSchema],
 
+    selectedDifficulty: {
+      type: String,
+      enum: ["beginner", "intermediate", "hard", "expert", "mixed"],
+      default: "beginner",
+    },
+
     // Elo rating audit trail tracking
     eloChange: {
       studentEloBefore: { type: Number, default: null },
       studentEloAfter: { type: Number, default: null },
+      delta: { type: Number, default: 0 },
+      oldTier: { type: String, default: null },
+      newTier: { type: String, default: null },
+      isDemoted: { type: Boolean, default: false },
+      isPromoted: { type: Boolean, default: false },
       questionEloChanges: [
         {
           questionId: { type: mongoose.Schema.Types.ObjectId, ref: "Question" },

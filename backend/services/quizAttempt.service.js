@@ -2,6 +2,17 @@ import Question from "../models/question.model.js";
 import QuizAttempt from "../models/quizAttempt.model.js";
 import { evaluateSnapshotSubmission } from "../utils/grading.utils.js";
 import Quiz from "../models/quiz.model.js";
+import StudentProfile from "../models/studentProfile.model.js";
+import EloRating from "../models/eloRating.model.js";
+
+export const getTierFromElo = (elo) => {
+    if (elo >= 1800) return "Expert";
+    if (elo >= 1600) return "Master";
+    if (elo >= 1400) return "Advanced";
+    if (elo >= 1200) return "Intermediate";
+    if (elo >= 1000) return "Learner";
+    return "Beginner";
+};
 
 
 /**
@@ -66,33 +77,86 @@ export const handleExpiredAttempt = async (attempt, quizTimeLimit) => {
     return attempt;
 };
 
-// Helper to initialize snapshot creation (supports student custom question limit & full two-level randomization)
-export const createAttemptSession = async (userId, quizId, questionLimit = null) => {
+// Helper to initialize snapshot creation (supports student difficulty selection & question limits)
+export const createAttemptSession = async (userId, quizId, questionLimit = null, difficulty = "beginner") => {
     let rawQuestions = await Question.find({ quizId })
-        .select("questionText marks difficulty options")
+        .select("questionText marks difficulty options eloRating")
         .lean();
 
     if (!rawQuestions || rawQuestions.length === 0) {
         throw new Error("Cannot start a quiz that contains no active questions");
     }
 
-    // 1. Always thoroughly randomize questions using Fisher-Yates shuffle
-    const shuffled = [...rawQuestions];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-
-    // 2. Determine session question count: student chosen limit or default 50
+    // Determine target limit
     let limit = questionLimit ? parseInt(questionLimit, 10) : 50;
     if (isNaN(limit) || limit <= 0) {
         limit = 50;
     }
+    const maxSelectable = Math.min(limit, rawQuestions.length);
 
-    // Slice to limit (capped by total available questions)
-    const selectedQuestions = shuffled.slice(0, Math.min(limit, shuffled.length));
+    // Filter and order questions according to chosen difficulty (Beginner, Intermediate, Hard, Expert, Mixed)
+    let orderedQuestions = [];
+    const normalizedDiff = (difficulty || "beginner").toLowerCase();
 
-    // 3. Shuffle options within each question so ABCD positions cannot be memorized
+    const easyQs = rawQuestions.filter((q) => q.difficulty === "easy");
+    const mediumQs = rawQuestions.filter((q) => q.difficulty === "medium");
+    const hardQs = rawQuestions.filter((q) => q.difficulty === "hard");
+
+    // Fisher-Yates shuffle helper
+    const shuffleArray = (arr) => {
+        const copy = [...arr];
+        for (let i = copy.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [copy[i], copy[j]] = [copy[j], copy[i]];
+        }
+        return copy;
+    };
+
+    if (normalizedDiff === "beginner") {
+        // Prioritize Easy -> Medium -> Hard (Progressive beginner start, strictly no architectural shocks)
+        orderedQuestions = [
+            ...shuffleArray(easyQs),
+            ...shuffleArray(mediumQs),
+            ...shuffleArray(hardQs),
+        ];
+    } else if (normalizedDiff === "intermediate") {
+        // Prioritize Medium -> Easy -> Hard
+        orderedQuestions = [
+            ...shuffleArray(mediumQs),
+            ...shuffleArray(easyQs),
+            ...shuffleArray(hardQs),
+        ];
+    } else if (normalizedDiff === "hard") {
+        // Prioritize Hard -> Medium -> Easy
+        orderedQuestions = [
+            ...shuffleArray(hardQs),
+            ...shuffleArray(mediumQs),
+            ...shuffleArray(easyQs),
+        ];
+    } else if (normalizedDiff === "expert") {
+        // High challenge questions, prioritizing Hard with highest Elo
+        const sortedByElo = [...rawQuestions].sort(
+            (a, b) => (b.eloRating || 1200) - (a.eloRating || 1200)
+        );
+        orderedQuestions = sortedByElo;
+    } else {
+        // "mixed" / "all" / "random": Progressive tiered distribution:
+        // Warmup easy questions first, medium application questions, hard mastery questions
+        orderedQuestions = [
+            ...shuffleArray(easyQs),
+            ...shuffleArray(mediumQs),
+            ...shuffleArray(hardQs),
+        ];
+    }
+
+    // Fallback if difficulty buckets were empty
+    if (orderedQuestions.length === 0) {
+        orderedQuestions = shuffleArray(rawQuestions);
+    }
+
+    const selectedQuestions = orderedQuestions.slice(0, maxSelectable);
+
+    // Shuffle options within each question so ABCD positions cannot be memorized
     const questionSnapshots = selectedQuestions.map((q) => {
         const shuffledOptions = [...(q.options || [])];
         for (let i = shuffledOptions.length - 1; i > 0; i--) {
@@ -118,6 +182,7 @@ export const createAttemptSession = async (userId, quizId, questionLimit = null)
         quizId,
         totalQuestions: questionSnapshots.length,
         questionSnapshots,
+        selectedDifficulty: normalizedDiff,
         status: "started",
         startedAt: new Date(),
     });
@@ -125,14 +190,14 @@ export const createAttemptSession = async (userId, quizId, questionLimit = null)
     return { attempt, rawQuestions: questionSnapshots };
 };
 
-// Helper to process quiz submission, verify time, and calculate score
+// Helper to process quiz submission, verify time, calculate score, and adjust student Elo/grade
 export const submitAttemptSession = async (attemptId, userId, userAnswers) => {
     // 1. Fetch active attempt session with quiz settings
     const attempt = await QuizAttempt.findOne({
         _id: attemptId,
         userId,
         status: "started",
-    }).populate("quizId", "title tags timeLimit passingScore negativeMarking");
+    }).populate("quizId", "title tags timeLimit passingScore negativeMarking interestIds");
 
     if (!attempt) {
         const err = new Error("Active quiz session not found or already submitted");
@@ -181,7 +246,110 @@ export const submitAttemptSession = async (attemptId, userId, userAnswers) => {
         }
     );
 
-    // 4. Update Attempt Record in DB
+    // 4. Dynamic Experience Points & Elo Progression / Penalty Engine
+    const difficulty = attempt.selectedDifficulty || "beginner";
+    let studentProfile = await StudentProfile.findOne({ userId });
+    if (!studentProfile) {
+        studentProfile = await StudentProfile.create({ userId });
+    }
+
+    const currentElo = studentProfile.overallElo || 1000;
+    const oldTier = studentProfile.levelName || getTierFromElo(currentElo);
+
+    let eloDelta = 0;
+    if (passed) {
+        // High score mastery bonuses
+        if (scorePercentage >= 90) {
+            if (difficulty === "expert") eloDelta = 55;
+            else if (difficulty === "hard") eloDelta = 45;
+            else if (difficulty === "intermediate") eloDelta = 35;
+            else if (difficulty === "mixed") eloDelta = 30;
+            else eloDelta = 25; // beginner
+        } else if (scorePercentage >= 75) {
+            if (difficulty === "expert") eloDelta = 40;
+            else if (difficulty === "hard") eloDelta = 32;
+            else if (difficulty === "intermediate") eloDelta = 25;
+            else if (difficulty === "mixed") eloDelta = 22;
+            else eloDelta = 18;
+        } else {
+            // Passed (50% - 74%)
+            if (difficulty === "expert") eloDelta = 28;
+            else if (difficulty === "hard") eloDelta = 22;
+            else if (difficulty === "intermediate") eloDelta = 18;
+            else if (difficulty === "mixed") eloDelta = 15;
+            else eloDelta = 12;
+        }
+    } else {
+        // Poor Result / Failed (< 50%) -> Experience points drop / Grade low hota jayega!
+        // The higher the tier attempted, the heavier the penalty
+        if (difficulty === "expert") {
+            eloDelta = -45;
+        } else if (difficulty === "hard") {
+            eloDelta = -32;
+        } else if (difficulty === "intermediate") {
+            eloDelta = -20;
+        } else if (difficulty === "mixed") {
+            eloDelta = -15;
+        } else {
+            eloDelta = -10; // beginner
+        }
+
+        // Additional penalty if very low score (< 30%)
+        if (scorePercentage < 30) {
+            eloDelta -= 8;
+        }
+    }
+
+    const newElo = Math.max(100, currentElo + eloDelta);
+    const newTier = getTierFromElo(newElo);
+    const isDemoted = newElo < currentElo && oldTier !== newTier;
+    const isPromoted = newElo > currentElo && oldTier !== newTier;
+
+    // Update StudentProfile
+    studentProfile.overallElo = newElo;
+    studentProfile.levelName = newTier;
+    if (eloDelta > 0) {
+        studentProfile.experiencePoints = (studentProfile.experiencePoints || 0) + (eloDelta * 10);
+    }
+    await studentProfile.save();
+
+    // Update EloRating records for matching quiz interests
+    const quizDoc = attempt.quizId;
+    if (quizDoc && Array.isArray(quizDoc.interestIds) && quizDoc.interestIds.length > 0) {
+        for (const interestId of quizDoc.interestIds) {
+            await EloRating.findOneAndUpdate(
+                { studentId: userId, interestId },
+                {
+                    $inc: { rating: eloDelta, quizzesAttempted: 1 },
+                    $max: { highestRating: newElo },
+                    $set: { lastUpdated: new Date() },
+                },
+                { upsert: true }
+            );
+        }
+    } else {
+        // Update all active student EloRating records
+        await EloRating.updateMany(
+            { studentId: userId, isArchived: false },
+            {
+                $inc: { rating: eloDelta, quizzesAttempted: 1 },
+                $set: { lastUpdated: new Date() },
+            }
+        );
+    }
+
+    const eloSummary = {
+        studentEloBefore: currentElo,
+        studentEloAfter: newElo,
+        delta: eloDelta,
+        oldTier,
+        newTier,
+        isDemoted,
+        isPromoted,
+        difficulty,
+    };
+
+    // 5. Update Attempt Record in DB
     attempt.answers = compiledSnapshotArray;
     attempt.correctAnswersCount = correctAnswersCount;
     attempt.incorrectAnswersCount = incorrectAnswersCount; 
@@ -193,6 +361,7 @@ export const submitAttemptSession = async (attemptId, userId, userAnswers) => {
     attempt.timeTaken = timeTakenInSeconds;
     attempt.status = "completed";
     attempt.completedAt = now;
+    attempt.eloChange = eloSummary;
 
     await attempt.save();
 
@@ -208,6 +377,7 @@ export const submitAttemptSession = async (attemptId, userId, userAnswers) => {
         passed,
         timeTakenInSeconds,
         completedAt: attempt.completedAt,
+        eloChange: eloSummary,
     };
 };
 

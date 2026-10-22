@@ -162,7 +162,7 @@ const AdminUserTable = ({
                       <img
                         src={user.avatar?.url || `https://api.dicebear.com/9.x/identicon/svg?seed=${user.username}`}
                         alt={user.name}
-                        className="w-9 h-9 rounded-full bg-elevated border border-main object-cover flex-shrink-0"
+                        className="w-9 h-9 rounded-full bg-elevated border border-main object-cover shrink-0"
                       />
                       <div>
                         <p className="font-medium text-main">{user.name || 'Unnamed'}</p>
@@ -172,7 +172,7 @@ const AdminUserTable = ({
                   </td>
 
                   {/* Email */}
-                  <td className="px-6 py-4 text-muted truncate max-w-[180px]">
+                  <td className="px-6 py-4 text-muted truncate max-w-45">
                     {user.email}
                   </td>
 

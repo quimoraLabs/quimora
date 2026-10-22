@@ -65,7 +65,7 @@ export default function LevelBadge({ levelName, elo = null, showTooltip = true }
       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs font-bold transition-all shadow-2xs select-none ${config.bg} ${config.text} ${config.border}`}
       title={showTooltip ? `${resolvedTier} Tier • Skill Rating Level` : undefined}
     >
-      <div className={`p-1 rounded-md bg-gradient-to-br ${config.color} text-white shadow-xs`}>
+      <div className={`p-1 rounded-md bg-linear-to-br ${config.color} text-white shadow-xs`}>
         <Icon className="w-3 h-3" />
       </div>
       <span>{resolvedTier}</span>

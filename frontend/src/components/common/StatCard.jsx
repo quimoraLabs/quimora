@@ -69,11 +69,11 @@ export default function StatCard({
       } ${className}`}
     >
       {/* Gradient Accent Bar - Top */}
-      <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${cardGradient} rounded-t-2xl transition-all duration-300 group-hover:h-1.5`} />
+      <div className={`absolute top-0 left-0 right-0 h-1 bg-linear-to-r ${cardGradient} rounded-t-2xl transition-all duration-300 group-hover:h-1.5`} />
 
       {/* Subtle Background Glow on Hover */}
       <div
-        className={`pointer-events-none absolute -right-16 -bottom-16 h-40 w-40 rounded-full bg-gradient-to-tr ${cardGradient} opacity-0 group-hover:opacity-10 blur-3xl transition-opacity duration-500`}
+        className={`pointer-events-none absolute -right-16 -bottom-16 h-40 w-40 rounded-full bg-linear-to-tr ${cardGradient} opacity-0 group-hover:opacity-10 blur-3xl transition-opacity duration-500`}
       />
 
       {/* Header: Title & Icon */}
@@ -84,7 +84,7 @@ export default function StatCard({
 
         {Icon && (
           <div
-            className={`p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 shadow-sm transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 ${
+            className={`p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 shadow-sm group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 ${
               bgColorClass || ""
             }`}
           >
@@ -122,7 +122,7 @@ export default function StatCard({
             initial={{ width: 0 }}
             animate={{ width: `${stat.progress}%` }}
             transition={{ delay: 0.3, duration: 0.8 }}
-            className={`h-full bg-gradient-to-r ${cardGradient} rounded-full`}
+            className={`h-full bg-linear-to-r ${cardGradient} rounded-full`}
           />
         </div>
       )}

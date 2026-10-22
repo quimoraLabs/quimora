@@ -10,7 +10,7 @@ const useQuizListStore = create((set, get) => ({
   fetchAvailableQuizzes: async () => {
     set({ loading: true });
     try {
-      const response = await axiosClient.get(`${get().url}/quizzes/student`);
+      const response = await axiosClient.get("/quizzes/student");
       set({ quizzes: response.data?.data || [] });
     } catch (error) {
       console.error("Error fetching student quizzes:", error);

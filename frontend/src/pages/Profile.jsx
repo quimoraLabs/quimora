@@ -420,11 +420,11 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-slate-50 dark:bg-[#0b0f19] text-slate-900 dark:text-white pb-20 transition-colors duration-300 rounded-3xl overflow-hidden shadow-2xl border border-slate-200/80 dark:border-white/10">
       
       {/* 1. DYNAMIC HIGH-TECH COVER BANNER */}
-      <div className="relative h-64 sm:h-72 md:h-80 w-full overflow-hidden bg-gradient-to-r from-blue-950 via-indigo-950 to-slate-950">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#3b82f615_1px,transparent_1px),linear-gradient(to_bottom,#3b82f615_1px,transparent_1px)] bg-[size:28px_28px]" />
-        <div className="absolute -top-32 -left-32 w-[32rem] h-[32rem] bg-blue-600/30 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute -bottom-32 -right-32 w-[32rem] h-[32rem] bg-indigo-600/30 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-50 dark:from-[#0b0f19] via-transparent to-transparent opacity-95" />
+      <div className="relative h-64 sm:h-72 md:h-80 w-full overflow-hidden bg-linear-to-r from-blue-950 via-indigo-950 to-slate-950">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#3b82f615_1px,transparent_1px),linear-gradient(to_bottom,#3b82f615_1px,transparent_1px)] bg-size-[28px_28px]" />
+        <div className="absolute -top-32 -left-32 w-lg h-128 bg-blue-600/30 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute -bottom-32 -right-32 w-lg h-128 bg-indigo-600/30 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute inset-0 bg-linear-to-t from-slate-50 dark:from-[#0b0f19] via-transparent to-transparent opacity-95" />
 
         {/* Top Status & Controls */}
         <div className="absolute top-6 right-6 flex items-center gap-3 z-10">
@@ -448,7 +448,7 @@ export default function ProfilePage() {
           
           {/* Avatar with Glow & Upload Camera */}
           <div className="relative group shrink-0">
-            <div className="absolute -inset-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 rounded-[2.8rem] blur-xl opacity-75 group-hover:opacity-100 transition duration-500" />
+            <div className="absolute -inset-2 bg-linear-to-r from-blue-600 via-indigo-600 to-cyan-500 rounded-[2.8rem] blur-xl opacity-75 group-hover:opacity-100 transition duration-500" />
             <div className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-[2.5rem] bg-white dark:bg-slate-900 border-4 border-white dark:border-slate-800 shadow-2xl overflow-hidden">
               <img
                 src={
@@ -566,7 +566,7 @@ export default function ProfilePage() {
           <div className="flex flex-col sm:flex-row md:flex-col gap-3 shrink-0 w-full sm:w-auto">
             <button
               onClick={() => setActiveTab(activeTab === "edit" ? "overview" : "edit")}
-              className="px-6 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm shadow-xl shadow-blue-600/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="px-6 py-3 rounded-2xl bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm shadow-xl shadow-blue-600/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <Pencil size={16} />
               <span>{activeTab === "edit" ? "View Overview" : "Edit Profile"}</span>
@@ -1278,7 +1278,7 @@ export default function ProfilePage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
+                      <label className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
                         <GithubIcon size={13} />
                         <span>GitHub URL</span>
                       </label>
@@ -1292,7 +1292,7 @@ export default function ProfilePage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
+                      <label className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
                         <LinkedinIcon size={13} />
                         <span>LinkedIn URL</span>
                       </label>
@@ -1306,7 +1306,7 @@ export default function ProfilePage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
+                      <label className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
                         <Globe size={13} />
                         <span>Portfolio / Website</span>
                       </label>
@@ -1326,7 +1326,7 @@ export default function ProfilePage() {
                   <button
                     type="submit"
                     disabled={savingProfile}
-                    className="w-full sm:flex-1 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-2xl shadow-xl shadow-blue-600/30 transition flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full sm:flex-1 py-4 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-2xl shadow-xl shadow-blue-600/30 transition flex items-center justify-center gap-2 cursor-pointer"
                   >
                     {savingProfile ? (
                       <RefreshCw className="w-5 h-5 animate-spin" />
