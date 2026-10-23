@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import axiosClient from "../../api/axiosClient";
 import Loader from "../../components/common/Loader";
+import AssessmentExport from "../../components/common/AssessmentExport";
 
 const StudentFullReportPage = () => {
   const { attemptId } = useParams();
@@ -101,14 +102,18 @@ const StudentFullReportPage = () => {
           <ArrowLeft className="w-3.5 h-3.5" /> Back / Close Tab
         </button>
         
-        <button
-          onClick={handlePrint}
-          className="flex items-center gap-2 px-4 py-2 bg-gray-900 hover:bg-black text-white rounded-md font-bold text-xs shadow transition-all cursor-pointer"
-          title="Save as A4 Landscape PDF or Print (Ctrl+P)"
-        >
-          <Printer className="w-4 h-4 text-emerald-400" />
-          <span>Print / Save as PDF</span>
-        </button>
+        <div className="flex items-center gap-2.5">
+          <AssessmentExport apiResponse={{ data: report }} />
+
+          <button
+            onClick={handlePrint}
+            className="flex items-center gap-2 px-4 py-2 bg-gray-900 hover:bg-black text-white rounded-md font-bold text-xs shadow transition-all cursor-pointer"
+            title="Save as A4 Landscape PDF or Print (Ctrl+P)"
+          >
+            <Printer className="w-4 h-4 text-emerald-400" />
+            <span>Print / Save as PDF</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Clean Report Sheet */}
