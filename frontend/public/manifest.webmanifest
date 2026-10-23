@@ -1,0 +1,66 @@
+{
+  "id": "/?source=pwa",
+  "name": "Quimora - Adaptive Examination & Learning Platform",
+  "short_name": "Quimora",
+  "description": "Secure adaptive assessment, AI examination generator, and real-time Elo rating evaluation system.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "theme_color": "#4f46e5",
+  "background_color": "#0f172a",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["education", "productivity", "assessment"],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Quizzes Catalog",
+      "short_name": "Quizzes",
+      "description": "Browse and take adaptive examinations",
+      "url": "/student/quizzes",
+      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Student Dashboard",
+      "short_name": "Dashboard",
+      "description": "View overall performance and Elo rank progress",
+      "url": "/student/dashboard",
+      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Student Profile",
+      "short_name": "Profile",
+      "description": "Manage interests, college, and badges",
+      "url": "/student/profile",
+      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
+    }
+  ]
+}

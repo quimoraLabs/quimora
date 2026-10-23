@@ -3,6 +3,7 @@ import { Toaster } from "react-hot-toast";
 import useAuthStore from "./features/auth/store/authStore";
 import Loader from "./components/common/Loader";
 import ScrollToTop from "./components/common/ScrollToTop";
+import PwaInstallBanner from "./components/common/PwaInstallBanner";
 import { AppRouter } from "./routes/AppRouter";
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
     <>
       <ScrollToTop />
       <Toaster position="top-center" reverseOrder={false} />
+      <PwaInstallBanner />
       <AppRouter />
     </>
   );
