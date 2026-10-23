@@ -45,7 +45,7 @@ const StudentFullReportPage = () => {
     window.print();
   };
 
-  const handleSavePDF = () => {
+  const handleSavePDF = async () => {
     if (!reportRef.current || isGenerating) return;
 
     setIsGenerating(true);
@@ -56,7 +56,7 @@ const StudentFullReportPage = () => {
     const filename = `Quimora_Report_${safeTitle}_${Date.now()}.pdf`;
 
     const opt = {
-      margin:       [8, 8, 8, 8], // mm margins
+      margin:       [8, 8, 8, 8],
       filename:     filename,
       image:        { type: 'jpeg', quality: 0.98 },
       html2canvas:  { scale: 2, useCORS: true, logging: false },
@@ -64,18 +64,19 @@ const StudentFullReportPage = () => {
       pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
     };
 
-    html2pdf()
-      .set(opt)
-      .from(reportRef.current)
-      .save()
-      .then(() => {
-        setIsGenerating(false);
-      })
-      .catch((err) => {
-        console.error("PDF generation error:", err);
-        setIsGenerating(false);
-        alert("PDF generate karne mein error aaya! Alternative ke liye aap Print button se Save as PDF kar sakte hain.");
-      });
+    try {
+      const pdfWorker = typeof html2pdf === "function" ? html2pdf : (html2pdf?.default || window.html2pdf);
+      if (!pdfWorker) {
+        throw new Error("PDF generator module not available");
+      }
+      await pdfWorker().set(opt).from(reportRef.current).save();
+    } catch (err) {
+      console.warn("Direct PDF generation fallback to native print:", err);
+      // Fallback silently to browser print dialog without alert popups
+      window.print();
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   if (loading) return <Loader />;
@@ -142,10 +143,10 @@ const StudentFullReportPage = () => {
         <div className="flex items-center gap-2.5">
           <button
             onClick={handlePrint}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-gray-100 text-gray-800 border border-gray-300 rounded-md font-bold text-xs shadow-sm transition-all cursor-pointer"
-            title="Open browser print dialog (Ctrl+P)"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-gray-900 hover:bg-black text-white rounded-md font-bold text-xs shadow transition-all cursor-pointer"
+            title="Open system print dialog to save as PDF or print (Ctrl+P)"
           >
-            <Printer className="w-4 h-4 text-gray-700" /> Print (Browser)
+            <Printer className="w-4 h-4" /> Print / Save as PDF
           </button>
 
           <button

@@ -280,7 +280,7 @@ export const submitAttemptSession = async (attemptId, userId, userAnswers) => {
             else eloDelta = 12;
         }
     } else {
-        // Poor Result / Failed (< 50%) -> Experience points drop / Grade low hota jayega!
+        // Poor Result / Failed (< 50%) -> Experience points penalty / Rank rating deduction
         // The higher the tier attempted, the heavier the penalty
         if (difficulty === "expert") {
             eloDelta = -45;
