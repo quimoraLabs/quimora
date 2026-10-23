@@ -1,12 +1,9 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
   Printer, 
-  ArrowLeft,
-  Download,
-  Loader2
+  ArrowLeft 
 } from "lucide-react";
-import html2pdf from "html2pdf.js";
 import axiosClient from "../../api/axiosClient";
 import Loader from "../../components/common/Loader";
 
@@ -16,8 +13,6 @@ const StudentFullReportPage = () => {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const reportRef = useRef(null);
 
   useEffect(() => {
     const fetchReport = async () => {
@@ -43,40 +38,6 @@ const StudentFullReportPage = () => {
 
   const handlePrint = () => {
     window.print();
-  };
-
-  const handleSavePDF = async () => {
-    if (!reportRef.current || isGenerating) return;
-
-    setIsGenerating(true);
-
-    const safeTitle = (report?.quizTitle || "Quiz_Report")
-      .replace(/[^a-zA-Z0-9]/g, "_")
-      .substring(0, 40);
-    const filename = `Quimora_Report_${safeTitle}_${Date.now()}.pdf`;
-
-    const opt = {
-      margin:       [8, 8, 8, 8],
-      filename:     filename,
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true, logging: false },
-      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' },
-      pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
-    };
-
-    try {
-      const pdfWorker = typeof html2pdf === "function" ? html2pdf : (html2pdf?.default || window.html2pdf);
-      if (!pdfWorker) {
-        throw new Error("PDF generator module not available");
-      }
-      await pdfWorker().set(opt).from(reportRef.current).save();
-    } catch (err) {
-      console.warn("Direct PDF generation fallback to native print:", err);
-      // Fallback silently to browser print dialog without alert popups
-      window.print();
-    } finally {
-      setIsGenerating(false);
-    }
   };
 
   if (loading) return <Loader />;
@@ -140,41 +101,18 @@ const StudentFullReportPage = () => {
           <ArrowLeft className="w-3.5 h-3.5" /> Back / Close Tab
         </button>
         
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={handlePrint}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-gray-900 hover:bg-black text-white rounded-md font-bold text-xs shadow transition-all cursor-pointer"
-            title="Open system print dialog to save as PDF or print (Ctrl+P)"
-          >
-            <Printer className="w-4 h-4" /> Print / Save as PDF
-          </button>
-
-          <button
-            onClick={handleSavePDF}
-            disabled={isGenerating}
-            className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md font-bold text-xs shadow transition-all disabled:opacity-50 cursor-pointer"
-            title="Download direct high-resolution A4 landscape PDF"
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Generating PDF...
-              </>
-            ) : (
-              <>
-                <Download className="w-4 h-4" />
-                Download PDF
-              </>
-            )}
-          </button>
-        </div>
+        <button
+          onClick={handlePrint}
+          className="flex items-center gap-2 px-4 py-2 bg-gray-900 hover:bg-black text-white rounded-md font-bold text-xs shadow transition-all cursor-pointer"
+          title="Save as A4 Landscape PDF or Print (Ctrl+P)"
+        >
+          <Printer className="w-4 h-4 text-emerald-400" />
+          <span>Print / Save as PDF</span>
+        </button>
       </div>
 
       {/* Main Clean Report Sheet */}
-      <div 
-        ref={reportRef} 
-        className="max-w-6xl mx-auto bg-white border border-gray-300 rounded-lg p-5 shadow-sm print:border-none print:shadow-none print:p-0 print:max-w-full"
-      >
+      <div className="max-w-6xl mx-auto bg-white border border-gray-300 rounded-lg p-5 shadow-sm print:border-none print:shadow-none print:p-0 print:max-w-full">
         
         {/* Simple Header */}
         <div className="border-b-2 border-gray-900 pb-2 mb-3 flex justify-between items-end">
