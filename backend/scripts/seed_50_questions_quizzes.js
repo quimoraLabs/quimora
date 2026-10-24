@@ -207,7 +207,7 @@ async function seed50QuestionsCatalog() {
         description: `Deep 50-question comprehensive assessment on ${conf.topic}.`,
         timeLimit: 50,
         passingScore: 50,
-        maxAttempts: 10,
+        maxAttempts: 3,
         status: "published",
         isActive: true,
         createdBy: admin ? admin._id : new mongoose.Types.ObjectId(),
@@ -237,12 +237,12 @@ async function seed50QuestionsCatalog() {
     const inserted = await Question.insertMany(questionDocs);
     quiz.questions = inserted.map((q) => q._id);
     quiz.timeLimit = 50;
-    quiz.maxAttempts = 10;
+    quiz.maxAttempts = 3;
     quiz.status = "published";
     quiz.isActive = true;
     await quiz.save();
 
-    console.log(`  ✅ ${quiz.title}: seeded ${inserted.length} questions (50-question bank active, maxAttempts: 10)`);
+    console.log(`  ✅ ${quiz.title}: seeded ${inserted.length} questions (50-question bank active, maxAttempts: 3)`);
   }
 
   // Also check other quizzes and expand to 50 questions if they have 15
@@ -277,10 +277,9 @@ async function seed50QuestionsCatalog() {
         eloRating: 900 + idx * 25,
       }));
 
-      const inserted = await Question.insertMany(newDocs);
       quiz.questions = inserted.map((q) => q._id);
       quiz.timeLimit = 50;
-      quiz.maxAttempts = 10;
+      quiz.maxAttempts = 3;
       await quiz.save();
       console.log(`  ✅ Expanded ${quiz.title} to 50 questions.`);
     }
@@ -290,7 +289,7 @@ async function seed50QuestionsCatalog() {
   console.log("🧹 Flushing Redis caches...");
   await redisCache.delPattern("quizzes:*");
 
-  console.log("🎉 Seeding complete! All quizzes now have 50-question banks with 10 maxAttempts.");
+  console.log("🎉 Seeding complete! All quizzes now have 50-question banks with 3 maxAttempts.");
   process.exit(0);
 }
 

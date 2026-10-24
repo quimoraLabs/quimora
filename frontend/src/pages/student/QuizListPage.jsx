@@ -1,18 +1,51 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import { Play, Sparkles, SlidersHorizontal, BookOpen, RotateCcw } from "lucide-react";
+import { Play, Sparkles, SlidersHorizontal, BookOpen, RotateCcw, Search, Tag, X } from "lucide-react";
 import useQuizListStore from "../../features/student/quiz/store/useQuizListStore";
 import DataTable from "../../components/common/DataTable";
 import InterestFilterBar from "../../features/student/components/InterestFilterBar";
 import InterestOnboardingModal from "../../features/student/components/InterestOnboardingModal";
 import axiosClient from "../../api/axiosClient";
 
+const getTopicBadge = (quiz) => {
+  const t = (quiz?.title || "").toLowerCase();
+  const tags = (quiz?.tags || []).map((x) => x.toLowerCase());
+
+  if (t.includes("html") || tags.includes("html") || tags.includes("html5")) {
+    return { label: "HTML5", bg: "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20" };
+  }
+  if (t.includes("css") || tags.includes("css") || tags.includes("css3") || tags.includes("flexbox")) {
+    return { label: "CSS3", bg: "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20" };
+  }
+  if (t.includes("javascript") || t.includes(" js ") || tags.includes("javascript") || tags.includes("es6")) {
+    return { label: "JavaScript", bg: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20" };
+  }
+  if (t.includes("react") || tags.includes("react")) {
+    return { label: "React", bg: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20" };
+  }
+  if (t.includes("node") || t.includes("express") || tags.includes("node")) {
+    return { label: "Node.js", bg: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20" };
+  }
+  if (t.includes("sql") || tags.includes("sql")) {
+    return { label: "SQL", bg: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20" };
+  }
+  if (t.includes("mongo") || tags.includes("mongodb")) {
+    return { label: "MongoDB", bg: "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20" };
+  }
+  if (t.includes("comprehensive") || tags.includes("comprehensive")) {
+    return { label: "Comprehensive", bg: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20" };
+  }
+  return { label: "Specialized", bg: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20" };
+};
+
 function QuizListPage() {
   const navigate = useNavigate();
   const { fetchAvailableQuizzes, quizzes } = useQuizListStore();
   const [interests, setInterests] = useState([]);
   const [selectedInterestId, setSelectedInterestId] = useState(null);
+  const [selectedSubtopic, setSelectedSubtopic] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loadingInterests, setLoadingInterests] = useState(true);
 
@@ -43,9 +76,8 @@ function QuizListPage() {
       return;
     }
 
-    navigate("/student/quiz/rules", {
+    navigate(`/student/quizzes/${quiz.id}`, {
       state: {
-        quizId: quiz.id,
         title: quiz.title,
         timeLimit: quiz.timeLimit,
         totalQuestions: quiz.questions?.length || 0,
@@ -59,8 +91,8 @@ function QuizListPage() {
     fetchAvailableQuizzes();
   }, [fetchStudentInterests, fetchAvailableQuizzes]);
 
-  // Strictly filter quizzes by the student's selected profile interests
-  const filteredQuizzes = useMemo(() => {
+  // Base interest-filtered quizzes
+  const interestFilteredQuizzes = useMemo(() => {
     if (!quizzes || quizzes.length === 0) {
       return [];
     }
@@ -76,19 +108,16 @@ function QuizListPage() {
 
     // 1. Base filter: Quiz belongs to student's chosen topics OR is a general instructor quiz
     const allowedQuizzes = quizzes.filter((q) => {
-      // General quizzes without specific interest restrictions are accessible to all students
       if (!q.interestIds || q.interestIds.length === 0) {
         return true;
       }
 
-      // Direct ID check
       const matchesId = (q.interestIds || []).some((item) => {
         const idStr = (typeof item === "object" ? item?._id : item)?.toString() || "";
         return studentInterestIdStrings.has(idStr);
       });
       if (matchesId) return true;
 
-      // Fallback topic tag or name matching against student's selected interests
       return interests.some((interest) => {
         const tags = (interest.topicTags || []).map((t) => t.toLowerCase());
         const interestName = (interest.name || "").toLowerCase();
@@ -137,18 +166,64 @@ function QuizListPage() {
     return allowedQuizzes;
   }, [quizzes, selectedInterestId, interests]);
 
+  // Extract available subtopics from current pool of quizzes (e.g. HTML, CSS, JavaScript)
+  const availableSubtopics = useMemo(() => {
+    const set = new Set();
+    interestFilteredQuizzes.forEach((q) => {
+      const badge = getTopicBadge(q);
+      if (badge && badge.label) {
+        set.add(badge.label);
+      }
+    });
+    return Array.from(set);
+  }, [interestFilteredQuizzes]);
+
+  // Apply subtopic pill filter and search query filter
+  const finalQuizzes = useMemo(() => {
+    let result = interestFilteredQuizzes;
+
+    if (selectedSubtopic !== "all") {
+      result = result.filter((q) => getTopicBadge(q).label === selectedSubtopic);
+    }
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.trim().toLowerCase();
+      result = result.filter((q) => {
+        const title = (q.title || "").toLowerCase();
+        const desc = (q.description || "").toLowerCase();
+        const tags = (q.tags || []).map((t) => t.toLowerCase());
+        const badge = getTopicBadge(q).label.toLowerCase();
+        return title.includes(query) || desc.includes(query) || tags.some((t) => t.includes(query)) || badge.includes(query);
+      });
+    }
+
+    return result;
+  }, [interestFilteredQuizzes, selectedSubtopic, searchQuery]);
+
   // Define headers for the DataTable
   const headers = useMemo(() => ["Quiz Title", "Time Limit", "Questions", "Attempts", ""], []);
 
   // Define renderRow for DataTable
   const renderQuizRow = useCallback((quiz) => {
-    const isExhausted = quiz?.maxAttempts > 0 && (quiz?.attemptsRemaining === 0 || quiz?.canAttempt === false);
+    // Strictly clamp maxAttempts to 3
+    const maxAttempts = Math.min(Number(quiz?.maxAttempts) || 3, 3);
+    const attemptsUsed = Number(quiz?.attemptsUsed) || 0;
+    const attemptsRemaining = quiz?.attemptsRemaining !== undefined
+      ? Math.min(Number(quiz.attemptsRemaining), Math.max(0, maxAttempts - attemptsUsed))
+      : Math.max(0, maxAttempts - attemptsUsed);
+    const isExhausted = attemptsRemaining <= 0 || quiz?.canAttempt === false;
+    const badge = getTopicBadge(quiz);
 
     return (
       <>
         <td className="px-6 py-4 whitespace-nowrap">
-          <div className="text-sm font-medium text-main">{quiz?.title}</div>
-          <div className="text-sm text-muted">{quiz?.description}</div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${badge.bg}`}>
+              {badge.label}
+            </span>
+            <div className="text-sm font-semibold text-main">{quiz?.title}</div>
+          </div>
+          <div className="text-xs text-muted max-w-xl line-clamp-1">{quiz?.description}</div>
         </td>
         <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">
           {quiz?.timeLimit} minutes
@@ -157,35 +232,23 @@ function QuizListPage() {
           {quiz?.questions?.length || 0}
         </td>
         <td className="px-6 py-4 whitespace-nowrap text-sm">
-          {quiz?.maxAttempts > 0 ? (
-            <div className="flex flex-col gap-1">
-              <span
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold w-fit ${
-                  !isExhausted
-                    ? "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800"
-                    : "bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800"
-                }`}
-              >
-                <RotateCcw className="w-3 h-3" />
-                {quiz?.attemptsUsed || 0} / {quiz?.maxAttempts} Used
-              </span>
-              <span className="text-[11px] text-muted">
-                {!isExhausted
-                  ? `${quiz?.attemptsRemaining ?? (quiz.maxAttempts - (quiz.attemptsUsed || 0))} attempts left`
-                  : "No attempts remaining"}
-              </span>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-1">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold w-fit bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                <RotateCcw className="w-3 h-3" />
-                Unlimited
-              </span>
-              <span className="text-[11px] text-muted">
-                {quiz?.attemptsUsed || 0} attempts taken
-              </span>
-            </div>
-          )}
+          <div className="flex flex-col gap-1">
+            <span
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold w-fit ${
+                !isExhausted
+                  ? "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800"
+                  : "bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800"
+              }`}
+            >
+              <RotateCcw className="w-3 h-3" />
+              {attemptsUsed} / {maxAttempts} Used
+            </span>
+            <span className="text-[11px] text-muted">
+              {!isExhausted
+                ? `${attemptsRemaining} attempts left`
+                : "No attempts remaining"}
+            </span>
+          </div>
         </td>
         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
           <button
@@ -229,7 +292,7 @@ function QuizListPage() {
           </button>
 
           <div className="text-xs font-semibold px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-            {filteredQuizzes.length} Quizzes Available
+            {finalQuizzes.length} Quizzes Available
           </div>
         </div>
       </div>
@@ -240,16 +303,78 @@ function QuizListPage() {
           <InterestFilterBar
             interests={interests}
             activeInterestId={selectedInterestId}
-            onSelectInterest={setSelectedInterestId}
+            onSelectInterest={(id) => {
+              setSelectedInterestId(id);
+              setSelectedSubtopic("all");
+            }}
           />
         </div>
       )}
 
+      {/* Granular Topic Choice Toolbar: Search & Subtopic Chips */}
+      {interestFilteredQuizzes.length > 0 && (
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-slate-900/70 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+          {/* Subtopic Filter Chips */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+            <span className="text-xs font-medium text-muted mr-1.5 flex items-center gap-1">
+              <Tag className="w-3 h-3" /> Topic:
+            </span>
+            <button
+              onClick={() => setSelectedSubtopic("all")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                selectedSubtopic === "all"
+                  ? "bg-indigo-600 text-white shadow-sm shadow-indigo-500/20"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+              }`}
+            >
+              All Topics ({interestFilteredQuizzes.length})
+            </button>
+            {availableSubtopics.map((sub) => {
+              const count = interestFilteredQuizzes.filter((q) => getTopicBadge(q).label === sub).length;
+              const isActive = selectedSubtopic === sub;
+              return (
+                <button
+                  key={sub}
+                  onClick={() => setSelectedSubtopic(sub)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                    isActive
+                      ? "bg-indigo-600 text-white shadow-sm shadow-indigo-500/20"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+                  }`}
+                >
+                  {sub} ({count})
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Quick Search Input */}
+          <div className="relative min-w-[220px]">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+            <input
+              type="text"
+              placeholder="Search HTML, CSS, JS..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-8 pr-8 py-1.5 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 text-main placeholder:text-muted"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-main"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Quizzes Table / Empty State */}
-      {filteredQuizzes.length > 0 ? (
+      {finalQuizzes.length > 0 ? (
         <DataTable
           headers={headers}
-          data={filteredQuizzes}
+          data={finalQuizzes}
           renderRow={renderQuizRow}
           isView={false}
           isEdit={false}
@@ -262,26 +387,41 @@ function QuizListPage() {
             <BookOpen className="w-6 h-6" />
           </div>
           <p className="text-base font-semibold text-slate-800 dark:text-slate-200">
-            {interests.length === 0
+            {searchQuery || selectedSubtopic !== "all"
+              ? "No quizzes match your active filter or search"
+              : interests.length === 0
               ? "No interests selected in your profile yet"
               : selectedInterestId
               ? "No quizzes found for this selected topic"
               : "No quizzes match your selected interests"}
           </p>
           <p className="text-xs text-muted mt-1.5">
-            {interests.length === 0
+            {searchQuery || selectedSubtopic !== "all"
+              ? "Try resetting the subtopic filter or clearing your search query."
+              : interests.length === 0
               ? "Select your current topics or electives to unlock tailored quizzes."
               : selectedInterestId
               ? "Try switching to 'All Quizzes' or pick another topic from your interests."
               : "Update your interests to explore quizzes across different engineering topics."}
           </p>
           <div className="mt-5 flex items-center justify-center gap-3">
+            {(searchQuery || selectedSubtopic !== "all") && (
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setSelectedSubtopic("all");
+                }}
+                className="px-4 py-2 text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl hover:bg-slate-200 transition-all cursor-pointer"
+              >
+                Reset Topic Filters
+              </button>
+            )}
             {selectedInterestId && (
               <button
                 onClick={() => setSelectedInterestId(null)}
                 className="px-4 py-2 text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl hover:bg-slate-200 transition-all cursor-pointer"
               >
-                Clear Topic Filter
+                Clear Interest Filter
               </button>
             )}
             <button

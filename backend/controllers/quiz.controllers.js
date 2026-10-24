@@ -77,14 +77,26 @@ export const getAvailableQuizzesForStudents = async (req, res, next) => {
 
     let totalItems = await Quiz.countDocuments(query);
 
-    // Auto-generate topic quizzes using AI if student has selected interests but 0 quizzes exist
-    if (userId && totalItems === 0) {
+    // Ensure granular topic quizzes (HTML, CSS, JS, etc.) are seeded for student's interests
+    if (userId) {
       const studentProf = await StudentProfile.findOne({ userId }).populate("interests");
       if (studentProf && Array.isArray(studentProf.interests) && studentProf.interests.length > 0) {
+        let seededAny = false;
+        const { seedCatalogQuizzes } = await import("../services/catalogSeeder.service.js");
         for (const interest of studentProf.interests) {
-          await autoGenerateTopicQuiz(interest);
+          const count = await Quiz.countDocuments({
+            interestIds: interest._id,
+            status: "published",
+            isActive: true,
+          });
+          if (count < 2 && interest.slug) {
+            await seedCatalogQuizzes(interest.slug);
+            seededAny = true;
+          }
         }
-        totalItems = await Quiz.countDocuments(query);
+        if (seededAny) {
+          totalItems = await Quiz.countDocuments(query);
+        }
       }
     }
 
@@ -161,8 +173,16 @@ export const getAvailableQuizzesForStudents = async (req, res, next) => {
           ? "PASS_LIMIT_REACHED"
           : "NONE";
 
+      // Strictly clamp maxAttempts to 3 (prevent any 10 from leaking)
+      const rawMax = Number(quizObj.maxAttempts);
+      const maxAttempts = (rawMax > 0 && rawMax <= 3) ? rawMax : 3;
+      quizObj.maxAttempts = maxAttempts;
+      const attemptsRemaining = Math.max(0, maxAttempts - attemptsUsed);
+
       return {
         ...quizObj,
+        maxAttempts,
+        attemptsRemaining,
         attemptsUsed,
         passAttemptsCount,
         maxPassAllowed,
@@ -244,7 +264,7 @@ export const createQuiz = async (req, res, next) => {
       title,
       description,
       timeLimit,
-      maxAttempts,
+      maxAttempts: Math.min(Number(maxAttempts) || 3, 3),
       startDate,
       endDate,
       createdBy: userId,
@@ -440,6 +460,10 @@ export const updateQuiz = async (req, res, next) => {
         filteredData[field] = data[field];
       }
     });
+
+    if (filteredData.maxAttempts !== undefined) {
+      filteredData.maxAttempts = Math.min(Number(filteredData.maxAttempts) || 3, 3);
+    }
 
     if (Object.keys(filteredData).length === 0) {
       return res.status(400).json({ error: "No valid fields provided for update" });

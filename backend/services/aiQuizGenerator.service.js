@@ -270,14 +270,24 @@ function createSynthetic50Questions(quizId, topicName) {
  * Auto-generate a 50-question quiz for an interest if none exist
  */
 export const autoGenerateTopicQuiz = async (interest) => {
-  const topicName = interest.name || "Specialized Topic";
+  // First, ensure granular topic quizzes (HTML, CSS, JS, etc.) are seeded for this interest
+  try {
+    const { seedCatalogQuizzes } = await import("./catalogSeeder.service.js");
+    if (interest.slug) {
+      await seedCatalogQuizzes(interest.slug);
+    }
+  } catch (err) {
+    console.warn("⚠️ [AUTO GENERATOR] seedCatalogQuizzes fallback:", err.message);
+  }
+
   const existingCount = await Quiz.countDocuments({
     interestIds: interest._id,
     status: "published",
     isActive: true,
   });
 
-  if (existingCount > 0) {
+  // If granular quizzes already exist or at least 2 quizzes exist, return existing
+  if (existingCount >= 2) {
     return null;
   }
 
@@ -289,7 +299,7 @@ export const autoGenerateTopicQuiz = async (interest) => {
     description: `AI-generated 50-question comprehensive assessment testing core concepts and advanced patterns in ${topicName}.`,
     timeLimit: 50,
     passingScore: 50,
-    maxAttempts: 10,
+    maxAttempts: 3, // strictly 3 attempts
     status: "published",
     isActive: true,
     createdBy: adminId,

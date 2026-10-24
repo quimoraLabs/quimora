@@ -35,12 +35,14 @@ export const checkQuizEligibility = async (quizId, userId) => {
         status: { $in: ["completed", "abandoned"] },
     });
 
-    if (quiz.maxAttempts > 0 && attemptCount >= quiz.maxAttempts) {
+    const effectiveMaxAttempts = Math.min(Number(quiz.maxAttempts) || 3, 3);
+
+    if (effectiveMaxAttempts > 0 && attemptCount >= effectiveMaxAttempts) {
         return {
             isEligible: false,
-            reason: `Maximum allotment of ${quiz.maxAttempts} attempts reached for this quiz.`,
+            reason: `Maximum allotment of ${effectiveMaxAttempts} attempts reached for this quiz.`,
             attemptsUsed: attemptCount,
-            maxAttempts: quiz.maxAttempts,
+            maxAttempts: effectiveMaxAttempts,
         };
     }
 
@@ -55,7 +57,7 @@ export const checkQuizEligibility = async (quizId, userId) => {
         isEligible: true,
         hasActiveSession: Boolean(activeAttempt),
         activeAttemptId: activeAttempt ? activeAttempt._id : null,
-        attemptsRemaining: quiz.maxAttempts > 0 ? quiz.maxAttempts - attemptCount : null,
+        attemptsRemaining: effectiveMaxAttempts > 0 ? Math.max(0, effectiveMaxAttempts - attemptCount) : null,
     };
 };
 

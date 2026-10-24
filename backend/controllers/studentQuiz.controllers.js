@@ -146,16 +146,17 @@ export const startQuizAttempt = async (req, res, next) => {
     activeAttempt = await handleExpiredAttempt(activeAttempt, quiz.timeLimit);
 
     // 3. Attempt Allocation Limit Check (Only for NEW attempts)
-    if (!activeAttempt && quiz.maxAttempts > 0) {
+    const effectiveMaxAttempts = Math.min(Number(quiz.maxAttempts) || 3, 3);
+    if (!activeAttempt && effectiveMaxAttempts > 0) {
       const pastAttempts = await QuizAttempt.countDocuments({
         userId,
         quizId,
         status: { $in: ["completed", "abandoned"] }
       });
-      if (pastAttempts >= quiz.maxAttempts) {
+      if (pastAttempts >= effectiveMaxAttempts) {
         return res.status(403).json({
           success: false,
-          error: `Maximum allotment of ${quiz.maxAttempts} attempts reached`
+          error: `Maximum allotment of ${effectiveMaxAttempts} attempts reached`
         });
       }
     }

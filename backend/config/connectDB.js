@@ -21,6 +21,15 @@ const connectDB = async () => {
       console.log(`🧪 [TEST DB] MongoDB connected to: ${dbName} (${targetURI})`);
     } else {
       console.log(`🍃 MongoDB connected to database: ${dbName}`);
+      // Background sanitize and catalog quiz seeding (non-blocking)
+      import("../services/catalogSeeder.service.js")
+        .then(async ({ sanitizeMaxAttempts, seedCatalogQuizzes }) => {
+          await sanitizeMaxAttempts();
+          await seedCatalogQuizzes();
+        })
+        .catch((err) => {
+          console.warn("⚠️ [STARTUP SEEDER] Background catalog seed warning:", err.message);
+        });
     }
   } catch (err) {
     console.error("❌ MongoDB connection error:", err.message);
