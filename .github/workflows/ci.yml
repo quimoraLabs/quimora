@@ -2,9 +2,9 @@ name: Quimora CI Workflow
 
 on:
   push:
-    branches: [ main, dev ]
+    branches: [ main, dev, v3 ]
   pull_request:
-    branches: [ main, dev ]
+    branches: [ main, dev, v3 ]
 
 jobs:
   test-and-build:
@@ -15,6 +15,10 @@ jobs:
         image: mongo:7.0
         ports:
           - 27017:27017
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
 
     steps:
       - name: Checkout Codebase
@@ -34,11 +38,16 @@ jobs:
           NODE_ENV: test
           MONGO_URI: mongodb://localhost:27017/quimora_test
           MONGO_URI_TEST: mongodb://localhost:27017/quimora_test
+          REDIS_URI: redis://localhost:6379
           JWT_SECRET: ci_test_secret_key_for_quimora_application_12345
           IMAGEKIT_PUBLIC_KEY: dummy_public_key
           IMAGEKIT_PRIVATE_KEY: dummy_private_key
           IMAGEKIT_URL_ENDPOINT: https://ik.imagekit.io/dummy
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY || '' }}
         run: npm --prefix backend run test
+
+      - name: Run Frontend Tests
+        run: npm --prefix frontend run test
 
       - name: Verify Frontend Production Build
         run: npm --prefix frontend run build

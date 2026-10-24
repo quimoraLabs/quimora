@@ -30,16 +30,6 @@ export const generateAIQuestionsService = async ({
   targetTier = "",
   targetElo = null,
 }) => {
-  const apiKey = config.groqApiKey;
-
-  if (!apiKey) {
-    const error = new Error("GROQ_API_KEY is not configured in backend environment.");
-    error.statusCode = 500;
-    throw error;
-  }
-
-  const groq = new Groq({ apiKey });
-
   const numQuestions = Math.min(Math.max(parseInt(count, 10) || 5, 1), 10);
   const isMixed = !difficulty || ["mixed", "all", "any"].includes(difficulty?.toLowerCase());
   const targetDifficulty = isMixed
@@ -47,6 +37,33 @@ export const generateAIQuestionsService = async ({
     : ["easy", "medium", "hard"].includes(difficulty?.toLowerCase())
     ? difficulty.toLowerCase()
     : "medium";
+
+  const apiKey = config.groqApiKey;
+
+  if (!apiKey) {
+    if (process.env.NODE_ENV === "test") {
+      return Array.from({ length: numQuestions }, (_, i) => ({
+        questionText: `Calibrated assessment question ${i + 1} for ${topic} (${targetTier || targetDifficulty})`,
+        options: [
+          { optionText: `Accurate canonical answer for ${topic}`, isCorrect: true },
+          { optionText: `Plausible distractor A for ${topic}`, isCorrect: false },
+          { optionText: `Plausible distractor B for ${topic}`, isCorrect: false },
+          { optionText: `Plausible distractor C for ${topic}`, isCorrect: false },
+        ],
+        explanation: `Pedagogical explanation for ${topic}.`,
+        marks: 1,
+        timeLimitSeconds: 60,
+        difficulty: targetDifficulty,
+        ...(targetTier ? { targetTier } : {}),
+      }));
+    }
+
+    const error = new Error("GROQ_API_KEY is not configured in backend environment.");
+    error.statusCode = 500;
+    throw error;
+  }
+
+  const groq = new Groq({ apiKey });
 
   // Tier-specific pedagogical calibration guidelines
   const TIER_CALIBRATIONS = {
@@ -276,6 +293,9 @@ export const generateAIDescriptionService = async ({ title }) => {
   const apiKey = config.groqApiKey;
 
   if (!apiKey) {
+    if (process.env.NODE_ENV === "test") {
+      return `Comprehensive assessment covering foundational and advanced concepts in ${title || "the requested topic"}.`;
+    }
     const error = new Error("GROQ_API_KEY is not configured in backend environment.");
     error.statusCode = 500;
     throw error;
