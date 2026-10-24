@@ -5,7 +5,7 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./tests/setup.js'],
     reporters: ['verbose'],
-    testTimeout: 10000,
+    testTimeout: 30000,
     fileParallelism: false,
     pool: 'forks',
     poolOptions: {

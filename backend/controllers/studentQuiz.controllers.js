@@ -87,25 +87,26 @@ export const startQuizAttempt = async (req, res, next) => {
     const { quizId, questionLimit, difficulty } = req.body;
     const userId = req.auth.userId.toString();
 
-    // 1. Validate Question Limit (Strict options: 10, 20, 25, 30, 40, 50)
-    const ALLOWED_LIMITS = [10, 20, 25, 30, 40, 50];
+    // 1. Fetch & Validate Quiz Availability
+    const quiz = await assertQuizExists(quizId);
+    if (quiz.status !== "published" || !quiz.isActive) {
+      return res.status(400).json({ error: "Quiz is currently unavailable" });
+    }
+
+    // 1.1 Validate Question Limit (Options: 10, 15, 20, 25, 30, 40, 50, or total bank)
+    const totalQuizQuestions = Array.isArray(quiz.questions) ? quiz.questions.length : 15;
+    const ALLOWED_LIMITS = Array.from(new Set([10, 15, 20, 25, 30, 40, 50, totalQuizQuestions])).filter(n => n > 0);
     if (questionLimit && !ALLOWED_LIMITS.includes(Number(questionLimit))) {
       return res.status(400).json({
         error: `Invalid question limit. Allowed options are: ${ALLOWED_LIMITS.join(", ")}`,
       });
     }
 
-    // 1.1 Validate Difficulty Level (beginner, intermediate, hard, expert, mixed)
+    // 1.2 Validate Difficulty Level (beginner, intermediate, hard, expert, mixed)
     const ALLOWED_DIFFICULTIES = ["beginner", "intermediate", "hard", "expert", "mixed"];
     const chosenDifficulty = difficulty && ALLOWED_DIFFICULTIES.includes(String(difficulty).toLowerCase())
       ? String(difficulty).toLowerCase()
       : "beginner";
-
-    // 2. Fetch & Validate Quiz Availability
-    const quiz = await assertQuizExists(quizId);
-    if (quiz.status !== "published" || !quiz.isActive) {
-      return res.status(400).json({ error: "Quiz is currently unavailable" });
-    }
 
     // 3. Check Decoupled Fail & Pass Limits (StudentQuizProgress)
     const progress = await StudentQuizProgress.findOne({ userId, quizId });

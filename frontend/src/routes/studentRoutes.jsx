@@ -25,6 +25,7 @@ export const StudentQuizRoutes = () => (
     {/* Student Fullscreen Quiz Routes (No Sidebar Layout) */}
     <Route element={<ProtectedRoutes allowedRoles={["user"]} />}>
       <Route path="/student/quiz/rules" element={<ExamInstructionsPage />} />
+      <Route path="/student/quizzes/:quizId" element={<ExamInstructionsPage />} />
       <Route path="/student/quiz/start" element={<TakeExamPage />} />
       <Route
         path="/student/quiz/results"

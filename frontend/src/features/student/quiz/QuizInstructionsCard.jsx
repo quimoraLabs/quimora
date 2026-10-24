@@ -17,14 +17,14 @@ import {
   Flame,
   Layers,
 } from "lucide-react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import toast from "react-hot-toast";
 import useStudentQuizStore from "../exam/store/useStudentQuizStore";
 import { enterFullScreen, exitFullScreen } from "../exam/hooks/enterFullScreen";
 import axiosClient from "../../../api/axiosClient";
 
-const ALLOWED_OPTIONS = [10, 20, 25, 30, 40, 50];
+const ALLOWED_OPTIONS = [10, 15, 20, 25, 30, 40, 50];
 
 const DIFFICULTY_LEVELS = [
   {
@@ -88,13 +88,53 @@ export const QuizInstructionsCard = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const { quizId: paramQuizId } = useParams();
 
   const { startAttempt, loading } = useStudentQuizStore();
 
-  const quizId = location.state?.quizId;
-  const quizTitle = location.state?.title || "Assessment";
-  const quizDuration = location.state?.timeLimit || 50;
-  const totalQuestions = location.state?.totalQuestions || 50;
+  const quizId =
+    location.state?.quizId ||
+    paramQuizId ||
+    sessionStorage.getItem("activeExamQuizId");
+
+  const [quizMeta, setQuizMeta] = useState({
+    title: location.state?.title || sessionStorage.getItem("activeExamQuizTitle") || "Assessment",
+    timeLimit: Number(location.state?.timeLimit || sessionStorage.getItem("activeExamQuizDuration")) || 50,
+    totalQuestions: Number(location.state?.totalQuestions || sessionStorage.getItem("activeExamQuizQuestions")) || 50,
+  });
+
+  useEffect(() => {
+    if (quizId) {
+      sessionStorage.setItem("activeExamQuizId", quizId);
+    }
+  }, [quizId]);
+
+  useEffect(() => {
+    if (!quizId) return;
+    const fetchQuizDetails = async () => {
+      try {
+        const res = await axiosClient.get(`/quizzes/${quizId}`);
+        if (res.data?.success && res.data?.data) {
+          const q = res.data.data;
+          setQuizMeta({
+            title: q.title || "Assessment",
+            timeLimit: q.timeLimit || 50,
+            totalQuestions: q.questions?.length || 15,
+          });
+        }
+      } catch (err) {
+        console.warn("Could not fetch quiz details:", err);
+      }
+    };
+
+    if (!location.state?.title || !location.state?.totalQuestions) {
+      fetchQuizDetails();
+    }
+  }, [quizId, location.state]);
+
+  const quizTitle = quizMeta.title;
+  const quizDuration = quizMeta.timeLimit;
+  const totalQuestions = quizMeta.totalQuestions;
 
   // Options restricted strictly to [10, 20, 25, 30, 40, 50]
   const questionOptions = useMemo(() => {

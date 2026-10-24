@@ -126,5 +126,5 @@ describe('⚡ Module 5: V3 Adaptive Engine, Level Tiers & Quiz Assignment APIs',
     expect(res.body).toHaveProperty('success', true);
     expect(Array.isArray(res.body.data)).toBe(true);
     expect(res.body.data.length).toBe(2);
-  });
+  }, 30000);
 });

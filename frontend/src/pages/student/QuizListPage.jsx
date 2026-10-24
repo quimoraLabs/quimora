@@ -71,16 +71,28 @@ function QuizListPage() {
   }, [fetchAvailableQuizzes, fetchStudentInterests]);
 
   const handleStart = useCallback((quiz) => {
-    if (!quiz || !quiz.id) {
-      toast.error("Invalid Question");
+    const quizId = quiz?._id || quiz?.id;
+    if (!quiz || !quizId) {
+      toast.error("Invalid quiz selection");
       return;
     }
 
-    navigate(`/student/quizzes/${quiz.id}`, {
+    try {
+      sessionStorage.setItem("activeExamQuizId", quizId);
+      sessionStorage.setItem("activeExamQuizTitle", quiz.title || "Assessment");
+      sessionStorage.setItem("activeExamQuizDuration", String(quiz.timeLimit || 15));
+      sessionStorage.setItem("activeExamQuizQuestions", String(quiz.questions?.length || 15));
+    } catch (e) {
+      console.warn("sessionStorage warning:", e);
+    }
+
+    navigate("/student/quiz/rules", {
       state: {
+        quizId,
         title: quiz.title,
         timeLimit: quiz.timeLimit,
-        totalQuestions: quiz.questions?.length || 0,
+        totalQuestions: quiz.questions?.length || 15,
+        tags: quiz.tags || [],
       },
     });
   }, [navigate]);
