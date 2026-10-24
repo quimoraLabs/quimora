@@ -12,15 +12,19 @@ process.on("uncaughtException", (err) => {
   console.error("💥 Uncaught Exception:", err);
 });
 
-app.listen(PORT, async () => {
-  console.log(`🚀 Server is running on port ${PORT}`);
-  console.log(`🌍 Environment: ${config.nodeENV}`);
-  console.log(`📡 API Prefix: ${config.apiPrefix}`);
-  console.log(`🔗 Allowed Origins: ${allowedOrigins.join(", ")}`);
-  
+const startServer = async () => {
   try {
     await connectDB();
   } catch (error) {
-    console.error("❌ Failed to connect to Database:", error);
+    console.error("❌ Failed to connect to Database on startup:", error.message);
   }
-});
+
+  app.listen(PORT, () => {
+    console.log(`🚀 Server is running on port ${PORT}`);
+    console.log(`🌍 Environment: ${config.nodeENV}`);
+    console.log(`📡 API Prefix: ${config.apiPrefix}`);
+    console.log(`🔗 Allowed Origins: ${allowedOrigins.join(", ")}`);
+  });
+};
+
+startServer();

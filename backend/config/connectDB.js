@@ -8,7 +8,13 @@ const connectDB = async () => {
       ? process.env.MONGO_URI_TEST || config.mongoURITest || "mongodb://localhost:27017/quimora_test"
       : config.mongoURI;
 
-    const conn = await mongoose.connect(targetURI);
+    if (!targetURI) {
+      throw new Error("No MongoDB connection URI found in environment variables. Please configure MONGO_URI.");
+    }
+
+    const conn = await mongoose.connect(targetURI, {
+      serverSelectionTimeoutMS: 10000,
+    });
     const dbName = conn.connection.name;
 
     if (isTest) {
@@ -18,7 +24,7 @@ const connectDB = async () => {
     }
   } catch (err) {
     console.error("❌ MongoDB connection error:", err.message);
-    process.exit(1);
+    throw err;
   }
 };
 
