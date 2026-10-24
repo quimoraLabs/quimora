@@ -508,10 +508,22 @@ export const seedCatalogQuizzes = async (targetSlug = null) => {
     let seededCount = 0;
 
     for (const item of itemsToSeed) {
-      const interest = await Interest.findOne({ slug: item.slug });
+      let interest = await Interest.findOne({ slug: item.slug });
+      if (!interest) {
+        interest = await Interest.findOne({
+          $or: [
+            { name: new RegExp(item.slug.replace(/-/g, " "), "i") },
+            { topicTags: item.slug },
+          ],
+        });
+      }
       if (!interest) {
         continue;
       }
+
+      const beginnerTopics = ["HTML", "Python", "SQL", "Arrays & Big-O", "Machine Learning", "Web Security", "DevOps & Docker", "React Native"];
+      const learnerTopics = ["CSS", "React", "MongoDB", "Stacks & Queues", "Pandas & NumPy", "Generative AI"];
+      const assignedLevel = item.level || (beginnerTopics.includes(item.subtopic) ? "Beginner" : learnerTopics.includes(item.subtopic) ? "Learner" : "Intermediate");
 
       let quiz = await Quiz.findOne({ title: item.title });
       if (!quiz) {
@@ -521,7 +533,8 @@ export const seedCatalogQuizzes = async (targetSlug = null) => {
           timeLimit: item.timeLimit,
           createdBy: instructor._id,
           interestIds: [interest._id],
-          tags: [...(interest.topicTags || []), item.subtopic?.toLowerCase(), "topic-choice"].filter(Boolean),
+          level: assignedLevel,
+          tags: [...(interest.topicTags || []), item.subtopic?.toLowerCase(), assignedLevel.toLowerCase(), "topic-choice"].filter(Boolean),
           status: "published",
           isActive: true,
           maxAttempts: 3, // STRICTLY 3 attempts
@@ -531,12 +544,18 @@ export const seedCatalogQuizzes = async (targetSlug = null) => {
         await quiz.save();
         seededCount++;
       } else {
-        // Enforce strict 3 attempts and published state
+        // Enforce strict 3 attempts, level, and published state
         quiz.maxAttempts = 3;
         quiz.status = "published";
         quiz.isActive = true;
+        if (!quiz.level) {
+          quiz.level = assignedLevel;
+        }
         if (!quiz.interestIds || !quiz.interestIds.includes(interest._id)) {
           quiz.interestIds = [interest._id];
+        }
+        if (!quiz.tags || !quiz.tags.includes(assignedLevel.toLowerCase())) {
+          quiz.tags = [...(quiz.tags || []), assignedLevel.toLowerCase()];
         }
         await quiz.save();
       }

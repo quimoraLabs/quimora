@@ -10,6 +10,7 @@ import {
     getStudentQuizWiseLeaderboard,
     checkStudentQuizEligibility,
 } from "../controllers/studentQuiz.controllers.js";
+import { getAvailableQuizzesForStudents } from "../controllers/quiz.controllers.js";
 import { validateObjectId } from "../middleware/validObjectId.middleware.js";
 import authMiddleWare, {
     authorizeRoles,
@@ -17,6 +18,9 @@ import authMiddleWare, {
 } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
+
+// Student Quizzes Discovery Endpoint (supports ?interestId=... and ?level=...)
+router.get("/quizzes", authMiddleWare, authorizeRoles("user"), getAvailableQuizzesForStudents);
 
 // eligibility,start and end Quiz Endpoint
 router.get("/quiz/:quizId/eligibility", authMiddleWare, authorizeRoles("user"), checkStudentOnboarding, checkStudentQuizEligibility);

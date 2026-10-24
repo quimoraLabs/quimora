@@ -1,5 +1,6 @@
 import Interest from "../models/interest.model.js";
 import StudentProfileService from "../services/studentProfile.service.js";
+import { redisCache } from "../config/redis.js";
 
 const CORE_DEFAULT_INTERESTS = [
   {
@@ -155,6 +156,8 @@ export const completeStudentOnboarding = async (req, res, next) => {
       interestIds
     );
 
+    await redisCache.delPattern("quizzes:student:*");
+
     res.status(200).json({
       success: true,
       message: "Onboarding completed successfully",
@@ -187,6 +190,8 @@ export const updateStudentInterests = async (req, res, next) => {
       req.auth.userId,
       interestIds
     );
+
+    await redisCache.delPattern("quizzes:student:*");
 
     res.status(200).json({
       success: true,

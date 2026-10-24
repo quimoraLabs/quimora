@@ -5,7 +5,9 @@ import QuizAttempt from "../models/quizAttempt.model.js";
 import StudentProfile from "../models/studentProfile.model.js";
 import StudentQuizProgress from "../models/studentQuizProgress.model.js";
 import Interest from "../models/interest.model.js";
+import EloRating from "../models/eloRating.model.js";
 import { autoGenerateTopicQuiz } from "../services/aiQuizGenerator.service.js";
+import { seedCatalogQuizzes } from "../services/catalogSeeder.service.js";
 import mongoose from "mongoose";
 import { redisCache } from "../config/redis.js";
 import {
@@ -24,21 +26,69 @@ import { isDuplicateQuiz } from "../utils/duplicate.utils.js";
 export const getAvailableQuizzesForStudents = async (req, res, next) => {
   try {
     const now = new Date();
-    let { page = 1, limit = 10 } = req.query;
-    page = parseInt(page, 10);
-    limit = parseInt(limit, 10);
+    let { page = 1, limit = 10, interestId, level } = req.query;
+    page = Math.max(1, parseInt(page, 10) || 1);
+    limit = Math.max(1, parseInt(limit, 10) || 10);
 
     const userId = req.auth?.userId;
 
     const cacheKey = userId
-      ? `quizzes:student:${userId}:p${page}:l${limit}`
-      : `quizzes:student:all:p${page}:l${limit}`;
+      ? `quizzes:student:${userId}:i${interestId || "all"}:lvl${level || "all"}:p${page}:l${limit}`
+      : `quizzes:student:all:i${interestId || "all"}:lvl${level || "all"}:p${page}:l${limit}`;
 
     const cachedData = await redisCache.get(cacheKey);
     if (cachedData) {
       return res.status(200).json(cachedData);
     }
 
+    // Step 1: Ensure quizzes exist for student's selected interests & level before querying
+    if (userId) {
+      const studentProf = await StudentProfile.findOne({ userId }).populate("interests");
+      if (studentProf && Array.isArray(studentProf.interests) && studentProf.interests.length > 0) {
+        // Filter target interests: either specific interestId requested or all student profile interests
+        const targetInterests = interestId
+          ? studentProf.interests.filter(
+              (i) => i._id?.toString() === interestId.toString()
+            )
+          : studentProf.interests;
+
+        for (const interest of targetInterests) {
+          // Calculate student's level in this interest for track progression
+          const eloDoc = await EloRating.findOne({ studentId: userId, interestId: interest._id });
+          const currentRating = eloDoc?.rating || studentProf.overallElo || 1000;
+          let currentLevel = "Beginner";
+          if (currentRating >= 1800) currentLevel = "Expert";
+          else if (currentRating >= 1600) currentLevel = "Master";
+          else if (currentRating >= 1400) currentLevel = "Advanced";
+          else if (currentRating >= 1200) currentLevel = "Intermediate";
+          else if (currentRating >= 1000) currentLevel = "Learner";
+
+          const targetLevel = level || currentLevel;
+
+          const existingCount = await Quiz.countDocuments({
+            interestIds: interest._id,
+            status: "published",
+            isActive: true,
+          });
+
+          if (existingCount === 0) {
+            if (interest.slug) {
+              await seedCatalogQuizzes(interest.slug);
+            }
+            const postSeedCount = await Quiz.countDocuments({
+              interestIds: interest._id,
+              status: "published",
+              isActive: true,
+            });
+            if (postSeedCount === 0) {
+              await autoGenerateTopicQuiz(interest, targetLevel);
+            }
+          }
+        }
+      }
+    }
+
+    // Step 2: Build strict query (no generic un-tagged quiz leakage)
     const query = {
       status: "published",
       isActive: true,
@@ -48,57 +98,22 @@ export const getAvailableQuizzesForStudents = async (req, res, next) => {
       ],
     };
 
-    // V3 Interest-Driven Filter: match student's selected interests, tags, or general instructor quizzes
     if (userId) {
       const profile = await StudentProfile.findOne({ userId });
-      if (profile && Array.isArray(profile.interests) && profile.interests.length > 0) {
-        const userInterests = await Interest.find({ _id: { $in: profile.interests } }).lean();
-        const keywords = userInterests.flatMap((i) => [
-          i.name,
-          i.slug,
-          ...(i.topicTags || []),
-        ]).filter(Boolean);
-
-        const regexTerms = keywords.map(
-          (k) => new RegExp(k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")
-        );
-
-        query.$or = [
-          { interestIds: { $in: profile.interests } },
-          { interestIds: { $size: 0 } },
-          { interestIds: { $exists: false } },
-          { tags: { $in: keywords.map((k) => k.toLowerCase()) } },
-          { title: { $in: regexTerms } },
-          { description: { $in: regexTerms } },
-        ];
+      if (interestId && mongoose.Types.ObjectId.isValid(interestId)) {
+        query.interestIds = new mongoose.Types.ObjectId(interestId);
+      } else if (profile && Array.isArray(profile.interests) && profile.interests.length > 0) {
+        query.interestIds = { $in: profile.interests };
       }
-      // If student hasn't selected interests yet, they see all active published quizzes
+    } else if (interestId && mongoose.Types.ObjectId.isValid(interestId)) {
+      query.interestIds = new mongoose.Types.ObjectId(interestId);
     }
 
-    let totalItems = await Quiz.countDocuments(query);
-
-    // Ensure granular topic quizzes (HTML, CSS, JS, etc.) are seeded for student's interests
-    if (userId) {
-      const studentProf = await StudentProfile.findOne({ userId }).populate("interests");
-      if (studentProf && Array.isArray(studentProf.interests) && studentProf.interests.length > 0) {
-        let seededAny = false;
-        const { seedCatalogQuizzes } = await import("../services/catalogSeeder.service.js");
-        for (const interest of studentProf.interests) {
-          const count = await Quiz.countDocuments({
-            interestIds: interest._id,
-            status: "published",
-            isActive: true,
-          });
-          if (count < 2 && interest.slug) {
-            await seedCatalogQuizzes(interest.slug);
-            seededAny = true;
-          }
-        }
-        if (seededAny) {
-          totalItems = await Quiz.countDocuments(query);
-        }
-      }
+    if (level) {
+      query.level = level;
     }
+
+    const totalItems = await Quiz.countDocuments(query);
 
     const quizzes = await Quiz.find(query)
       .populate("createdBy", "name email")
@@ -181,6 +196,7 @@ export const getAvailableQuizzesForStudents = async (req, res, next) => {
 
       return {
         ...quizObj,
+        level: quizObj.level || "Beginner",
         maxAttempts,
         attemptsRemaining,
         attemptsUsed,

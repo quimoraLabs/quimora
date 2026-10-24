@@ -66,9 +66,12 @@ function QuizListPage() {
   }, []);
 
   useEffect(() => {
-    fetchAvailableQuizzes();
+    fetchAvailableQuizzes({ interestId: selectedInterestId });
+  }, [fetchAvailableQuizzes, selectedInterestId]);
+
+  useEffect(() => {
     fetchStudentInterests();
-  }, [fetchAvailableQuizzes, fetchStudentInterests]);
+  }, [fetchStudentInterests]);
 
   const handleStart = useCallback((quiz) => {
     const quizId = quiz?._id || quiz?.id;
@@ -118,12 +121,8 @@ function QuizListPage() {
       interests.map((i) => (i._id?.toString() || i.id?.toString() || "").trim())
     );
 
-    // 1. Base filter: Quiz belongs to student's chosen topics OR is a general instructor quiz
+    // 1. Base filter: Quiz belongs strictly to student's chosen topics
     const allowedQuizzes = quizzes.filter((q) => {
-      if (!q.interestIds || q.interestIds.length === 0) {
-        return true;
-      }
-
       const matchesId = (q.interestIds || []).some((item) => {
         const idStr = (typeof item === "object" ? item?._id : item)?.toString() || "";
         return studentInterestIdStrings.has(idStr);
@@ -233,6 +232,11 @@ function QuizListPage() {
             <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${badge.bg}`}>
               {badge.label}
             </span>
+            {quiz?.level && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20">
+                {quiz.level}
+              </span>
+            )}
             <div className="text-sm font-semibold text-main">{quiz?.title}</div>
           </div>
           <div className="text-xs text-muted max-w-xl line-clamp-1">{quiz?.description}</div>

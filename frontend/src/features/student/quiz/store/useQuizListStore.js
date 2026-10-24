@@ -7,10 +7,21 @@ const useQuizListStore = create((set, get) => ({
   loading: false,
   url: import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1",
 
-  fetchAvailableQuizzes: async () => {
+  fetchAvailableQuizzes: async (params = {}) => {
     set({ loading: true });
     try {
-      const response = await axiosClient.get("/quizzes/student");
+      const cleanParams = {};
+      if (params.interestId) cleanParams.interestId = params.interestId;
+      if (params.level) cleanParams.level = params.level;
+      if (params.page) cleanParams.page = params.page;
+      if (params.limit) cleanParams.limit = params.limit;
+
+      let response;
+      try {
+        response = await axiosClient.get("/student/quizzes", { params: cleanParams });
+      } catch (err) {
+        response = await axiosClient.get("/quizzes/student", { params: cleanParams });
+      }
       set({ quizzes: response.data?.data || [] });
     } catch (error) {
       console.error("Error fetching student quizzes:", error);

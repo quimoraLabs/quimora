@@ -69,6 +69,11 @@ const quizSchema = new mongoose.Schema(
       type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Interest" }],
       default: [],
     },
+    level: {
+      type: String,
+      enum: ["Beginner", "Learner", "Intermediate", "Advanced", "Master", "Expert"],
+      default: "Beginner",
+    },
   },
   { timestamps: true, versionKey: false }
 );
@@ -89,6 +94,7 @@ quizSchema.set("toObject", { virtuals: true });
 quizSchema.index({ status: 1, startDate: 1, endDate: 1 });
 quizSchema.index({ createdBy: 1 });
 quizSchema.index({ interestIds: 1 });
+quizSchema.index({ interestIds: 1, level: 1 });
 
 const Quiz = mongoose.model("Quiz", quizSchema);
 export default Quiz;

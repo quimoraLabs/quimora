@@ -267,10 +267,13 @@ function createSynthetic50Questions(quizId, topicName) {
 }
 
 /**
- * Auto-generate a 50-question quiz for an interest if none exist
+ * Auto-generate a quiz for an interest if none exist (supports HackerRank-style level progression)
  */
-export const autoGenerateTopicQuiz = async (interest) => {
-  // First, ensure granular topic quizzes (HTML, CSS, JS, etc.) are seeded for this interest
+export const autoGenerateTopicQuiz = async (interest, levelName = "Beginner") => {
+  if (!interest) return null;
+  const topicName = interest.name || interest.slug || "Domain";
+
+  // First, ensure granular topic quizzes are seeded for this interest
   try {
     const { seedCatalogQuizzes } = await import("./catalogSeeder.service.js");
     if (interest.slug) {
@@ -282,29 +285,41 @@ export const autoGenerateTopicQuiz = async (interest) => {
 
   const existingCount = await Quiz.countDocuments({
     interestIds: interest._id,
+    level: levelName,
     status: "published",
     isActive: true,
   });
 
-  // If granular quizzes already exist or at least 2 quizzes exist, return existing
-  if (existingCount >= 2) {
-    return null;
+  // If a quiz for this interest at this level already exists, return it
+  if (existingCount >= 1) {
+    return await Quiz.findOne({
+      interestIds: interest._id,
+      level: levelName,
+      status: "published",
+      isActive: true,
+    });
   }
 
   const admin = await User.findOne({ role: "admin" });
   const adminId = admin ? admin._id : new mongoose.Types.ObjectId();
 
   const newQuiz = new Quiz({
-    title: `${topicName} Comprehensive Assessment`,
-    description: `AI-generated 50-question comprehensive assessment testing core concepts and advanced patterns in ${topicName}.`,
-    timeLimit: 50,
+    title: `${topicName} (${levelName}) Comprehensive Assessment`,
+    description: `Track assessment testing core problem-solving and foundational concepts in ${topicName} at the ${levelName} level.`,
+    timeLimit: 15,
     passingScore: 50,
     maxAttempts: 3, // strictly 3 attempts
     status: "published",
     isActive: true,
     createdBy: adminId,
     interestIds: [interest._id],
-    tags: [topicName.toLowerCase().replace(/\s+/g, "-"), "ai-generated", "50-questions"],
+    level: levelName,
+    tags: [
+      topicName.toLowerCase().replace(/[^a-z0-9]/g, "-"),
+      levelName.toLowerCase(),
+      "adaptive-track",
+      "topic-choice",
+    ],
   });
 
   await newQuiz.save();
@@ -312,10 +327,20 @@ export const autoGenerateTopicQuiz = async (interest) => {
   // Try Groq AI generation for first batch of questions if key available
   let questionsToInsert = [];
   try {
+    const difficultyMap = {
+      Beginner: "easy",
+      Learner: "easy",
+      Intermediate: "medium",
+      Advanced: "hard",
+      Master: "hard",
+      Expert: "hard",
+    };
+    const targetDifficulty = difficultyMap[levelName] || "medium";
+
     const aiQuestions = await generateAIQuestionsService({
-      topic: topicName,
-      count: 10,
-      difficulty: "medium",
+      topic: `${topicName} (${levelName} level)`,
+      count: 15,
+      difficulty: targetDifficulty,
     });
 
     if (Array.isArray(aiQuestions) && aiQuestions.length > 0) {
@@ -327,18 +352,18 @@ export const autoGenerateTopicQuiz = async (interest) => {
           isCorrect: Boolean(opt.isCorrect),
         })),
         marks: 2,
-        difficulty: q.difficulty || "medium",
-        eloRating: 1000 + idx * 30,
+        difficulty: q.difficulty || targetDifficulty,
+        eloRating: 950 + idx * 30,
       }));
     }
   } catch (err) {
-    console.log(`ℹ️ [AI GENERATOR] Groq AI fallback used for ${topicName}:`, err.message);
+    console.log(`ℹ️ [AI GENERATOR] Groq AI fallback used for ${topicName} (${levelName}):`, err.message);
   }
 
-  // If fewer than 50, fill remaining with authentic synthetic questions
-  if (questionsToInsert.length < 50) {
+  // If fewer than 15, fill remaining with authentic synthetic questions
+  if (questionsToInsert.length < 15) {
     const synthetic = createSynthetic50Questions(newQuiz._id, topicName);
-    const needed = 50 - questionsToInsert.length;
+    const needed = 15 - questionsToInsert.length;
     questionsToInsert.push(...synthetic.slice(0, needed));
   }
 

@@ -3,6 +3,9 @@ import request from 'supertest';
 import app from '../app.js';
 import Quiz from '../models/quiz.model.js';
 import Question from '../models/question.model.js';
+import Interest from '../models/interest.model.js';
+import StudentProfile from '../models/studentProfile.model.js';
+import { redisCache } from '../config/redis.js';
 import { createTestUsersAndTokens } from './helpers/seedAuth.js';
 
 describe('🎓 Module 2: Student Role Dashboard & Quiz Attempt APIs', () => {
@@ -111,6 +114,93 @@ describe('🎓 Module 2: Student Role Dashboard & Quiz Attempt APIs', () => {
     expect(res.body).toHaveProperty('success', true);
     expect(res.body.data).toHaveProperty('profile');
     expect(res.body.data).toHaveProperty('eloRatings');
+  });
+
+  it('10. GET /api/v1/student/quizzes - strictly filters quizzes by student profile interests', async () => {
+    // Find or create Python and Web interests
+    let pythonInterest = await Interest.findOne({ slug: 'data-science' });
+    if (!pythonInterest) {
+      pythonInterest = await Interest.create({
+        name: 'Python Track Test',
+        slug: 'data-science',
+        topicTags: ['python', 'pandas'],
+        isCore: true,
+      });
+    }
+
+    let webInterest = await Interest.findOne({ slug: 'web-foundations' });
+    if (!webInterest) {
+      webInterest = await Interest.create({
+        name: 'Web Track Test',
+        slug: 'web-foundations',
+        topicTags: ['html', 'css'],
+        isCore: true,
+      });
+    }
+
+    // Create quizzes for each interest
+    const pythonQuiz = await Quiz.create({
+      title: 'Python Essentials Beginner Course',
+      description: 'Core python test',
+      createdBy: authData.instructor.user._id,
+      interestIds: [pythonInterest._id],
+      level: 'Beginner',
+      tags: ['python'],
+      status: 'published',
+      isActive: true,
+      maxAttempts: 3,
+    });
+
+    const webQuiz = await Quiz.create({
+      title: 'Web Foundations HTML Special',
+      description: 'HTML foundations test',
+      createdBy: authData.instructor.user._id,
+      interestIds: [webInterest._id],
+      level: 'Beginner',
+      tags: ['html'],
+      status: 'published',
+      isActive: true,
+      maxAttempts: 3,
+    });
+
+    // Update student's profile to only have Python interest
+    await StudentProfile.findOneAndUpdate(
+      { userId: authData.student.user._id },
+      { interests: [pythonInterest._id] }
+    );
+
+    // Clear cache to simulate fresh interest change
+    await redisCache.delPattern("quizzes:student:*");
+
+    // Call GET /api/v1/student/quizzes
+    const res = await request(app)
+      .get('/api/v1/student/quizzes')
+      .set('Authorization', `Bearer ${authData.student.token}`);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toHaveProperty('success', true);
+    const returnedQuizTitles = res.body.data.map((q) => q.title);
+    expect(returnedQuizTitles).toContain('Python Essentials Beginner Course');
+    // Web quiz must NOT leak into Python student's catalog
+    expect(returnedQuizTitles).not.toContain('Web Foundations HTML Special');
+  });
+
+  it('11. GET /api/v1/student/quizzes?interestId=... - strictly filters to requested interest', async () => {
+    const pythonInterest = await Interest.findOne({ slug: 'data-science' });
+    const res = await request(app)
+      .get(`/api/v1/student/quizzes?interestId=${pythonInterest._id}`)
+      .set('Authorization', `Bearer ${authData.student.token}`);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toHaveProperty('success', true);
+    expect(res.body.data.length).toBeGreaterThan(0);
+    res.body.data.forEach((q) => {
+      expect(q).toHaveProperty('level');
+      const hasMatch = q.interestIds.some(
+        (id) => (id._id || id).toString() === pythonInterest._id.toString()
+      );
+      expect(hasMatch).toBe(true);
+    });
   });
 });
 
