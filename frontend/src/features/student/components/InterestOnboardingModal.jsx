@@ -32,6 +32,90 @@ const ICON_MAP = {
   layers: Layers,
 };
 
+const FALLBACK_CORE_INTERESTS = [
+  {
+    _id: "core-web-foundations",
+    name: "Web Foundations (HTML, CSS, JS)",
+    slug: "web-foundations",
+    description: "HTML5 semantic structure, CSS3 styling, Flexbox, and core JavaScript basics.",
+    topicTags: ["html5", "css3", "javascript", "dom", "flexbox"],
+    icon: "globe",
+    isCore: true,
+  },
+  {
+    _id: "core-modern-web",
+    name: "Modern Web & Frameworks",
+    slug: "modern-web",
+    description: "React, Next.js, Node.js, Express, Redux state management, and REST APIs.",
+    topicTags: ["react", "nodejs", "nextjs", "express", "redux"],
+    icon: "layers",
+    isCore: true,
+  },
+  {
+    _id: "core-data-science",
+    name: "Python & Data Science",
+    slug: "data-science",
+    description: "Python programming, data analysis, Pandas, NumPy, and statistics.",
+    topicTags: ["python", "pandas", "numpy", "statistics", "analytics"],
+    icon: "database",
+    isCore: true,
+  },
+  {
+    _id: "core-database-systems",
+    name: "Database Systems (SQL & NoSQL)",
+    slug: "database-systems",
+    description: "SQL queries, relational databases, PostgreSQL, MongoDB, and Redis caching.",
+    topicTags: ["sql", "mongodb", "postgresql", "redis", "indexing"],
+    icon: "server",
+    isCore: true,
+  },
+  {
+    _id: "core-dsa",
+    name: "Data Structures & Algorithms",
+    slug: "dsa",
+    description: "Arrays, linked lists, trees, graphs, sorting algorithms, and time complexity.",
+    topicTags: ["dsa", "algorithms", "arrays", "trees", "complexity"],
+    icon: "cpu",
+    isCore: true,
+  },
+  {
+    _id: "core-ai-ml",
+    name: "Artificial Intelligence & ML",
+    slug: "artificial-intelligence",
+    description: "Machine learning fundamentals, neural networks, LLMs, and prompt engineering.",
+    topicTags: ["ai", "machine-learning", "llm", "neural-networks", "groq"],
+    icon: "cpu",
+    isCore: true,
+  },
+  {
+    _id: "core-cyber-security",
+    name: "Cyber Security & Web Safety",
+    slug: "cyber-security",
+    description: "Network security, cryptography, JWT authentication, and OWASP standards.",
+    topicTags: ["security", "jwt", "auth", "encryption", "owasp"],
+    icon: "shield",
+    isCore: true,
+  },
+  {
+    _id: "core-cloud-devops",
+    name: "Cloud Computing & DevOps",
+    slug: "cloud-computing",
+    description: "AWS cloud services, Docker containers, CI/CD pipelines, and Linux basics.",
+    topicTags: ["docker", "aws", "cloud", "ci-cd", "linux"],
+    icon: "cloud",
+    isCore: true,
+  },
+  {
+    _id: "core-mobile-apps",
+    name: "Mobile App Development",
+    slug: "mobile-apps",
+    description: "Cross-platform mobile apps with React Native, Flutter, and UI patterns.",
+    topicTags: ["react-native", "flutter", "mobile", "android", "ios"],
+    icon: "smartphone",
+    isCore: true,
+  },
+];
+
 export default function InterestOnboardingModal({
   isOpen,
   initialSelectedIds = [],
@@ -65,24 +149,25 @@ export default function InterestOnboardingModal({
     }
   }, [isOpen, initialSelectedIds]);
 
+  const fetchInterests = async () => {
+    try {
+      setLoading(true);
+      const res = await axiosClient.get("/interests");
+      if (res.data?.success && Array.isArray(res.data?.data) && res.data.data.length > 0) {
+        setInterests(res.data.data);
+      } else {
+        setInterests(FALLBACK_CORE_INTERESTS);
+      }
+    } catch (err) {
+      console.error("Failed to load interests from API, falling back to core topics:", err);
+      setInterests(FALLBACK_CORE_INTERESTS);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!isOpen) return;
-
-    const fetchInterests = async () => {
-      try {
-        setLoading(true);
-        const res = await axiosClient.get("/interests");
-        if (res.data?.success && Array.isArray(res.data?.data)) {
-          setInterests(res.data.data);
-        }
-      } catch (err) {
-        console.error("Failed to load interests:", err);
-        toast.error("Could not load interest topics. Please refresh.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchInterests();
   }, [isOpen]);
 
@@ -225,14 +310,29 @@ export default function InterestOnboardingModal({
               </div>
             ) : filteredInterests.length === 0 ? (
               <div className="py-12 text-center text-slate-500 dark:text-slate-400">
-                <p className="text-sm">No topics matching &quot;{searchQuery}&quot;</p>
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery("")}
-                  className="mt-2 text-xs text-indigo-600 dark:text-indigo-400 font-semibold hover:underline"
-                >
-                  Clear search
-                </button>
+                {searchQuery.trim() ? (
+                  <>
+                    <p className="text-sm">No topics matching &quot;{searchQuery}&quot;</p>
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery("")}
+                      className="mt-2 text-xs text-indigo-600 dark:text-indigo-400 font-semibold hover:underline cursor-pointer"
+                    >
+                      Clear search
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm">Unable to load topics from server.</p>
+                    <button
+                      type="button"
+                      onClick={fetchInterests}
+                      className="mt-2 text-xs text-indigo-600 dark:text-indigo-400 font-semibold hover:underline cursor-pointer"
+                    >
+                      Retry loading topics
+                    </button>
+                  </>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
