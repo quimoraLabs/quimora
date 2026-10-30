@@ -413,6 +413,12 @@ function QuizListPage() {
             <div className="py-12 text-center text-sm text-muted">Loading Chapters Curriculum...</div>
           ) : trackData && trackData.chapters?.length > 0 ? (
             <div className="space-y-4">
+              <div className="flex items-center justify-between px-1">
+                <div>
+                  <h3 className="text-sm font-bold text-main">{trackData.interest?.name} Track</h3>
+                  <p className="text-xs text-muted">Complete prerequisites sequentially to unlock subsequent chapters and certification challenges.</p>
+                </div>
+              </div>
               {trackData.chapters.map((chapter, cIdx) => (
                 <div
                   key={chapter._id}
