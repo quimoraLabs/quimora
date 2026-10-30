@@ -13,12 +13,15 @@ import {
   BookOpen,
   Star,
   Sparkles,
+  Coins,
 } from "lucide-react";
 import useStudentQuizStore from "../../features/student/exam/store/useStudentQuizStore";
 import PerformanceTrend from "../../features/student/dashboard/PerformanceTrendCard";
+import SkillRadarCard from "../../features/student/dashboard/SkillRadarCard";
 import RecentAttempt from "../../features/student/dashboard/RecentAttemptsCard";
+import DailyPracticeHeatmapCard from "../../features/student/dashboard/DailyPracticeHeatmapCard";
 import LatestResult from "../../features/student/dashboard/LatestResultCard";
-import Leaderboard from "../../features/student/dashboard/LeaderboardItem";
+import LeaderboardCard from "../../features/student/dashboard/LeaderboardCard";
 import WeakestArea from "../../features/student/dashboard/WeakestAreasCard";
 import StatCard from "../../components/common/StatCard";
 import InterestOnboardingModal from "../../features/student/components/InterestOnboardingModal";
@@ -71,9 +74,29 @@ function StudentDashboardPage() {
 
   /**
    * Stats Card Configuration
-   * Each stat has: label, value, icon, color, subtitle
+   * 6 cards: Elo Rating, Coins Balance, Tests, Avg, Best, Lowest
    */
   const statsConfig = [
+    {
+      label: "Arena Elo Rating",
+      value: `${dashboardStats?.overallElo ?? profileData?.profile?.overallElo ?? 1000} Elo`,
+      change: `${dashboardStats?.levelName ?? profileData?.profile?.levelName ?? "Learner"} Tier`,
+      icon: Zap,
+      gradient: "from-indigo-600 to-violet-600",
+      iconColor: "text-indigo-600 dark:text-indigo-400",
+      bgColorClass: "bg-indigo-50 dark:bg-indigo-900/20",
+      changeType: "positive",
+    },
+    {
+      label: "Quimora Coins",
+      value: `${dashboardStats?.coinsBalance ?? profileData?.profile?.coinsBalance ?? 100}`,
+      change: "Rewards & unlocks currency",
+      icon: Coins,
+      gradient: "from-amber-500 to-yellow-600",
+      iconColor: "text-amber-500 dark:text-amber-400",
+      bgColorClass: "bg-amber-50 dark:bg-amber-900/20",
+      changeType: "positive",
+    },
     {
       label: "Total Tests Taken",
       value: dashboardStats?.totalTestsTaken ?? 0,
@@ -131,26 +154,26 @@ function StudentDashboardPage() {
   const latestResult = dashboardStats?.latestResult;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-4 md:p-6 lg:p-8 space-y-6 md:space-y-8">
+    <div className="min-h-screen bg-main p-4 md:p-6 lg:p-8 space-y-6 md:space-y-8">
       {/* ===== HEADER ===== */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+          <h1 className="text-2xl md:text-3xl font-bold text-main tracking-tight">
             👋 Welcome Back, Student!
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Track your quiz performance and progress
+          <p className="text-sm text-muted mt-1">
+            Track your competitive quiz performance, Elo calibrations & domain tracks
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm">
+          <span className="text-xs text-muted bg-surface px-3 py-1.5 rounded-full border border-main shadow-sm">
             Last updated: {new Date().toLocaleDateString()}
           </span>
         </div>
       </div>
 
       {/* ===== STATS GRID ===== */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
         {statsConfig.map((stat, index) => (
           <StatCard
             key={stat.label}
@@ -171,25 +194,26 @@ function StudentDashboardPage() {
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        className="p-6 bg-linear-to-r from-indigo-900/10 via-purple-900/10 to-transparent border border-indigo-200/60 dark:border-indigo-900/40 rounded-3xl backdrop-blur-md shadow-sm"
+        className="p-6 bg-surface/80 border border-main rounded-3xl backdrop-blur-md shadow-card relative overflow-hidden"
       >
+        <div className="pointer-events-none absolute -top-12 -right-12 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl" />
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 text-xs font-bold uppercase tracking-wider mb-1.5">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-xs font-bold uppercase tracking-wider mb-1.5 border border-cyan-500/20">
               <Sparkles className="w-3.5 h-3.5" />
               Adaptive Elo Calibration
             </div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+            <h3 className="text-lg font-bold text-main">
               Your Active Learning Interests & Skill Tiers
             </h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Real-time Elo ratings ($K=32$) dynamically adapt difficulty based on your test performance.
+            <p className="text-xs text-muted">
+              Real-time Elo ratings (K=32) dynamically adapt difficulty based on your test performance.
             </p>
           </div>
 
           <button
             onClick={() => setShowOnboarding(true)}
-            className="px-4 py-2 text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-white dark:bg-gray-900 border border-indigo-200 dark:border-indigo-800 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition-all shadow-sm cursor-pointer whitespace-nowrap self-start sm:self-auto"
+            className="px-4 py-2 text-xs font-bold text-cyan-400 bg-elevated border border-cyan-500/30 rounded-xl hover:bg-cyan-500/10 transition-all shadow-sm cursor-pointer whitespace-nowrap self-start sm:self-auto"
           >
             ⚙️ Edit Interests ({profileData?.profile?.interests?.length || 0}/10)
           </button>
@@ -207,13 +231,13 @@ function StudentDashboardPage() {
               return (
                 <div
                   key={interest._id}
-                  className="p-3.5 bg-white dark:bg-gray-900 border border-gray-200/80 dark:border-gray-800 rounded-2xl shadow-xs flex items-center justify-between gap-3"
+                  className="p-3.5 bg-elevated border border-main rounded-2xl shadow-xs flex items-center justify-between gap-3 hover:border-cyan-500/30 transition-all"
                 >
                   <div className="min-w-0">
-                    <p className="font-bold text-xs text-gray-900 dark:text-white truncate">
+                    <p className="font-bold text-xs text-main truncate">
                       {interest.name}
                     </p>
-                    <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate">
+                    <p className="text-2xs text-muted truncate">
                       {interest.topicTags?.join(", ") || "General"}
                     </p>
                   </div>
@@ -226,7 +250,7 @@ function StudentDashboardPage() {
           </div>
         ) : (
           <div className="py-4 text-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-muted">
               No interests selected yet. Pick 5 to 6 interests to calibrate your personalized questions.
             </p>
           </div>
@@ -244,111 +268,57 @@ function StudentDashboardPage() {
         }}
       />
 
-      {/* ===== MAIN CONTENT GRID ===== */}
+      {/* ===== DUAL ANALYTICS: ACCURACY PROGRESSION & SKILL RADAR MATRIX ===== */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 md:gap-8">
+        {/* Performance Trend Area Chart */}
+        <div className="xl:col-span-7">
+          <PerformanceTrend
+            performanceData={performanceData}
+            dashboardStats={dashboardStats}
+            dashboardLoading={dashboardLoading}
+          />
+        </div>
+
+        {/* Multi-Skill Radar / Spider Web Chart */}
+        <div className="xl:col-span-5">
+          <SkillRadarCard
+            profileData={profileData}
+            weakAreas={weakAreas}
+          />
+        </div>
+      </div>
+
+      {/* ===== MAIN CONTENT GRID: RECENT ATTEMPTS & PERFORMANCE CARDS ===== */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
         {/* LEFT COLUMN (8/12) */}
         <div className="lg:col-span-8 space-y-6">
-          {/* Performance Trend */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <PerformanceTrend
-              performanceData={performanceData}
-              dashboardStats={dashboardStats}
-              dashboardLoading={dashboardLoading}
-            />
-          </motion.div>
+          <RecentAttempt
+            recentAttempts={recentAttempts}
+            dashboardLoading={dashboardLoading}
+          />
 
-          {/* Recent Attempts */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <RecentAttempt
-              recentAttempts={recentAttempts}
-              dashboardLoading={dashboardLoading}
-            />
-          </motion.div>
+          <DailyPracticeHeatmapCard
+            dailyActivity={dashboardStats?.dailyActivity}
+            recentAttempts={recentAttempts}
+          />
         </div>
 
         {/* RIGHT COLUMN (4/12) */}
         <div className="lg:col-span-4 space-y-6">
           {/* Latest Result */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25 }}
-          >
-            <LatestResult
-              latestResult={latestResult}
-              dashboardStats={dashboardStats}
-            />
-          </motion.div>
+          <LatestResult
+            latestResult={latestResult}
+            dashboardStats={dashboardStats}
+          />
 
           {/* Weakest Areas */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35 }}
-          >
-            <WeakestArea weakAreas={weakAreas} />
-          </motion.div>
+          <WeakestArea weakAreas={weakAreas} />
 
-          {/* Leaderboard */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.4 }}
-            className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-lg p-6"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  <Users className="w-5 h-5 text-indigo-500" />
-                  Leaderboard
-                </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Top student performance in your class
-                </p>
-              </div>
-              <span className="text-xs font-medium text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 px-2.5 py-1 rounded-full">
-                Top 5
-              </span>
-            </div>
-
-            <div className="space-y-2">
-              {dashboardLoading ? (
-                // Skeleton loading
-                Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl animate-pulse">
-                    <div className="w-6 h-6 bg-gray-200 dark:bg-gray-700 rounded-full" />
-                    <div className="flex-1">
-                      <div className="w-24 h-4 bg-gray-200 dark:bg-gray-700 rounded" />
-                      <div className="w-16 h-3 mt-1 bg-gray-200 dark:bg-gray-700 rounded" />
-                    </div>
-                    <div className="w-12 h-4 bg-gray-200 dark:bg-gray-700 rounded" />
-                  </div>
-                ))
-              ) : leaderboard.length > 0 ? (
-                leaderboard.map((entry) => (
-                  <Leaderboard key={entry.rank} entry={entry} />
-                ))
-              ) : (
-                <div className="text-center py-8">
-                  <Star className="w-10 h-10 text-gray-300 dark:text-gray-700 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    No leaderboard data yet
-                  </p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">
-                    Complete a quiz to get on the board!
-                  </p>
-                </div>
-              )}
-            </div>
-          </motion.div>
+          {/* Leaderboard Card */}
+          <LeaderboardCard
+            leaderboard={leaderboard}
+            dashboardLoading={dashboardLoading}
+          />
         </div>
       </div>
     </div>

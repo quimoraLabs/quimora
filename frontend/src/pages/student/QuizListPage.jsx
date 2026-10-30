@@ -1,11 +1,12 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import { Play, Sparkles, SlidersHorizontal, BookOpen, RotateCcw, Search, Tag, X } from "lucide-react";
+import { Play, Sparkles, SlidersHorizontal, BookOpen, RotateCcw, Search, Tag, X, CheckCircle2, Eye } from "lucide-react";
 import useQuizListStore from "../../features/student/quiz/store/useQuizListStore";
 import DataTable from "../../components/common/DataTable";
 import InterestFilterBar from "../../features/student/components/InterestFilterBar";
 import InterestOnboardingModal from "../../features/student/components/InterestOnboardingModal";
+import QuizDetailsModal from "../../features/student/quiz/QuizDetailsModal";
 import axiosClient from "../../api/axiosClient";
 
 const getTopicBadge = (quiz) => {
@@ -48,6 +49,7 @@ function QuizListPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loadingInterests, setLoadingInterests] = useState(true);
+  const [selectedQuizForDetails, setSelectedQuizForDetails] = useState(null);
 
   // Fetch only the student's chosen interests from their profile
   const fetchStudentInterests = useCallback(async () => {
@@ -229,17 +231,32 @@ function QuizListPage() {
       <>
         <td className="px-6 py-4 whitespace-nowrap">
           <div className="flex items-center gap-2 mb-1">
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${badge.bg}`}>
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-2xs font-bold uppercase tracking-wider border ${badge.bg}`}>
               {badge.label}
             </span>
             {quiz?.level && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-2xs font-bold uppercase tracking-wider border bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20">
                 {quiz.level}
               </span>
             )}
             <div className="text-sm font-semibold text-main">{quiz?.title}</div>
           </div>
           <div className="text-xs text-muted max-w-xl line-clamp-1">{quiz?.description}</div>
+
+          {/* Teacher / Evaluator Profile Badge */}
+          <div className="mt-2 flex items-center gap-2">
+            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 text-2xs text-muted">
+              <span className="w-4 h-4 rounded-full bg-linear-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white text-3xs font-bold">
+                {(quiz?.instructor?.name || quiz?.createdBy?.name || "Quimora Faculty").charAt(0).toUpperCase()}
+              </span>
+              <span className="font-semibold text-slate-700 dark:text-slate-300">
+                {quiz?.instructor?.name || quiz?.createdBy?.name || "Quimora Faculty"}
+              </span>
+              <span className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded-full text-3xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                <CheckCircle2 className="w-2.5 h-2.5 text-emerald-500" /> Verified Evaluator
+              </span>
+            </div>
+          </div>
         </td>
         <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">
           {quiz?.timeLimit} minutes
@@ -259,7 +276,7 @@ function QuizListPage() {
               <RotateCcw className="w-3 h-3" />
               {attemptsUsed} / {maxAttempts} Used
             </span>
-            <span className="text-[11px] text-muted">
+            <span className="text-2xs text-muted">
               {!isExhausted
                 ? `${attemptsRemaining} attempts left`
                 : "No attempts remaining"}
@@ -267,17 +284,27 @@ function QuizListPage() {
           </div>
         </td>
         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-          <button
-            onClick={() => handleStart(quiz)}
-            disabled={isExhausted}
-            className={`inline-flex items-center gap-2 px-4 py-2 border border-transparent text-sm font-medium rounded-xl text-white transition-all shadow-sm ${
-              isExhausted
-                ? "bg-gray-400 dark:bg-zinc-700 opacity-60 cursor-not-allowed"
-                : "bg-indigo-600 hover:bg-indigo-700 cursor-pointer shadow-indigo-500/20 hover:shadow-indigo-500/30"
-            }`}
-          >
-            <Play className="w-4 h-4" /> {isExhausted ? "Limit Reached" : "Start"}
-          </button>
+          <div className="flex items-center justify-end gap-2">
+            <button
+              onClick={() => setSelectedQuizForDetails(quiz)}
+              className="inline-flex items-center gap-1.5 px-3 py-2 border border-main text-xs font-semibold rounded-xl text-main hover:bg-main transition-all cursor-pointer"
+              title="View quiz syllabus, evaluator & rules"
+            >
+              <Eye className="w-3.5 h-3.5 text-indigo-500" />
+              <span>Details</span>
+            </button>
+            <button
+              onClick={() => handleStart(quiz)}
+              disabled={isExhausted}
+              className={`inline-flex items-center gap-2 px-4 py-2 border border-transparent text-sm font-medium rounded-xl text-white transition-all shadow-sm ${
+                isExhausted
+                  ? "bg-gray-400 dark:bg-zinc-700 opacity-60 cursor-not-allowed"
+                  : "bg-indigo-600 hover:bg-indigo-700 cursor-pointer shadow-indigo-500/20 hover:shadow-indigo-500/30"
+              }`}
+            >
+              <Play className="w-4 h-4" /> {isExhausted ? "Limit Reached" : "Start"}
+            </button>
+          </div>
         </td>
       </>
     );
@@ -365,7 +392,7 @@ function QuizListPage() {
           </div>
 
           {/* Quick Search Input */}
-          <div className="relative min-w-[220px]">
+          <div className="relative min-w-55">
             <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
             <input
               type="text"
@@ -456,6 +483,14 @@ function QuizListPage() {
         initialSelectedIds={interests.map((i) => i._id || i.id)}
         onClose={() => setIsModalOpen(false)}
         onComplete={handleOnboardingComplete}
+      />
+
+      {/* Quiz Syllabus & Details Preview Modal */}
+      <QuizDetailsModal
+        isOpen={Boolean(selectedQuizForDetails)}
+        onClose={() => setSelectedQuizForDetails(null)}
+        quiz={selectedQuizForDetails}
+        onStartQuiz={handleStart}
       />
     </div>
   );

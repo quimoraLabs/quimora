@@ -4,6 +4,7 @@ import {
   Clock3,
   FileQuestion,
   Trophy,
+  CheckCircle2,
 } from "lucide-react";
 
 export default function QuizCard({
@@ -11,6 +12,7 @@ export default function QuizCard({
   description,
   timeLimit,
   totalQuestions,
+  instructor,
   handleStart,
 }) {
   return (
@@ -83,8 +85,27 @@ export default function QuizCard({
         </div>
       </div>
 
-      {/* Divider */}
+      {/* Teacher / Evaluator Profile Badge */}
+      <div className="mt-4 flex items-center justify-between p-2.5 rounded-2xl bg-main/50 border border-main">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-lg bg-linear-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow-xs">
+            {(instructor?.name || "Q").charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <p className="text-xs font-bold text-main leading-none">
+              {instructor?.name || "Quimora Faculty"}
+            </p>
+            <p className="text-2xs text-muted mt-0.5">
+              {instructor?.department || "Academic Certified Evaluator"}
+            </p>
+          </div>
+        </div>
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-2xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+          <CheckCircle2 className="w-3 h-3 text-emerald-500" /> Verified
+        </span>
+      </div>
 
+      {/* Divider */}
       <div className="my-5 border-t border-main"></div>
 
       {/* Stats */}

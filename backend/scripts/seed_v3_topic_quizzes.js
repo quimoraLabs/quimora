@@ -493,7 +493,7 @@ async function seedTopicQuizzes() {
       await QuizAssignment.findOneAndUpdate(
         { quizId: quiz._id },
         { instructorId: instructor._id, role: "primary", assignedAt: new Date() },
-        { upsert: true, new: true }
+        { upsert: true, returnDocument: 'after' }
       );
 
       // Create or update 15 questions

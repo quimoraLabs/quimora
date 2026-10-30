@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import { Header } from '../components/navigation/Header.jsx';
 
 describe('Header Component Unit Test', () => {
@@ -8,12 +9,14 @@ describe('Header Component Unit Test', () => {
     const toggleDarkModeMock = vi.fn();
 
     render(
-      <Header
-        title="Dashboard"
-        setSidebarOpen={setSidebarOpenMock}
-        toggleDarkMode={toggleDarkModeMock}
-        darkMode={false}
-      />
+      <MemoryRouter>
+        <Header
+          title="Dashboard"
+          setSidebarOpen={setSidebarOpenMock}
+          toggleDarkMode={toggleDarkModeMock}
+          darkMode={false}
+        />
+      </MemoryRouter>
     );
 
     // Check title renders

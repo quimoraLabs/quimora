@@ -11,14 +11,15 @@
 Quimora is evolving through distinct, versioned milestones:
 - **V1 (Shipped):** Core Auth, Quiz Management, Question Bank, Attempt Engine, Basic AI Question Generation.
 - **V2 (Shipped):** Server-Validated Timed Quizzes, 15s Grace Buffer, Admin Management Suite, Redis Caching, Bulk CSV/JSON Import.
-- **V3 (In Progress):** Interest-Driven Adaptive Engine, Elo Ratings ($K=32$), 6-Tier Level Progression, 1:1 Instructor Assignment & Consent Flow, Privacy-Preserving Analytics.
+- **V3 (Shipped & Stable):** Interest-Driven Adaptive Engine, Elo Ratings ($K=32$), 6-Tier Level Progression, 1:1 Instructor Assignment & Consent Flow, Privacy-Preserving Analytics.
+- **V3.5 (Active Sprint):** Polish, Navigation Upgrade (Header Profile Dropdown, Enriched Sidebar, Instructor Quiz Cards) & HackerRank-Style Chapter Progression & Weekly/Monthly Challenges Architecture.
 
 ```
-┌─────────────────────────┐      ┌─────────────────────────┐      ┌─────────────────────────┐
-│       V1 SHIPPED        │ ───► │       V2 SHIPPED        │ ───► │       V3 COMPLETED      │
-│  Baseline Auth & Quizzes│      │  Timed Engine & Admin   │      │ Adaptive Elo & Profiles │
-│       ✅ 100% DONE       │      │       ✅ 100% DONE       │      │       ✅ 100% DONE       │
-└─────────────────────────┘      └─────────────────────────┘      └─────────────────────────┘
+┌─────────────────────────┐      ┌─────────────────────────┐      ┌─────────────────────────┐      ┌─────────────────────────┐
+│       V1 SHIPPED        │ ───► │       V2 SHIPPED        │ ───► │       V3 SHIPPED        │ ───► │       V3.5 ACTIVE       │
+│  Baseline Auth & Quizzes│      │  Timed Engine & Admin   │      │ Adaptive Elo & Profiles │      │ Polish & HackerRank Flow│
+│       ✅ 100% DONE       │      │       ✅ 100% DONE       │      │       ✅ 100% DONE       │      │       🚧 IN PROGRESS     │
+└─────────────────────────┘      └─────────────────────────┘      └─────────────────────────┘      └─────────────────────────┘
 ```
 
 ---
@@ -122,6 +123,40 @@ Quimora is evolving through distinct, versioned milestones:
   - [x] Question preview cards tagged with calibrated skill tier metadata.
 - [x] **Automated Test Coverage**:
   - [x] `backend/tests/05_v3_adaptive_engine.test.js` created and passing (9 tests covering levels, real-time Elo tier mapping, 1:1 quiz assignment, pre-quiz transparency profile, telemetry consent, and AI generation calibration).
+
+---
+
+## 🟣 V3.5 Active Sprint — Polish & HackerRank Mission Architecture
+
+### 1. Navigation & Header Polish (Active)
+- [x] **Mongoose 9 Deprecation Fixes**: Migrated legacy `{ new: true }` to `{ returnDocument: 'after' }` across all backend models and services (43/43 tests passing).
+- [x] **Rank Warning Calibration**: Red Elo penalty warning conditionally displays only when a beginner student attempts an ahead/higher tier difficulty.
+- [x] **Adaptive Selection Dropdown**: Auto-converts cramped button grids to clean dropdown menus when options count $\ge 4$.
+- [ ] **Header Profile Dropdown**:
+  - [ ] Move Profile and Logout out of the Sidebar into a top-right User Avatar dropdown in `Header.jsx`.
+  - [ ] Include user avatar, full name, username/role badge, Profile link, theme switcher, and red Logout action.
+- [ ] **Enriched Student Sidebar**:
+  - [ ] Remove awkward bottom profile & logout from `Sidebar.jsx`.
+  - [ ] Add gamified navigation items: Dashboard, Skill Tracks, Live Challenges, All Quizzes, Leaderboard, My Attempts.
+- [ ] **Quiz Card Instructor Showcase**:
+  - [ ] Display verified domain instructor snippet (Avatar, Name, "Academic Certified" badge) directly on `QuizCard.jsx` and `QuizListPage.jsx` rows.
+
+### 2. HackerRank-Style Progression Architecture (Design Approved)
+- [ ] **Domain ➔ Chapter Curriculum Tree**:
+  - [ ] Structure domains into 5–8 logical Chapters (e.g. *Python ➔ Ch 1: Syntax, Ch 2: Data Structures, Ch 3: Functions, Ch 4: OOP, Ch 5: Error Handling*).
+  - [ ] Average 5–6 progressive quizzes per chapter (~60–100 quizzes per domain track).
+- [ ] **Sequential Progression & Auto-Unlocking**:
+  - [ ] Complete quiz with passing score ($\ge 50\%$) to unlock the next quiz / chapter.
+  - [ ] One-click **"Solve Next Challenge"** CTA directly on the Quiz Result screen.
+- [ ] **Domain Star Badges (1★ to 5★)**:
+  - [ ] Gamified star ratings per skill displayed on Student Profile (e.g. *Python ★★★★☆*).
+- [ ] **Live Challenges Engine (Weekly Sprints & Monthly Cups)**:
+  - [ ] Time-bound contest window with real-time countdown timer.
+  - [ ] Strict single-attempt proctored examination mode.
+  - [ ] Event Leaderboard with top 10 spotlight rankings and exclusive trophy badges.
+- [ ] **Domain-Wise Auto-Assigned Faculty**:
+  - [ ] Automatic provisioning of verified academic faculty per interest domain.
+  - [ ] Future extension: Proctored "Domain Skill Certification Assessment" issuing signed digital certificates.
 
 ---
 

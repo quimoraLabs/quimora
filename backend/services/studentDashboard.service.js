@@ -1,5 +1,9 @@
 import mongoose from "mongoose";
+import Quiz from "../models/quiz.model.js";
 import QuizAttempt from "../models/quizAttempt.model.js";
+import StudentProfile from "../models/studentProfile.model.js";
+import EloRating from "../models/eloRating.model.js";
+import LevelMappingService from "./levelMapping.service.js";
 
 /**
  * Fetch Overall Global Leaderboard across all students
@@ -34,6 +38,8 @@ export const getGlobalLeaderboard = async (userId, limit = 20) => {
                             _id: 0,
                             userId: "$_id",
                             name: "$user.name",
+                            username: "$user.username",
+                            email: "$user.email",
                             averageScore: { $round: ["$averageScore", 2] },
                             totalTests: 1,
                             maxScore: 1,
@@ -59,13 +65,47 @@ export const getGlobalLeaderboard = async (userId, limit = 20) => {
     );
     const currentRank = userRankIndex !== -1 ? userRankIndex + 1 : null;
 
-    const leaderboard = topList.map((entry, index) => ({
-        rank: index + 1,
-        name: entry.name,
-        averageScore: entry.averageScore,
-        totalTests: entry.totalTests,
-        isMe: entry.userId.toString() === userId.toString(),
-    }));
+    // Fetch student profiles and Elo ratings for all top users
+    const userIds = topList.map((entry) => entry.userId);
+    const profiles = await StudentProfile.find({ userId: { $in: userIds } }).lean();
+    const eloRecords = await EloRating.find({
+        studentId: { $in: userIds },
+        isArchived: false,
+    }).lean();
+
+    const levels = await LevelMappingService.getAllLevels();
+
+    const leaderboard = topList.map((entry, index) => {
+        const profile = profiles.find((p) => p.userId.toString() === entry.userId.toString());
+        const userElos = eloRecords.filter(
+            (r) => r.studentId.toString() === entry.userId.toString()
+        );
+
+        // Highest Elo rating from active records or profile.overallElo or 1000 default
+        const elo = profile?.overallElo ||
+            (userElos.length > 0 ? Math.max(...userElos.map((r) => r.rating)) : 1000);
+
+        // Tier resolution
+        const matchedLevel = levels?.find(
+            (lvl) => elo >= lvl.minElo && elo < lvl.maxElo
+        );
+        const tier = profile?.levelName || matchedLevel?.levelName || (elo >= 1000 ? "Learner" : "Beginner");
+
+        return {
+            rank: index + 1,
+            userId: entry.userId,
+            name: entry.name,
+            username: entry.username || entry.name?.toLowerCase().replace(/\s+/g, "_"),
+            email: entry.email,
+            averageScore: entry.averageScore,
+            maxScore: entry.maxScore,
+            score: entry.averageScore,
+            totalTests: entry.totalTests,
+            elo: elo,
+            tier: tier,
+            isMe: entry.userId.toString() === userId.toString(),
+        };
+    });
 
     return { currentRank, leaderboard };
 };
@@ -189,6 +229,8 @@ export const getQuizLeaderboard = async (quizId, userId, limit = 50) => {
  * Main Service for Student Dashboard Analytics
  */
 export const fetchStudentDashboardAnalytics = async (userId) => {
+    const studentProfile = await StudentProfile.findOne({ userId }).lean();
+
     const completedAttempts = await QuizAttempt.find({
         userId,
         status: "completed",
@@ -207,11 +249,23 @@ export const fetchStudentDashboardAnalytics = async (userId) => {
             minScore: 0,
             currentRank: null,
             latestResult: null,
+            overallElo: studentProfile?.overallElo || 1000,
+            levelName: studentProfile?.levelName || "Beginner",
+            coinsBalance: studentProfile?.coinsBalance || 100,
+            hintTokens: studentProfile?.hintTokens || 3,
+            experiencePoints: studentProfile?.experiencePoints || 0,
             performanceTrend: [],
             predictedNextScore: 0,
             weakAreas: [],
             recentHistory: [],
             leaderboard: leaderboard,
+            dailyActivity: {
+                activityMap: {},
+                currentStreak: 0,
+                longestStreak: 0,
+                activeDaysThisMonth: 0,
+                submissionsThisMonth: 0,
+            },
         };
     }
 
@@ -279,12 +333,88 @@ export const fetchStudentDashboardAnalytics = async (userId) => {
         .sort((a, b) => a.averageScore - b.averageScore)
         .slice(0, 4);
 
+    // Calculate Daily Practice Heatmap & Streak (GitHub / LeetCode style)
+    const activityMap = {};
+    const now = new Date();
+    const currentMonthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    let submissionsThisMonth = 0;
+
+    completedAttempts.forEach((attempt) => {
+        if (attempt.completedAt) {
+            const dateStr = new Date(attempt.completedAt).toISOString().split("T")[0];
+            activityMap[dateStr] = (activityMap[dateStr] || 0) + 1;
+            if (dateStr.startsWith(currentMonthPrefix)) {
+                submissionsThisMonth++;
+            }
+        }
+    });
+
+    const activeDaysThisMonth = Object.keys(activityMap).filter((d) => d.startsWith(currentMonthPrefix)).length;
+
+    const sortedDates = Object.keys(activityMap).sort().reverse();
+    let currentStreak = 0;
+    let longestStreak = 0;
+    let tempStreak = 0;
+
+    if (sortedDates.length > 0) {
+        const todayStr = now.toISOString().split("T")[0];
+        const yesterday = new Date(now);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split("T")[0];
+
+        const dateSet = new Set(sortedDates);
+        let checkDate = new Date(dateSet.has(todayStr) ? todayStr : (dateSet.has(yesterdayStr) ? yesterdayStr : null));
+        
+        if (!isNaN(checkDate.getTime())) {
+            while (true) {
+                const checkStr = checkDate.toISOString().split("T")[0];
+                if (dateSet.has(checkStr)) {
+                    currentStreak++;
+                    checkDate.setDate(checkDate.getDate() - 1);
+                } else {
+                    break;
+                }
+            }
+        }
+
+        const allAscDates = Object.keys(activityMap).sort();
+        for (let i = 0; i < allAscDates.length; i++) {
+            if (i === 0) {
+                tempStreak = 1;
+            } else {
+                const prev = new Date(allAscDates[i - 1]);
+                const curr = new Date(allAscDates[i]);
+                const diffDays = Math.round((curr - prev) / (1000 * 60 * 60 * 24));
+                if (diffDays === 1) {
+                    tempStreak++;
+                } else if (diffDays > 1) {
+                    tempStreak = 1;
+                }
+            }
+            if (tempStreak > longestStreak) longestStreak = tempStreak;
+        }
+    }
+    if (longestStreak < currentStreak) longestStreak = currentStreak;
+
+    const dailyActivity = {
+        activityMap,
+        currentStreak,
+        longestStreak: Math.max(longestStreak, currentStreak),
+        activeDaysThisMonth,
+        submissionsThisMonth,
+    };
+
     return {
         totalTestsTaken,
         averageScore,
         maxScore,
         minScore,
         currentRank,
+        overallElo: studentProfile?.overallElo || 1000,
+        levelName: studentProfile?.levelName || "Learner",
+        coinsBalance: studentProfile?.coinsBalance || 100,
+        hintTokens: studentProfile?.hintTokens || 3,
+        experiencePoints: studentProfile?.experiencePoints || 0,
         latestResult: {
             quizTitle: latestAttempt.quizId?.title || "Untitled Quiz",
             score: latestAttempt.score,
@@ -299,5 +429,6 @@ export const fetchStudentDashboardAnalytics = async (userId) => {
         weakAreas,
         recentHistory,
         leaderboard,
+        dailyActivity,
     };
 };

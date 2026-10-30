@@ -39,7 +39,7 @@ export default function InterestFilterBar({
             <span>{interest.name}</span>
             {interest.topicTags && interest.topicTags.length > 0 && (
               <span
-                className={`text-[10px] px-1.5 py-0.2 rounded-md ${
+                className={`text-2xs px-1.5 py-0.2 rounded-md ${
                   isActive
                     ? "bg-white/20 text-white"
                     : "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400"

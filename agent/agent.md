@@ -75,21 +75,52 @@ All technical specifications, schemas, business rules, and roadmaps are maintain
   - [x] Frontend Student Dashboard & Quiz List Interest Filter Bar (`InterestFilterBar.jsx`).
   - [x] Automated test coverage: 32/32 tests passing; frontend build 100% verified.
 
+### ✅ V3 Shipped & Verified (100% Completed)
+- [x] **V3 Documentation Alignment**: `DECISIONS.md`, `DATA_MODEL.md`, `ARCHITECTURE.md`, `MASTER_ROADMAP.md` aligned.
+- [x] **V3 User Architecture & Profiles**: `StudentProfile` (max 10 interests), `InstructorProfile` (min 1 expertise), `EloRating` ($K=32$, `highestRating`, `isArchived`), `Level` (6 canonical tiers), `QuizAssignment`.
+- [x] **V3 Seed & Migration Scripts**: `reset_v3_data.js`, `seed_admin.js`, `seed_v3_levels.js`, `seed_v3_interests.js`.
+- [x] **V3 Service Layer**: `user.service.js`, `studentProfile.service.js`, `instructorProfile.service.js`, `eloEngine.service.js`, `levelMapping.service.js`.
+- [x] **V3 Interest Discovery & Onboarding**: `/interests` catalog, `/onboarding`, onboarding guard middleware, modal & filter bar UI.
+- [x] **V3 1:1 Quiz Assignment & Transparency**: `/assign`, `/assigned`, `/assigned-instructor`, `/consent`, and pre-quiz consent modal.
+- [x] **V3 Elo-Aware Groq AI Question Generation**: Pedagogical prompt calibration for 6 skill tiers and student Elo rating.
+- [x] **V3 Automated Tests**: 43/43 tests passing across 5 test suites (`vitest run`).
+- [x] **Mongoose 9 Migration**: Replaced deprecated `new: true` with `returnDocument: 'after'` across all services and seeders.
+
 ---
 
-## ⏳ V3 PHASE 2 & PHASE 3 (Pending Next)
+## 🟣 V3.5 ACTIVE SPRINT: POLISH & HACKERRANK MISSION ARCHITECTURE
 
-- [ ] **Instructor Assignment & Consent Flow**:
-  - Implement `QuizAssignment` model, pre-quiz consent modal, and consent check middleware.
-- [ ] **Instructor Privacy-Preserving Analytics**:
-  - Implement `scopeInstructorAnalytics` middleware returning detailed data for assigned quizzes and anonymized aggregate data for external quizzes.
-- [ ] **Elo-Aware AI Question Generation**:
-  - Extend Groq AI service to calibrate generated MCQs based on target student Elo ratings.
-- [ ] **V3 Integration Test Suite**:
-  - Create `backend/tests/05_v3_adaptive_engine.test.js` covering Elo, Level, Consent, and Privacy Scoping.
+### 1. Navigation Ergonomics & UI Polish (In Progress)
+- [x] **Rank Warning Calibration**: Only displays when a beginner attempts an ahead/higher difficulty level.
+- [x] **Adaptive Dropdowns**: Auto-converts $\ge 4$ option grids into clean custom dropdown menus.
+- [ ] **Header User Avatar Dropdown (`Header.jsx`)**:
+  - Move Profile and Logout out of the Sidebar into a top-right User Avatar dropdown.
+  - Display user avatar, full name, username, role badge, Profile link, theme toggle, and Logout button.
+- [ ] **Streamlined Sidebar (`Sidebar.jsx`)**:
+  - Remove awkward bottom Profile & Logout buttons.
+  - Enrich student navigation: Dashboard, Skill Tracks, Live Challenges, All Quizzes, Leaderboard, My Attempts.
+- [ ] **Quiz Card Faculty Badge (`QuizCard.jsx` & `QuizListPage.jsx`)**:
+  - Display verified domain evaluator / faculty snippet on quiz cards so students know who curated the quiz before starting.
+
+### 2. HackerRank-Style Progression Architecture (Design Approved)
+- [ ] **Domain ➔ Chapter Curriculum Tree**:
+  - 5–8 logical Chapters per domain track (e.g. *Python ➔ Ch 1: Syntax, Ch 2: Data Structures, Ch 3: Functions, Ch 4: OOP, Ch 5: Error Handling*).
+  - Average 5–6 progressive quizzes per chapter (~60–100 quizzes per domain track).
+- [ ] **Sequential Progression & Auto-Unlocking**:
+  - Passing a quiz ($\ge 50\%$) unlocks the next quiz/chapter.
+  - Direct **"Solve Next Challenge"** CTA button on the attempt result screen.
+- [ ] **Domain Star Badges (1★ to 5★)**:
+  - Gamified topic mastery badges displayed prominently on the student profile.
+- [ ] **Live Challenges Engine (Weekly Sprints & Monthly Cups)**:
+  - Time-bound contest window with live countdown timer.
+  - Strict single attempt with active proctoring.
+  - Dedicated event leaderboards with top-10 spotlights and trophy badges.
+- [ ] **Domain-Wise Auto-Created Faculty**:
+  - Automatic domain evaluator assignment per topic track.
+  - Future: Proctored Domain Certification Assessment with signed digital certificate.
 
 ---
 
 ## 🔮 FUTURE SCOPE NOTE
 
-> *Future is bright. Once V3 is reached, V4/V5 will be planned. For now, focus on V3.*
+> *V1, V2, and V3 are shipped and stable. Active focus is on V3.5 Polish & HackerRank Theme Mission.*

@@ -122,7 +122,7 @@ export const assignQuizToInstructor = async (req, res, next) => {
     const assignment = await QuizAssignment.findOneAndUpdate(
       { quizId },
       { instructorId, role, assignedAt: new Date() },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
     );
 
     await InstructorProfileService.invalidateAssignedCountCache(instructorId);

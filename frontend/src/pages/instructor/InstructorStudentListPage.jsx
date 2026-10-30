@@ -205,7 +205,7 @@ export default function InstructorStudentListPage() {
                               student.quizzesTaken.slice(0, 2).map((quizTitle, i) => (
                                 <span
                                   key={i}
-                                  className="text-[11px] px-2 py-0.5 rounded-md bg-elevated border border-main text-muted truncate max-w-[140px]"
+                                  className="text-[11px] px-2 py-0.5 rounded-md bg-elevated border border-main text-muted truncate max-w-35"
                                   title={quizTitle}
                                 >
                                   {quizTitle}
@@ -215,7 +215,7 @@ export default function InstructorStudentListPage() {
                               <span className="text-xs text-muted">--</span>
                             )}
                             {student.quizzesTaken?.length > 2 && (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent/10 text-accent font-semibold">
+                              <span className="text-2xs px-1.5 py-0.5 rounded bg-accent/10 text-accent font-semibold">
                                 +{student.quizzesTaken.length - 2} more
                               </span>
                             )}
@@ -299,7 +299,7 @@ export default function InstructorStudentListPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="p-3 rounded-xl bg-elevated border border-main text-center">
-                <span className="text-[10px] uppercase font-semibold text-muted">
+                <span className="text-2xs uppercase font-semibold text-muted">
                   Average Score
                 </span>
                 <p className="text-xl font-bold text-emerald-500 mt-0.5">
@@ -307,7 +307,7 @@ export default function InstructorStudentListPage() {
                 </p>
               </div>
               <div className="p-3 rounded-xl bg-elevated border border-main text-center">
-                <span className="text-[10px] uppercase font-semibold text-muted">
+                <span className="text-2xs uppercase font-semibold text-muted">
                   Total Attempts
                 </span>
                 <p className="text-xl font-bold text-main mt-0.5">

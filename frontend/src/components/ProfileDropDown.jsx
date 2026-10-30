@@ -114,7 +114,7 @@ const ProfileDropdown = ({ logout }) => {
           ref={menuRef}
           id="Profile-menu"
           aria-labelledby="Profile-toggle"
-          className="absolute right-0 top-full mt-2 p-2 min-w- w-max max-w-xs text-slate-800 text-sm font-medium bg-white border border-slate-200 rounded-3xl shadow-[0_20px_60px_rgba(15,23,42,0.12)] z-50 overflow-hidden dark:text-slate-300 dark:bg-neutral-900 dark:border-neutral-700"
+          className="absolute right-0 top-full mt-2 p-2 w-max min-w-48 max-w-xs text-main text-sm font-medium bg-surface border border-main rounded-2xl shadow-card z-50 overflow-hidden"
         >
           {menuSections.map((section, index) => (
             <React.Fragment key={section.id}>

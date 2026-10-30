@@ -10,10 +10,10 @@ export function ExamTimer({ timer }) {
 
   const getStatusClasses = () => {
     if (isUrgentTime) {
-      return "border-red-500/50 bg-red-950/30 text-red-400 shadow-[0_0_20px_rgba(239,68,68,0.3)] animate-pulse";
+      return "border-red-500/50 bg-red-950/30 text-red-400 shadow-lg shadow-red-500/30 animate-pulse";
     }
     if (isLowTime) {
-      return "border-amber-500/50 bg-amber-950/20 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.2)]";
+      return "border-amber-500/50 bg-amber-950/20 text-amber-400 shadow-md shadow-amber-500/20";
     }
     return "border-brand-mid/40 bg-surface/80 text-brand-mid shadow-card backdrop-blur-md";
   };
@@ -27,7 +27,7 @@ export function ExamTimer({ timer }) {
         <div className="font-mono text-sm sm:text-xl md:text-2xl font-black tabular-nums tracking-tight">
           {minutes.toString().padStart(2, "0")}:{seconds.toString().padStart(2, "0")}
         </div>
-        <span className="hidden md:inline-block text-[9px] uppercase tracking-wider font-bold text-muted bg-elevated px-1.5 py-0.5 rounded-full border border-main whitespace-nowrap">
+        <span className="hidden md:inline-block text-3xs uppercase tracking-wider font-bold text-muted bg-elevated px-1.5 py-0.5 rounded-full border border-main whitespace-nowrap">
           {isUrgentTime ? "URGENT" : isLowTime ? "LOW" : "LEFT"}
         </span>
       </div>

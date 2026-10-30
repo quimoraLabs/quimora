@@ -7,6 +7,10 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Space Grotesk", sans-serif;
 
+  /* Typography extensions */
+  --text-2xs: 0.625rem;
+  --text-3xs: 0.5625rem;
+
   /* Brand Accents */
   --color-brand-start: #22d3ee;
   --color-brand-mid: #3b82f6;
@@ -16,44 +20,44 @@
   --color-brand-purple: #7336FF;
   --color-brand-blue: #3269FF;
 
-  /* ☀️ LIGHT MODE TOKENS - Clean Premium White look with subtle borders */
-  --color-bg-main: #f8fafc;
+  /* ☀️ LIGHT MODE TOKENS - Refined Slate Canvas with crisp card contrast & eye comfort */
+  --color-bg-main: #f1f5f9;
   --color-bg-surface: #ffffff;
-  --color-bg-elevated: #f1f5f9;
+  --color-bg-elevated: #e2e8f0;
 
   --color-text-main: #0f172a;
-  --color-text-muted: #64748b;
+  --color-text-muted: #475569;
   --color-placeholder: #94a3b8;
 
-  --color-border-main: #e2e8f0;
-  --color-border-soft: #f1f5f9;
+  --color-border-main: #cbd5e1;
+  --color-border-soft: #e2e8f0;
 
   --shadow-card:
-    0 20px 40px -15px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.02);
+    0 10px 30px -10px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.04);
 
-  /* Watermark tokens */
-  --watermark-opacity: 0.06;
+  /* Watermark tokens - Crisp visibility in daylight test conditions */
+  --watermark-opacity: 0.18;
   --watermark-scale: 1.05;
   --watermark-size: 20px;
 }
 
 :where(.dark) {
-  /* 🌙 DARK MODE TOKENS - Premium deep sci-fi navy/black theme */
-  --color-bg-main: #030712;
-  --color-bg-surface: #0b1329;
-  --color-bg-elevated: #111c44;
+  /* 🌙 DARK MODE TOKENS - Shadcn Obsidian Dark with Neon Cyan & Violet Accents */
+  --color-bg-main: #090d16;
+  --color-bg-surface: #0f1422;
+  --color-bg-elevated: #182032;
 
-  --color-text-main: #f9fafb;
-  --color-text-muted: #9ca3af;
-  --color-placeholder: #4b5563;
+  --color-text-main: #f8fafc;
+  --color-text-muted: #94a3b8;
+  --color-placeholder: #64748b;
 
-  --color-border-main: #1f2937;
+  --color-border-main: rgba(255, 255, 255, 0.08);
   --color-border-soft: rgba(255, 255, 255, 0.04);
 
   --shadow-card:
-    0 30px 60px -15px rgba(0, 0, 0, 0.8), 0 0 50px rgba(34, 211, 238, 0.02);
+    0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 40px rgba(6, 182, 212, 0.04);
 
-  --watermark-opacity: 0.04;
+  --watermark-opacity: 0.08;
   --watermark-scale: 1.05;
   --watermark-size: 20px;
 }
@@ -79,6 +83,24 @@ body {
 }
 @utility text-muted {
   color: var(--color-text-muted);
+}
+@utility text-secondary {
+  color: var(--color-text-muted);
+}
+@utility text-text-main {
+  color: var(--color-text-main);
+}
+@utility text-text-secondary {
+  color: var(--color-text-muted);
+}
+@utility bg-bg-surface {
+  background-color: var(--color-bg-surface);
+}
+@utility bg-bg-main {
+  background-color: var(--color-bg-main);
+}
+@utility border-border-main {
+  border-color: var(--color-border-main);
 }
 @utility placeholder-text-muted {
   &::placeholder {
@@ -135,6 +157,17 @@ button:active {
 button:disabled {
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+/* Hide scrollbar for Chrome, Safari, Edge and Firefox */
+.no-scrollbar::-webkit-scrollbar,
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar,
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 @import "./pages/auth/auth.css";

@@ -6,6 +6,7 @@ import StudentProfile from "../models/studentProfile.model.js";
 import StudentQuizProgress from "../models/studentQuizProgress.model.js";
 import Interest from "../models/interest.model.js";
 import EloRating from "../models/eloRating.model.js";
+import QuizAssignment from "../models/quizAssignment.model.js";
 import { autoGenerateTopicQuiz } from "../services/aiQuizGenerator.service.js";
 import { seedCatalogQuizzes } from "../services/catalogSeeder.service.js";
 import mongoose from "mongoose";
@@ -125,37 +126,50 @@ export const getAvailableQuizzesForStudents = async (req, res, next) => {
     // Compute student's attempts and decoupled progress for each quiz
     let attemptsMap = {};
     let progressMap = {};
-    if (userId && quizzes.length > 0) {
+    let assignmentMap = {};
+
+    if (quizzes.length > 0) {
       const quizIds = quizzes.map((q) => q._id);
 
-      const [attempts, progresses] = await Promise.all([
-        QuizAttempt.aggregate([
-          {
-            $match: {
-              userId: new mongoose.Types.ObjectId(userId),
-              quizId: { $in: quizIds },
-            },
-          },
-          {
-            $group: {
-              _id: "$quizId",
-              count: { $sum: 1 },
-            },
-          },
-        ]),
-        StudentQuizProgress.find({
-          userId: new mongoose.Types.ObjectId(userId),
-          quizId: { $in: quizIds },
-        }).lean(),
-      ]);
-
-      attempts.forEach((a) => {
-        attemptsMap[a._id.toString()] = a.count;
+      // Fetch assigned instructors for transparency showcase
+      const assignments = await QuizAssignment.find({ quizId: { $in: quizIds } })
+        .populate("instructorId", "name email department");
+      assignments.forEach((a) => {
+        if (a.instructorId) {
+          assignmentMap[a.quizId.toString()] = a.instructorId;
+        }
       });
 
-      progresses.forEach((p) => {
-        progressMap[p.quizId.toString()] = p;
-      });
+      if (userId) {
+        const [attempts, progresses] = await Promise.all([
+          QuizAttempt.aggregate([
+            {
+              $match: {
+                userId: new mongoose.Types.ObjectId(userId),
+                quizId: { $in: quizIds },
+              },
+            },
+            {
+              $group: {
+                _id: "$quizId",
+                count: { $sum: 1 },
+              },
+            },
+          ]),
+          StudentQuizProgress.find({
+            userId: new mongoose.Types.ObjectId(userId),
+            quizId: { $in: quizIds },
+          }).lean(),
+        ]);
+
+        attempts.forEach((a) => {
+          attemptsMap[a._id.toString()] = a.count;
+        });
+
+        progresses.forEach((p) => {
+          progressMap[p.quizId.toString()] = p;
+        });
+      }
     }
 
     const formattedQuizzes = quizzes.map((quiz) => {
@@ -194,9 +208,32 @@ export const getAvailableQuizzesForStudents = async (req, res, next) => {
       quizObj.maxAttempts = maxAttempts;
       const attemptsRemaining = Math.max(0, maxAttempts - attemptsUsed);
 
+      const assignedInst = assignmentMap[quizObj._id.toString()];
+      const instructor = assignedInst
+        ? {
+            name: assignedInst.name,
+            email: assignedInst.email,
+            department: assignedInst.department || "Academic Faculty",
+            isVerified: true,
+          }
+        : quizObj.createdBy
+        ? {
+            name: quizObj.createdBy.name || "Quimora Faculty",
+            email: quizObj.createdBy.email || "",
+            department: "Academic Faculty",
+            isVerified: true,
+          }
+        : {
+            name: "Quimora Faculty",
+            email: "faculty@quimora.com",
+            department: "Academic Board",
+            isVerified: true,
+          };
+
       return {
         ...quizObj,
         level: quizObj.level || "Beginner",
+        instructor,
         maxAttempts,
         attemptsRemaining,
         attemptsUsed,

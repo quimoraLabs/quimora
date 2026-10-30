@@ -70,7 +70,7 @@ export default function LevelBadge({ levelName, elo = null, showTooltip = true }
       </div>
       <span>{resolvedTier}</span>
       {elo !== null && (
-        <span className="opacity-80 text-[10px] font-mono ml-0.5">({elo})</span>
+        <span className="opacity-80 text-2xs font-mono ml-0.5">({elo})</span>
       )}
     </div>
   );

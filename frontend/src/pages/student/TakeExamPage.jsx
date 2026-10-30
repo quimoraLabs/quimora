@@ -180,11 +180,11 @@ export default function TakeExamPage() {
           {/* Quiz Title & Security Pill */}
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 sm:flex-initial">
             <div className="min-w-0">
-              <h1 className="text-xs sm:text-base md:text-lg font-bold text-main tracking-tight truncate max-w-[130px] sm:max-w-xs md:max-w-md">
+              <h1 className="text-xs sm:text-base md:text-lg font-bold text-main tracking-tight truncate max-w-32.5 sm:max-w-xs md:max-w-md">
                 {attemptQuiz.title || "Examination Session"}
               </h1>
               <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-1.5 sm:px-2 py-0.5 rounded-full border border-emerald-500/20 whitespace-nowrap">
+                <span className="inline-flex items-center gap-1 text-3xs sm:text-2xs font-bold text-emerald-500 bg-emerald-500/10 px-1.5 sm:px-2 py-0.5 rounded-full border border-emerald-500/20 whitespace-nowrap">
                   <ShieldCheck className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                   <span className="hidden xs:inline">PROCTORED</span> LIVE
                 </span>
@@ -245,23 +245,23 @@ export default function TakeExamPage() {
             {/* Header Badge */}
             <div className="flex items-center justify-between border-b border-main pb-3 sm:pb-4 mb-4 sm:mb-6 gap-2">
               <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                <span className="px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-xl bg-brand-mid/10 text-brand-mid font-mono font-bold text-[11px] sm:text-xs border border-brand-mid/20 whitespace-nowrap">
+                <span className="px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-xl bg-brand-mid/10 text-brand-mid font-mono font-bold text-2xs sm:text-xs border border-brand-mid/20 whitespace-nowrap">
                   Q {String(currentIndex + 1).padStart(2, "0")} / {String(totalQuestions).padStart(2, "0")}
                 </span>
                 {currentQuestion.marks && (
-                  <span className="text-[11px] sm:text-xs text-muted font-medium bg-elevated px-2 py-0.5 sm:py-1 rounded-xl border border-main whitespace-nowrap">
+                  <span className="text-2xs sm:text-xs text-muted font-medium bg-elevated px-2 py-0.5 sm:py-1 rounded-xl border border-main whitespace-nowrap">
                     +{currentQuestion.marks} Mark{currentQuestion.marks > 1 ? "s" : ""}
                   </span>
                 )}
               </div>
 
-              <span className="text-[11px] sm:text-xs font-semibold text-muted whitespace-nowrap">
+              <span className="text-2xs sm:text-xs font-semibold text-muted whitespace-nowrap">
                 {answers[currentQuestion._id] ? "Saved" : "Not Answered"}
               </span>
             </div>
 
             {/* Question Text */}
-            <h2 className="text-base sm:text-xl md:text-2xl font-bold text-main leading-snug sm:leading-relaxed mb-4 sm:mb-6 break-words" style={{ overflowWrap: "anywhere" }}>
+            <h2 className="text-base sm:text-xl md:text-2xl font-bold text-main leading-snug sm:leading-relaxed mb-4 sm:mb-6 wrap-break-word" style={{ overflowWrap: "anywhere" }}>
               {currentQuestion.questionText}
             </h2>
 
@@ -292,7 +292,7 @@ export default function TakeExamPage() {
                     onClick={() => handleSelectOptionIndex(idx)}
                     className={`relative p-3 sm:p-4 rounded-xl sm:rounded-2xl cursor-pointer transition-all flex items-center justify-between gap-2.5 sm:gap-4 border-2 w-full ${
                       isSelected
-                        ? "border-brand-mid bg-linear-to-r from-brand-mid/15 via-surface to-brand-mid/5 shadow-[0_0_20px_rgba(99,102,241,0.2)] text-main"
+                        ? "border-brand-mid bg-linear-to-r from-brand-mid/15 via-surface to-brand-mid/5 shadow-lg shadow-indigo-500/20 text-main"
                         : "border-main bg-surface hover:bg-elevated hover:border-brand-mid/40 text-muted"
                     }`}
                   >
@@ -317,14 +317,14 @@ export default function TakeExamPage() {
                       </div>
 
                       {/* Option Text */}
-                      <span className={`text-xs sm:text-sm md:text-base font-medium break-words flex-1 min-w-0 leading-snug ${isSelected ? "font-semibold text-main" : ""}`} style={{ overflowWrap: "anywhere" }}>
+                      <span className={`text-xs sm:text-sm md:text-base font-medium wrap-break-word flex-1 min-w-0 leading-snug ${isSelected ? "font-semibold text-main" : ""}`} style={{ overflowWrap: "anywhere" }}>
                         {option.optionText}
                       </span>
                     </div>
 
                     {/* Selected Checkmark Indicator */}
                     {isSelected && (
-                      <div className="relative z-10 flex items-center gap-1 text-[11px] sm:text-xs font-bold text-brand-mid bg-brand-mid/10 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full border border-brand-mid/20 shrink-0">
+                      <div className="relative z-10 flex items-center gap-1 text-2xs sm:text-xs font-bold text-brand-mid bg-brand-mid/10 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full border border-brand-mid/20 shrink-0">
                         <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-brand-mid" />
                         <span className="hidden sm:inline">SELECTED</span>
                       </div>
@@ -390,7 +390,7 @@ export default function TakeExamPage() {
               <div className="flex items-center justify-between border-b border-main pb-3 sm:pb-4 mb-3 sm:mb-4">
                 <div>
                   <h3 className="text-base sm:text-lg font-bold text-main">Question Palette</h3>
-                  <p className="text-[11px] sm:text-xs text-muted">Jump directly to any question</p>
+                  <p className="text-2xs sm:text-xs text-muted">Jump directly to any question</p>
                 </div>
                 <button
                   onClick={() => setShowQuestionGrid(false)}
@@ -428,7 +428,7 @@ export default function TakeExamPage() {
               </div>
 
               {/* Legend */}
-              <div className="flex items-center justify-center gap-4 sm:gap-6 border-t border-main pt-3 sm:pt-4 mt-4 sm:mt-6 text-[11px] sm:text-xs text-muted font-medium flex-wrap">
+              <div className="flex items-center justify-center gap-4 sm:gap-6 border-t border-main pt-3 sm:pt-4 mt-4 sm:mt-6 text-2xs sm:text-xs text-muted font-medium flex-wrap">
                 <div className="flex items-center gap-1.5 sm:gap-2">
                   <div className="w-3.5 h-3.5 rounded-lg bg-emerald-500/20 border border-emerald-500/40" />
                   <span>Answered</span>

@@ -1,39 +1,78 @@
-// import React from 'react'
+import React from "react";
 import { motion } from "motion/react";
+import { Target, AlertTriangle } from "lucide-react";
 
-const WeakestAreasCard = ({ weakAreas }) => {
+/**
+ * 🎯 Weakest Areas / Calibration Priority Card
+ */
+const WeakestAreasCard = ({ weakAreas = [] }) => {
   return (
-              <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="p-8 bg-bg-surface border border-border-main rounded-3xl"
-          >
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-lg font-bold text-text-main">Weak Areas</h2>
-              <span className="text-xs uppercase tracking-[0.24em] text-text-secondary">Focus Now</span>
-            </div>
-            <div className="space-y-4">
-              {weakAreas.length > 0 ? (
-                weakAreas.map((area) => (
-                  <div key={area.tag} className="space-y-3">
-                    <div className="flex items-center justify-between text-sm text-text-secondary">
-                      <span>{area.tag}</span>
-                      <span>{area.averageScore}%</span>
-                    </div>
-                    <div className="h-2 rounded-full bg-neutral-950 overflow-hidden">
-                      <div
-                        className="h-full bg-sky-500"
-                        style={{ width: `${Math.min(100, Math.max(0, 100 - area.averageScore))}%` }}
-                      />
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-neutral-500">No weak areas to show yet.</p>
-              )}
-            </div>
-          </motion.div>
-  )
-}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="p-6 bg-surface border border-main rounded-3xl shadow-card"
+    >
+      <div className="flex items-center justify-between mb-5">
+        <div>
+          <h2 className="text-lg font-bold text-main flex items-center gap-2">
+            <Target className="w-4 h-4 text-rose-400" />
+            Focus Areas
+          </h2>
+          <p className="text-xs text-muted">
+            Topics needing practice & calibration
+          </p>
+        </div>
+        <span className="text-2xs font-bold uppercase tracking-wider text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2.5 py-0.5 rounded-full">
+          Needs Focus
+        </span>
+      </div>
 
-export default WeakestAreasCard
+      <div className="space-y-3">
+        {weakAreas.length > 0 ? (
+          weakAreas.map((area) => {
+            const score = area.averageScore ?? 0;
+            return (
+              <div
+                key={area.tag}
+                className="p-3 bg-elevated/60 border border-main rounded-2xl space-y-2 hover:border-cyan-500/30 transition-all"
+              >
+                <div className="flex items-center justify-between text-xs font-semibold">
+                  <span className="text-main capitalize">{area.tag}</span>
+                  <span
+                    className={
+                      score < 50
+                        ? "text-rose-400"
+                        : score < 70
+                        ? "text-amber-400"
+                        : "text-emerald-400"
+                    }
+                  >
+                    {score}% avg
+                  </span>
+                </div>
+                <div className="h-1.5 rounded-full bg-main overflow-hidden border border-main">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      score < 50
+                        ? "bg-rose-500"
+                        : score < 70
+                        ? "bg-amber-500"
+                        : "bg-emerald-500"
+                    }`}
+                    style={{ width: `${Math.min(100, score)}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="text-center py-6 text-muted">
+            <p className="text-xs">No weak areas identified yet.</p>
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+};
+
+export default WeakestAreasCard;

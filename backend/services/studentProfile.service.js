@@ -44,7 +44,7 @@ export class StudentProfileService {
           },
           $set: { isArchived: false, lastUpdated: new Date() },
         },
-        { upsert: true, new: true }
+        { upsert: true, returnDocument: 'after' }
       );
     }
 
@@ -109,7 +109,7 @@ export class StudentProfileService {
           },
           $set: { isArchived: false, lastUpdated: new Date() },
         },
-        { upsert: true, new: true }
+        { upsert: true, returnDocument: 'after' }
       );
     }
 

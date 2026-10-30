@@ -20,24 +20,22 @@ export const Watermark = () => {
   }, []);
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-10 overflow-hidden select-none touch-none hidden sm:block">
+    <div className="fixed inset-0 pointer-events-none z-10 overflow-hidden select-none touch-none">
       <div
-        className="absolute inset-[-20%] grid gap-x-16 gap-y-24 items-center justify-items-center"
+        className="absolute inset-[-20%] grid gap-x-14 gap-y-20 items-center justify-items-center"
         style={{
-          // Rotate and scale the entire grid uniformly
-          transform: `rotate(-15deg) scale(${getComputedStyle(document.documentElement).getPropertyValue('--watermark-scale') || 1.1})`,
+          transform: `rotate(-15deg) scale(${getComputedStyle(document.documentElement).getPropertyValue('--watermark-scale') || 1.05})`,
           gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-          color: 'var(--color-text-muted, #94a3b8)',
-          // Fallback opacity to 0.03 (3%) if CSS variable is undefined
-          opacity: 'var(--watermark-opacity, 0.03)', 
+          color: 'var(--color-text-main, #0f172a)',
+          opacity: 'var(--watermark-opacity, 0.16)', 
         }}
       >
         {Array.from({ length: gridCount }).map((_, i) => (
           <div
             key={i}
-            className="text-xs font-medium tracking-widest whitespace-nowrap select-none"
+            className="text-2xs font-mono font-bold tracking-widest uppercase whitespace-nowrap select-none"
           >
-            QUIZZIFY PRO - SECURE TEST SESSION
+            QUIMORA PROCTOR • SECURE SESSION
           </div>
         ))}
       </div>

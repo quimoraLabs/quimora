@@ -564,7 +564,7 @@ export const seedCatalogQuizzes = async (targetSlug = null) => {
       await QuizAssignment.findOneAndUpdate(
         { quizId: quiz._id },
         { instructorId: instructor._id, role: "primary", assignedAt: new Date() },
-        { upsert: true, new: true }
+        { upsert: true, returnDocument: 'after' }
       );
 
       // Verify or insert questions

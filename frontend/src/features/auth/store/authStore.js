@@ -30,6 +30,12 @@ const useAuthStore = create((set, get) => ({
       return true;
     } catch (error) {
       console.error("Login failed:", error);
+      const errorMsg =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        "Invalid email or password";
+      toast.error(errorMsg);
       get().logout();
       return false;
     } finally {
@@ -49,11 +55,18 @@ const useAuthStore = create((set, get) => ({
         console.log("Registration successful:", response.data.message);
         return true;
       } else {
-        console.error("Registration failed:", response.data.message);
+        const errorMsg = response.data?.message || "Registration failed.";
+        toast.error(errorMsg);
+        console.error("Registration failed:", errorMsg);
         return false;
       }
     } catch (error) {
-      toast.error("An error occurred during registration.");
+      const errorMsg =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        "An error occurred during registration.";
+      toast.error(errorMsg);
       console.error("Registration failed:", error);
       return false;
     } finally {
@@ -74,6 +87,11 @@ const useAuthStore = create((set, get) => ({
       return true;
     } catch (error) {      
       console.error("Request OTP send failed:", error);
+      const errorMsg =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Failed to send OTP. Please check your email.";
+      toast.error(errorMsg);
       return false;
     } finally {
       set({ loading: false });
@@ -93,6 +111,11 @@ const useAuthStore = create((set, get) => ({
       return true;
     } catch (error) {
       console.error("Password changed failed:", error);
+      const errorMsg =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Failed to verify OTP or update password.";
+      toast.error(errorMsg);
       return false;
     } finally {
       set({ loading: false });

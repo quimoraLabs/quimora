@@ -40,20 +40,20 @@ const PublicLayout = ({ darkMode, toggleDarkMode, navLinks }) => (
 const DashboardLayout = ({ darkMode, toggleDarkMode, role }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   return (
-    <div className="min-h-screen bg-main text-main">
+    <div className="min-h-screen bg-main text-main flex">
       <Sidebar
         isOpen={isSidebarOpen}
         setIsOpen={setIsSidebarOpen}
         role={role}
       />
-      <div className="flex flex-col min-h-screen px-2">
+      <div className="flex-1 flex flex-col min-w-0 lg:pl-64">
         <Header
           darkMode={darkMode}
           toggleDarkMode={toggleDarkMode}
           title={getRoleDisplayName(role)}
           setSidebarOpen={setIsSidebarOpen}
         />
-        <main className="lg:ml-64 flex-1 pt-10">
+        <main className="flex-1">
           <Outlet />
         </main>
       </div>

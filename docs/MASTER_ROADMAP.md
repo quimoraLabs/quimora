@@ -49,67 +49,58 @@
 
 ---
 
-## 🔵 V3 Planned Scope (Interest-Driven Adaptive Engine — Current Target)
+## 🔵 V3 Shipped Scope (Interest-Driven Adaptive Engine — Completed & Stable)
 
-### 🎯 V3 Objective
-Build an **Interest-Driven Adaptive Assessment Engine** for Quimora that dynamically tailors quiz experiences to student skill levels via Elo ratings ($K=32$), maps skill progression to clear performance tiers, enforces explicit instructor assignments with student consent, and provides privacy-preserving analytics.
+### 🎯 V3 Objective (Achieved)
+Built an **Interest-Driven Adaptive Assessment Engine** for Quimora that dynamically tailors quiz experiences to student skill levels via Elo ratings ($K=32$), maps skill progression to 6 canonical performance tiers, enforces explicit instructor assignments with student consent, and provides privacy-preserving analytics.
 
-### 🌟 Core V3 Features
-1. **Interest Selection & Quiz Filtering**:
-   - Students pick topic interests/tags upon onboarding or profile customization.
-   - Quiz catalog dynamically filters and highlights quizzes aligned with chosen interests.
-   - Voluntary attempt flow without forced enrollment.
-2. **Elo-Based Adaptive Difficulty Engine**:
-   - Dynamic Elo rating formula calculated per student interest domain ($K = 32$).
-   - Correct responses elevate student Elo and lower question difficulty; incorrect responses lower student Elo and elevate question difficulty.
-3. **Level Mapping (Beginner → Expert)**:
-   - Automated rank classification based on fixed Elo score thresholds:
-     - **Beginner**: $0 - 1000$ Elo
-     - **Learner**: $1000 - 1200$ Elo
-     - **Intermediate**: $1200 - 1400$ Elo
-     - **Advanced**: $1400 - 1600$ Elo
-     - **Master**: $1600 - 1800$ Elo
-     - **Expert**: $1800+$ Elo
-4. **Instructor Assignment (1 Quiz = 1 Instructor)**:
-   - Strict assignment mapping where each quiz is linked to one primary instructor via `QuizAssignment`.
-   - Instructors manage multiple quizzes while maintaining clean ownership boundaries.
-5. **Student Consent & Instructor Transparency**:
-   - Pre-quiz modal displays instructor name, bio, expertise, and rating.
-   - Student explicitly consents before initiating the quiz attempt (`POST /api/v1/student/quiz/:quizId/consent`).
-6. **Privacy-Preserving Instructor Visibility**:
-   - Instructors access full detailed breakdown (student names, answers, attempt metrics) for their assigned quizzes.
-   - Cross-instructor quiz metrics display anonymized aggregate statistics only to protect student privacy.
-
-### 📅 Implementation Phases
-```mermaid
-graph TD
-    P1["Phase 1: Interest Model, Elo Engine & User Architecture"] --> P2["Phase 2: Level Mapping & Instructor Assignment"]
-    P2 --> P3["Phase 3: Elo-Aware AI Question Generation & Vitest Suite"]
-```
-
-- **Phase 1: Interest Model, Elo Engine & User Architecture (In Progress)**:
-  - Models: `Interest`, `EloRating`, `StudentProfile`, `InstructorProfile`.
-  - Services: `eloEngine.service.js` ($K=32$), `user.service.js`, `studentProfile.service.js`, `instructorProfile.service.js`.
-  - Scripts: `reset_v3_data.js`, `seed_v3_interests.js`, `seed_v3_levels.js`, `seed_admin.js`.
-  - Interest selection UI on student dashboard and quiz filter bar.
-- **Phase 2: Level Mapping & Instructor Assignment**:
-  - Models: `Level`, `QuizAssignment`.
-  - Services: `levelMapping.service.js` with Redis caching.
-  - UI: Level tier badges, rank progress card, pre-quiz instructor consent modal.
-  - Enforce instructor data isolation middleware (`scopeInstructorAnalytics`).
-- **Phase 3: Elo-Aware AI Question Generation & Vitest Suites**:
-  - Extend Groq AI question generator with target student Elo level / difficulty band.
-  - End-to-end integration testing in Vitest (`05_v3_adaptive_engine.test.js`).
-
-### 🚫 Out of Scope for V3
-The following items belong to future releases and are explicitly excluded from V3 planning:
-- Native Mobile Application (React Native)
-- Advanced AI Video/Webcam Proctoring
-- Enterprise Multi-Tenancy & Workspace Isolation
+### 🌟 Shipped V3 Capabilities
+- [x] **Interest Selection & Dynamic Quiz Filtering**: 5–6 initial selection during onboarding, max 10 profile interests.
+- [x] **Elo-Based Adaptive Engine**: $K=32$ Elo calculation with dynamic score delta bonuses on pass and tier-proportional deductions on fail.
+- [x] **6 Canonical Level Tiers**: Beginner (0–999), Learner (1000–1199), Intermediate (1200–1399), Advanced (1400–1599), Master (1600–1799), Expert (1800+).
+- [x] **1:1 Quiz Assignment & Pre-Quiz Transparency**: Transparent instructor badge on examination pre-start with explicit consent flow.
+- [x] **Elo-Aware Groq AI Question Generation**: Tier-calibrated MCQ generation.
+- [x] **Automated Vitest Test Suite**: 43/43 tests passing across 5 test suites.
 
 ---
 
-## 🔮 Future Scope (V4/V5)
+## 🟣 V3.5 Active Scope — Polish, Navigation & HackerRank Mission Architecture
 
-> *Future is bright. Once V3 is reached, V4/V5 will be planned. For now, focus on V3.*
+### 🎯 V3.5 Objective
+Polish the existing V3 system with modern navigation ergonomics (Header user dropdown, streamlined sidebar, quiz card faculty badges) and introduce the **HackerRank-Style Gamified Mission Architecture** (Domain Chapters, Sequential Unlocking, Domain Stars, and Live Weekly/Monthly Challenges).
+
+### 🌟 Core V3.5 Deliverables
+
+1. **Navigation & Header Polish**:
+   - **Header Avatar Dropdown**: Move Profile & Logout out of the Sidebar into a modern avatar dropdown menu in `Header.jsx`.
+   - **Streamlined Sidebar**: Remove awkward bottom profile & logout from `Sidebar.jsx`; enrich student navigation with *Dashboard, Skill Tracks, Live Challenges, All Quizzes, Leaderboard, My Attempts*.
+   - **Quiz Card Faculty Badge**: Display verified teacher/evaluator profile snippet on `QuizCard.jsx` and `QuizListPage.jsx`.
+   - **Mongoose 9 Deprecation Fixes**: Migrated `new: true` to `returnDocument: 'after'`.
+   - **Dynamic Rank Warning**: Display penalty warning only when beginner attempts higher difficulty.
+   - **Adaptive Dropdowns**: Auto-convert button groups to dropdowns when $\ge 4$ options.
+
+2. **HackerRank Progression Architecture**:
+   - **Domain ➔ Chapter Curriculum Tree**:
+     - No lengthy lessons/videos needed. Pure chapter-wise assessment ladder (5–8 chapters per domain).
+     - Average 5–6 progressive quizzes per chapter (Easy ➔ Medium ➔ Hard ➔ Boss Quiz), creating ~60–100 quizzes per domain.
+   - **Sequential Progression & Auto-Unlocking**:
+     - Passing a quiz ($\ge 50\%$) unlocks the next quiz/chapter.
+     - Direct **"Solve Next Challenge"** button on the attempt result screen.
+   - **Domain Star Ratings (1★ to 5★)**:
+     - Gamified topic mastery badges displayed prominently on the student profile.
+   - **Weekly Sprints & Monthly Grand Challenges**:
+     - Time-bound contest window with live countdown timer.
+     - Strict single attempt with active proctoring.
+     - Dedicated event leaderboards with top-10 spotlights and trophy badges.
+   - **Domain-Wise Auto-Created Faculty**:
+     - Automatic domain evaluator assignment per topic track.
+     - Future: Proctored Domain Certification Assessment with signed digital certificate.
+
+---
+
+## 🔮 Future Horizon (V4 / V5)
+
+- [ ] AI Video & Webcam Proctoring with tab-switch logging.
+- [ ] Cross-Platform Mobile Application (React Native).
+- [ ] Enterprise Multi-Tenancy & Custom Organization Workspaces.
 

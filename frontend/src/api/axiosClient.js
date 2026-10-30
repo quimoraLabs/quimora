@@ -43,10 +43,8 @@ axiosClient.interceptors.response.use(
     if (status === 401) {
       // Unauthenticated: Clear token and force re-login
       localStorage.removeItem("token");
-      toast.error(errorMessage || "Session expired. Please log in again.");
-
-      // Redirect to login page if not already there
       if (window.location.pathname !== "/login") {
+        toast.error(errorMessage || "Session expired. Please log in again.");
         window.location.href = "/login";
       }
     } else if (status === 403) {

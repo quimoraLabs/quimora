@@ -121,7 +121,7 @@ export default function InstructorConsentModal({
                     <h3 className="font-bold text-sm text-slate-900 dark:text-white truncate">
                       {instructor.name}
                     </h3>
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-2xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
                       <UserCheck className="w-3 h-3" />
                       Verified
                     </span>
@@ -134,7 +134,7 @@ export default function InstructorConsentModal({
                       {instructor.expertise.map((exp, i) => (
                         <span
                           key={i}
-                          className="text-[10px] px-2 py-0.5 rounded-md bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 font-medium"
+                          className="text-2xs px-2 py-0.5 rounded-md bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 font-medium"
                         >
                           {exp}
                         </span>

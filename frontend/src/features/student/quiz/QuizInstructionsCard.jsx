@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { motion } from "motion/react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import {
   ShieldCheck,
   AlertCircle,
@@ -16,6 +16,7 @@ import {
   Zap,
   Flame,
   Layers,
+  ChevronDown,
 } from "lucide-react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 
@@ -35,6 +36,7 @@ const DIFFICULTY_LEVELS = [
     color: "from-emerald-500 to-teal-600",
     badge: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
     activeClass: "bg-emerald-600 text-white shadow-md shadow-emerald-500/30 ring-2 ring-emerald-500",
+    desc: "Foundational • Safe XP",
   },
   {
     id: "intermediate",
@@ -44,6 +46,7 @@ const DIFFICULTY_LEVELS = [
     color: "from-blue-500 to-indigo-600",
     badge: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
     activeClass: "bg-blue-600 text-white shadow-md shadow-blue-500/30 ring-2 ring-blue-500",
+    desc: "Applied • Moderate risk",
   },
   {
     id: "hard",
@@ -53,6 +56,7 @@ const DIFFICULTY_LEVELS = [
     color: "from-amber-500 to-orange-600",
     badge: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
     activeClass: "bg-amber-600 text-white shadow-md shadow-amber-500/30 ring-2 ring-amber-500",
+    desc: "Complex • Rank sensitive",
   },
   {
     id: "expert",
@@ -62,6 +66,7 @@ const DIFFICULTY_LEVELS = [
     color: "from-rose-500 to-red-600",
     badge: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
     activeClass: "bg-rose-600 text-white shadow-md shadow-rose-500/30 ring-2 ring-rose-500",
+    desc: "Architecture & high risk",
   },
   {
     id: "mixed",
@@ -71,6 +76,7 @@ const DIFFICULTY_LEVELS = [
     color: "from-purple-500 to-fuchsia-600",
     badge: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20",
     activeClass: "bg-purple-600 text-white shadow-md shadow-purple-500/30 ring-2 ring-purple-500",
+    desc: "Progressive (Easy → Hard)",
   },
 ];
 
@@ -78,6 +84,14 @@ export const QuizInstructionsCard = () => {
   const [assignedInstructor, setAssignedInstructor] = useState(null);
   const [selectedQuestionLimit, setSelectedQuestionLimit] = useState(50);
   const [selectedDifficulty, setSelectedDifficulty] = useState("beginner");
+  const [isDifficultyDropdownOpen, setIsDifficultyDropdownOpen] = useState(false);
+  const [isQuestionLimitDropdownOpen, setIsQuestionLimitDropdownOpen] = useState(false);
+  const difficultyDropdownRef = useRef(null);
+  const questionLimitDropdownRef = useRef(null);
+
+  const [studentElo, setStudentElo] = useState(1000);
+  const [studentTier, setStudentTier] = useState("Beginner");
+
   const rules = [
     "Do not switch tabs or windows during the test. Doing so will be flagged.",
     "Multiple tab switches will result in automatic submission.",
@@ -101,7 +115,60 @@ export const QuizInstructionsCard = () => {
     title: location.state?.title || sessionStorage.getItem("activeExamQuizTitle") || "Assessment",
     timeLimit: Number(location.state?.timeLimit || sessionStorage.getItem("activeExamQuizDuration")) || 50,
     totalQuestions: Number(location.state?.totalQuestions || sessionStorage.getItem("activeExamQuizQuestions")) || 50,
+    interestIds: location.state?.interestIds || [],
   });
+
+  // Handle clicking outside custom dropdowns
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (difficultyDropdownRef.current && !difficultyDropdownRef.current.contains(e.target)) {
+        setIsDifficultyDropdownOpen(false);
+      }
+      if (questionLimitDropdownRef.current && !questionLimitDropdownRef.current.contains(e.target)) {
+        setIsQuestionLimitDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Fetch student profile to get actual Elo & current Tier for rank warning calibration
+  useEffect(() => {
+    const fetchStudentProfile = async () => {
+      try {
+        const res = await axiosClient.get("/interests/student/profile");
+        if (res.data?.success && res.data?.data) {
+          const { eloRatings } = res.data.data;
+          let elo = 1000;
+          if (Array.isArray(eloRatings) && eloRatings.length > 0) {
+            if (quizMeta.interestIds && quizMeta.interestIds.length > 0) {
+              const matched = eloRatings.find((r) => {
+                const iId = r.interestId?._id || r.interestId;
+                return quizMeta.interestIds.map(String).includes(String(iId));
+              });
+              if (matched && typeof matched.rating === "number") {
+                elo = matched.rating;
+              } else {
+                elo = eloRatings[0]?.rating || 1000;
+              }
+            } else {
+              elo = eloRatings[0]?.rating || 1000;
+            }
+          }
+          setStudentElo(elo);
+          if (elo >= 1800) setStudentTier("Expert");
+          else if (elo >= 1600) setStudentTier("Master");
+          else if (elo >= 1400) setStudentTier("Advanced");
+          else if (elo >= 1200) setStudentTier("Intermediate");
+          else if (elo >= 1000) setStudentTier("Learner");
+          else setStudentTier("Beginner");
+        }
+      } catch (err) {
+        console.warn("Could not fetch student profile:", err);
+      }
+    };
+    fetchStudentProfile();
+  }, [quizMeta.interestIds]);
 
   useEffect(() => {
     if (quizId) {
@@ -120,6 +187,7 @@ export const QuizInstructionsCard = () => {
             title: q.title || "Assessment",
             timeLimit: q.timeLimit || 50,
             totalQuestions: q.questions?.length || 15,
+            interestIds: q.interestIds || [],
           });
         }
       } catch (err) {
@@ -158,6 +226,12 @@ export const QuizInstructionsCard = () => {
   const effectiveTimeLimit = selectedQuestionLimit
     ? Math.max(5, Math.ceil(selectedQuestionLimit * 1))
     : quizDuration;
+
+  // Rank warning calibration: ONLY beginner students attempting an ahead/higher difficulty level
+  const isStudentBeginner = studentElo < 1200 || studentTier === "Beginner" || studentTier === "Learner";
+  const isAheadDifficulty = selectedDifficulty !== "beginner";
+  const showRankWarning = isStudentBeginner && isAheadDifficulty;
+  const currentDiff = DIFFICULTY_LEVELS.find((lvl) => lvl.id === selectedDifficulty) || DIFFICULTY_LEVELS[0];
 
   useEffect(() => {
     if (!quizId) return;
@@ -254,7 +328,7 @@ export const QuizInstructionsCard = () => {
               <ul className="space-y-2">
                 {rules.map((rule, idx) => (
                   <li key={idx} className="flex items-start gap-2.5 text-xs text-muted leading-relaxed">
-                    <span className="shrink-0 w-5 h-5 rounded-full bg-main text-main text-[11px] flex items-center justify-center font-bold border border-main">
+                    <span className="shrink-0 w-5 h-5 rounded-full bg-main text-main text-2xs flex items-center justify-center font-bold border border-main">
                       {idx + 1}
                     </span>
                     <span>{rule}</span>
@@ -273,16 +347,16 @@ export const QuizInstructionsCard = () => {
                   <div>
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs font-bold text-main">{assignedInstructor.name}</span>
-                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-2xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                         <CheckCircle2 className="w-3 h-3 text-emerald-500" /> Verified
                       </span>
                     </div>
-                    <p className="text-[11px] text-muted">
+                    <p className="text-2xs text-muted">
                       Evaluator &bull; {assignedInstructor.department || "Engineering"}
                     </p>
                   </div>
                 </div>
-                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-main text-muted border border-main">
+                <span className="text-2xs font-semibold px-2 py-0.5 rounded-md bg-main text-muted border border-main">
                   Academic Certified
                 </span>
               </div>
@@ -291,98 +365,243 @@ export const QuizInstructionsCard = () => {
 
           {/* Right Column: Difficulty Selector, Session Length, Stats & Warning (5 cols) */}
           <div className="lg:col-span-5 space-y-4">
-            {/* 1. Difficulty Level Selector (5 Options: Beginner, Intermediate, Hard, Expert, Mixed) */}
+            {/* 1. Difficulty Level Selector (Dropdown when >= 4 options, grid when < 4) */}
             <div className="p-4 rounded-2xl border border-indigo-500/20 bg-indigo-50/30 dark:bg-indigo-950/20 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs font-bold text-main">
                   <SlidersHorizontal className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                   <span>Choose Difficulty Level</span>
                 </div>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 capitalize">
+                <span className="text-2xs font-bold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 capitalize">
                   {selectedDifficulty}
                 </span>
               </div>
 
-              {/* 5 Difficulty Options: Beginner, Intermediate, Hard, Expert, Mixed */}
-              <div className="grid grid-cols-5 gap-1.5">
-                {DIFFICULTY_LEVELS.map((lvl) => {
-                  const isSelected = selectedDifficulty === lvl.id;
-                  const Icon = lvl.icon;
-                  return (
-                    <button
-                      key={lvl.id}
-                      type="button"
-                      onClick={() => setSelectedDifficulty(lvl.id)}
-                      className={`py-2 px-1 rounded-xl text-center flex flex-col items-center justify-center gap-1 transition-all cursor-pointer relative ${
-                        isSelected
-                          ? lvl.activeClass
-                          : "bg-surface border border-main text-muted hover:border-indigo-400 hover:text-main"
+              {DIFFICULTY_LEVELS.length >= 4 ? (
+                <div className="relative" ref={difficultyDropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setIsDifficultyDropdownOpen((prev) => !prev)}
+                    className="w-full flex items-center justify-between p-3 rounded-xl bg-surface border border-main hover:border-indigo-400/60 transition-all text-left cursor-pointer shadow-xs"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="p-2 rounded-lg bg-main border border-main text-indigo-500 shrink-0">
+                        <currentDiff.icon className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-bold text-main">{currentDiff.label}</span>
+                          <span className={`text-2xs font-bold px-2 py-0.2 rounded-full border ${currentDiff.badge}`}>
+                            {currentDiff.tag}
+                          </span>
+                        </div>
+                        <p className="text-2xs text-muted truncate mt-0.5">{currentDiff.desc}</p>
+                      </div>
+                    </div>
+                    <ChevronDown
+                      className={`w-4 h-4 text-muted transition-transform duration-200 shrink-0 ml-2 ${
+                        isDifficultyDropdownOpen ? "rotate-180 text-indigo-500" : ""
                       }`}
-                    >
-                      <Icon className={`w-3.5 h-3.5 ${isSelected ? "text-white" : "text-muted"}`} />
-                      <span className="text-[11px] font-bold leading-none">{lvl.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
+                    />
+                  </button>
 
-              <div className="flex items-center justify-between text-[11px] text-muted px-1">
-                <span>Selected: <strong className="text-main capitalize">{selectedDifficulty}</strong></span>
-                <span className="text-[10px]">
-                  {selectedDifficulty === "beginner" && "🟢 Foundational • Safe XP"}
-                  {selectedDifficulty === "intermediate" && "🟡 Applied • Moderate risk"}
-                  {selectedDifficulty === "hard" && "🟠 Complex • Rank sensitive"}
-                  {selectedDifficulty === "expert" && "🔴 Architecture & high risk"}
-                  {selectedDifficulty === "mixed" && "🟣 Progressive (Easy → Hard)"}
-                </span>
-              </div>
+                  <AnimatePresence>
+                    {isDifficultyDropdownOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -4, scale: 0.98 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute z-30 left-0 right-0 mt-1.5 p-1.5 bg-surface rounded-xl border border-main shadow-2xl backdrop-blur-md space-y-1"
+                      >
+                        {DIFFICULTY_LEVELS.map((lvl) => {
+                          const isSelected = selectedDifficulty === lvl.id;
+                          const Icon = lvl.icon;
+                          return (
+                            <button
+                              key={lvl.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedDifficulty(lvl.id);
+                                setIsDifficultyDropdownOpen(false);
+                              }}
+                              className={`w-full flex items-center justify-between p-2.5 rounded-lg text-left transition-all cursor-pointer ${
+                                isSelected
+                                  ? "bg-indigo-500/10 border border-indigo-500/30 text-indigo-600 dark:text-indigo-400 font-bold"
+                                  : "hover:bg-main text-muted hover:text-main"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <Icon className="w-4 h-4 shrink-0" />
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-xs font-bold">{lvl.label}</span>
+                                    <span className={`text-3xs font-semibold px-1.5 py-0.2 rounded-md border ${lvl.badge}`}>
+                                      {lvl.tag}
+                                    </span>
+                                  </div>
+                                  <p className="text-2xs text-muted truncate">{lvl.desc}</p>
+                                </div>
+                              </div>
+                              {isSelected && <CheckCircle2 className="w-4 h-4 text-indigo-500 shrink-0 ml-2" />}
+                            </button>
+                          );
+                        })}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <div
+                  className="grid gap-1.5"
+                  style={{ gridTemplateColumns: `repeat(${DIFFICULTY_LEVELS.length}, minmax(0, 1fr))` }}
+                >
+                  {DIFFICULTY_LEVELS.map((lvl) => {
+                    const isSelected = selectedDifficulty === lvl.id;
+                    const Icon = lvl.icon;
+                    return (
+                      <button
+                        key={lvl.id}
+                        type="button"
+                        onClick={() => setSelectedDifficulty(lvl.id)}
+                        className={`py-2 px-1 rounded-xl text-center flex flex-col items-center justify-center gap-1 transition-all cursor-pointer relative ${
+                          isSelected
+                            ? lvl.activeClass
+                            : "bg-surface border border-main text-muted hover:border-indigo-400 hover:text-main"
+                        }`}
+                      >
+                        <Icon className={`w-3.5 h-3.5 ${isSelected ? "text-white" : "text-muted"}`} />
+                        <span className="text-2xs font-bold leading-none">{lvl.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
-            {/* 2. Session Length Selector */}
+            {/* 2. Session Length Selector (Dropdown when >= 4 options, grid when < 4) */}
             <div className="p-4 rounded-2xl border border-indigo-500/20 bg-indigo-50/30 dark:bg-indigo-950/20 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs font-bold text-main">
                   <SlidersHorizontal className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                   <span>Choose Session Length</span>
                 </div>
-                <span className="text-[11px] font-semibold text-muted">
+                <span className="text-2xs font-semibold text-muted">
                   Bank: {totalQuestions} Qs
                 </span>
               </div>
 
-              {/* Strict Options: 10, 20, 25, 30, 40, 50 */}
-              <div className="grid grid-cols-3 gap-2">
-                {questionOptions.map((opt) => {
-                  const isSelected = selectedQuestionLimit === opt;
-                  const isDefault = opt === 50;
-                  return (
-                    <button
-                      key={opt}
-                      type="button"
-                      onClick={() => setSelectedQuestionLimit(opt)}
-                      className={`py-2 px-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex flex-col items-center justify-center relative ${
-                        isSelected
-                          ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/30 ring-2 ring-indigo-500"
-                          : "bg-surface border border-main text-muted hover:border-indigo-400 hover:text-main"
+              {questionOptions.length >= 4 ? (
+                <div className="relative" ref={questionLimitDropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setIsQuestionLimitDropdownOpen((prev) => !prev)}
+                    className="w-full flex items-center justify-between p-3 rounded-xl bg-surface border border-main hover:border-indigo-400/60 transition-all text-left cursor-pointer shadow-xs"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="p-2 rounded-lg bg-main border border-main text-indigo-500 shrink-0">
+                        <Clock className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-bold text-main">{selectedQuestionLimit} Questions</span>
+                          {selectedQuestionLimit === 50 && (
+                            <span className="text-3xs font-extrabold uppercase px-1.5 py-0.2 rounded-full bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300">
+                              Default
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-2xs text-muted mt-0.5">
+                          ~{effectiveTimeLimit} mins duration (~1 min/question)
+                        </p>
+                      </div>
+                    </div>
+                    <ChevronDown
+                      className={`w-4 h-4 text-muted transition-transform duration-200 shrink-0 ml-2 ${
+                        isQuestionLimitDropdownOpen ? "rotate-180 text-indigo-500" : ""
                       }`}
-                    >
-                      <span>{opt} Qs</span>
-                      {isDefault && (
-                        <span
-                          className={`text-[9px] px-1.5 py-0.2 rounded-full uppercase tracking-wider font-extrabold mt-0.5 ${
-                            isSelected
-                              ? "bg-white/20 text-white"
-                              : "bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300"
-                          }`}
-                        >
-                          Default
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-              <p className="text-[11px] text-muted text-center">
+                    />
+                  </button>
+
+                  <AnimatePresence>
+                    {isQuestionLimitDropdownOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -4, scale: 0.98 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute z-20 left-0 right-0 mt-1.5 p-1.5 bg-surface rounded-xl border border-main shadow-2xl backdrop-blur-md space-y-1 max-h-48 overflow-y-auto"
+                      >
+                        {questionOptions.map((opt) => {
+                          const isSelected = selectedQuestionLimit === opt;
+                          const isDefault = opt === 50;
+                          return (
+                            <button
+                              key={opt}
+                              type="button"
+                              onClick={() => {
+                                setSelectedQuestionLimit(opt);
+                                setIsQuestionLimitDropdownOpen(false);
+                              }}
+                              className={`w-full flex items-center justify-between p-2.5 rounded-lg text-left transition-all cursor-pointer ${
+                                isSelected
+                                  ? "bg-indigo-500/10 border border-indigo-500/30 text-indigo-600 dark:text-indigo-400 font-bold"
+                                  : "hover:bg-main text-muted hover:text-main"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs">{opt} Questions</span>
+                                {isDefault && (
+                                  <span className="text-3xs font-extrabold uppercase px-1.5 py-0.2 rounded-full bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300">
+                                    Default
+                                  </span>
+                                )}
+                              </div>
+                              {isSelected && <CheckCircle2 className="w-4 h-4 text-indigo-500 shrink-0" />}
+                            </button>
+                          );
+                        })}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <div
+                  className="grid gap-2"
+                  style={{ gridTemplateColumns: `repeat(${questionOptions.length}, minmax(0, 1fr))` }}
+                >
+                  {questionOptions.map((opt) => {
+                    const isSelected = selectedQuestionLimit === opt;
+                    const isDefault = opt === 50;
+                    return (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => setSelectedQuestionLimit(opt)}
+                        className={`py-2 px-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex flex-col items-center justify-center relative ${
+                          isSelected
+                            ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/30 ring-2 ring-indigo-500"
+                            : "bg-surface border border-main text-muted hover:border-indigo-400 hover:text-main"
+                        }`}
+                      >
+                        <span>{opt} Qs</span>
+                        {isDefault && (
+                          <span
+                            className={`text-3xs px-1.5 py-0.2 rounded-full uppercase tracking-wider font-extrabold mt-0.5 ${
+                              isSelected
+                                ? "bg-white/20 text-white"
+                                : "bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300"
+                            }`}
+                          >
+                            Default
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              <p className="text-2xs text-muted text-center">
                 Select questions to attempt. Duration scales ~1 min/question.
               </p>
             </div>
@@ -391,7 +610,7 @@ export const QuizInstructionsCard = () => {
             <div className="flex items-center p-3.5 bg-main rounded-2xl border border-main shadow-inner">
               <div className="flex flex-col items-center flex-1">
                 <Clock className="w-4 h-4 text-muted mb-0.5" />
-                <span className="text-[10px] text-muted uppercase tracking-wider font-bold">
+                <span className="text-2xs text-muted uppercase tracking-wider font-bold">
                   Duration
                 </span>
                 <span className="text-base font-bold text-main">
@@ -401,7 +620,7 @@ export const QuizInstructionsCard = () => {
               <div className="w-px h-8 bg-border-main" />
               <div className="flex flex-col items-center flex-1">
                 <FileText className="w-4 h-4 text-muted mb-0.5" />
-                <span className="text-[10px] text-muted uppercase tracking-wider font-bold">
+                <span className="text-2xs text-muted uppercase tracking-wider font-bold">
                   Questions
                 </span>
                 <span className="text-base font-bold text-main">
@@ -410,16 +629,28 @@ export const QuizInstructionsCard = () => {
               </div>
             </div>
 
-            {/* 3. PROMINENT RED WARNING NOTE DIRECTLY ABOVE START BUTTON */}
-            <div className="p-3.5 rounded-2xl border-2 border-red-500/40 bg-red-500/10 dark:bg-red-950/30 text-red-700 dark:text-red-300 space-y-1.5 shadow-sm">
-              <div className="flex items-center gap-1.5 font-bold text-xs text-red-600 dark:text-red-400">
-                <AlertTriangle className="w-4 h-4 text-red-500 shrink-0 animate-bounce" />
-                <span>NOTE / RANK WARNING</span>
-              </div>
-              <p className="text-[11px] leading-relaxed text-red-800/90 dark:text-red-300/90">
-                You may select any difficulty level (including <strong>Intermediate</strong>, <strong>Hard</strong>, or <strong>Expert</strong>). However, higher difficulty carries rank penalty risk: <strong>poor performance or failing (&lt; 50%) will deduct Experience Points (Elo) and degrade your grade/rank!</strong> Choose your tier carefully.
-              </p>
-            </div>
+            {/* 3. PROMINENT RED WARNING NOTE: ONLY SHOWN IF STUDENT IS BEGINNER AND SELECTS AN ADVANCED/AHEAD LEVEL */}
+            <AnimatePresence>
+              {showRankWarning && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, height: "auto", scale: 1 }}
+                  exit={{ opacity: 0, height: 0, scale: 0.98 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+                  <div className="p-3.5 rounded-2xl border-2 border-red-500/40 bg-red-500/10 dark:bg-red-950/30 text-red-700 dark:text-red-300 space-y-1.5 shadow-sm">
+                    <div className="flex items-center gap-1.5 font-bold text-xs text-red-600 dark:text-red-400">
+                      <AlertTriangle className="w-4 h-4 text-red-500 shrink-0 animate-bounce" />
+                      <span>NOTE / RANK WARNING</span>
+                    </div>
+                    <p className="text-2xs leading-relaxed text-red-800/90 dark:text-red-300/90">
+                      You are currently at <strong>{studentTier}</strong> tier ({studentElo} Elo). Selecting a higher difficulty (<strong>{selectedDifficulty.toUpperCase()}</strong>) carries rank penalty risk: <strong>poor performance or failing (&lt; 50%) will deduct Experience Points (Elo) and degrade your grade/rank!</strong> Choose your tier carefully.
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Action Buttons */}
             <div className="space-y-2 pt-1">

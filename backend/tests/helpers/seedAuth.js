@@ -34,7 +34,7 @@ export const createTestUsersAndTokens = async () => {
   await StudentProfile.findOneAndUpdate(
     { userId: student._id },
     { $set: { onboardingCompleted: true } },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: 'after' }
   );
 
   // 2. Create or Find Instructor

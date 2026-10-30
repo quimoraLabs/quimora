@@ -67,7 +67,7 @@ export class EloEngineService {
             isArchived: false,
           },
         },
-        { upsert: true, new: true, session }
+        { upsert: true, returnDocument: 'after', session }
       );
     }
 
