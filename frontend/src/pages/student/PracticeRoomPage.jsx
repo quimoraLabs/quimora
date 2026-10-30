@@ -40,7 +40,6 @@ export default function PracticeRoomPage() {
     }
   }, [navigate]);
 
-  // Countdown timer (non-proctored, friendly)
   useEffect(() => {
     if (result || timeLeft <= 0) return;
     const interval = setInterval(() => {
@@ -65,7 +64,7 @@ export default function PracticeRoomPage() {
     if (!session?.sessionId || submitting || result) return;
     try {
       setSubmitting(true);
-      const res = await axiosClient.post("/api/v2/practice/submit", {
+      const res = await axiosClient.post("/practice/submit", {
         sessionId: session.sessionId,
         answers,
         timeSpentSeconds: (session.timeLimitMinutes || 10) * 60 - timeLeft,
@@ -256,4 +255,3 @@ export default function PracticeRoomPage() {
     </div>
   );
 }
-

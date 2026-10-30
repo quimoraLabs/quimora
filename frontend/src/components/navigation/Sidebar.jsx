@@ -119,7 +119,7 @@ export default function Sidebar({ isOpen, setIsOpen, role }) {
               <img
                 src={logo}
                 alt="Quimora Logo"
-                className="w-8 h-8 rounded-lg object-contain shadow-xs"
+                className="w-32 h-16 rounded-lg object-contain shadow-xs"
               />
               <span className="text-xl font-bold tracking-tight bg-linear-to-r from-accent to-accent-hover bg-clip-text text-transparent">
                 Quimora

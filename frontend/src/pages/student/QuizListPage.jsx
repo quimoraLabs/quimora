@@ -78,7 +78,7 @@ function QuizListPage() {
 
   const fetchStudentInterests = useCallback(async () => {
     try {
-      const res = await axiosClient.get("/api/v2/interests/student/profile");
+      const res = await axiosClient.get("/interests/student/profile");
       if (res.data?.success && res.data?.data?.interests) {
         setInterests(res.data.data.interests);
         if (res.data.data.interests.length > 0) {
@@ -96,7 +96,7 @@ function QuizListPage() {
     if (!interestId) return;
     try {
       setLoadingTrack(true);
-      const res = await axiosClient.get(`/api/v2/student/tracks/${interestId}`);
+      const res = await axiosClient.get(`/student/tracks/${interestId}`);
       if (res.data?.success) {
         setTrackData(res.data.data);
       }
@@ -365,7 +365,7 @@ function QuizListPage() {
         </div>
       </div>
 
-      {/* Main View Mode Tabs: [ Chapters & Curriculum Track ] vs [ All Certification Quizzes ] */}
+      {/* Main View Mode Tabs */}
       <div className="flex items-center gap-2 border-b border-soft pb-2">
         <button
           onClick={() => setActiveCatalogTab("chapters")}

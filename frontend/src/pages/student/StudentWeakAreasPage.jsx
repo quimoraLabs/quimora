@@ -27,7 +27,7 @@ export default function StudentWeakAreasPage() {
   const fetchStatus = async () => {
     try {
       setLoading(true);
-      const res = await axiosClient.get("/api/v2/practice/status");
+      const res = await axiosClient.get("/practice/status");
       if (res.data?.success) {
         setPracticeData(res.data.data);
       }
@@ -45,7 +45,7 @@ export default function StudentWeakAreasPage() {
   const handleSetTarget = async (targetVal) => {
     try {
       setSettingTarget(true);
-      const res = await axiosClient.post("/api/v2/practice/custom-target", {
+      const res = await axiosClient.post("/practice/custom-target", {
         target: targetVal,
       });
       if (res.data?.success) {
@@ -63,7 +63,7 @@ export default function StudentWeakAreasPage() {
   const handleStartMode1 = async () => {
     try {
       setStartingMode("mode1");
-      const res = await axiosClient.post("/api/v2/practice/mode1/start");
+      const res = await axiosClient.post("/practice/mode1/start");
       if (res.data?.success) {
         sessionStorage.setItem("activePracticeSession", JSON.stringify(res.data.data));
         navigate("/student/practice/room");
@@ -88,7 +88,7 @@ export default function StudentWeakAreasPage() {
 
     try {
       setStartingMode(topicTag);
-      const res = await axiosClient.post("/api/v2/practice/mode2/start", {
+      const res = await axiosClient.post("/practice/mode2/start", {
         scopeType: "topic",
         targetName: topicTag,
       });
@@ -127,7 +127,7 @@ export default function StudentWeakAreasPage() {
         <div className="p-4 bg-surface border border-soft rounded-2xl flex items-center gap-3 shadow-xs max-w-md">
           <Sparkles className="w-5 h-5 text-indigo-500 shrink-0" />
           <p className="text-xs font-medium text-main leading-relaxed">
-            {readiness?.message}
+            {readiness?.message || "Diagnostic practice recommended on critical topics before attempting Main Exam."}
           </p>
         </div>
       </div>
@@ -136,16 +136,16 @@ export default function StudentWeakAreasPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-surface border border-soft rounded-2xl p-5 shadow-xs">
           <span className="text-2xs font-bold text-muted uppercase tracking-wider">Practice Level</span>
-          <div className="text-2xl font-black text-main mt-1">Level {profile?.practiceLevel}</div>
+          <div className="text-2xl font-black text-main mt-1">Level {profile?.practiceLevel || 1}</div>
           <div className="mt-3">
             <div className="flex justify-between text-2xs font-semibold text-muted mb-1">
-              <span>XP: {profile?.practiceXp}</span>
-              <span>{profile?.levelProgressPercent}%</span>
+              <span>XP: {profile?.practiceXp || 0}</span>
+              <span>{profile?.levelProgressPercent || 0}%</span>
             </div>
             <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
               <div
                 className="h-full bg-indigo-600 rounded-full transition-all"
-                style={{ width: `${profile?.levelProgressPercent}%` }}
+                style={{ width: `${profile?.levelProgressPercent || 0}%` }}
               />
             </div>
           </div>
@@ -154,7 +154,7 @@ export default function StudentWeakAreasPage() {
         <div className="bg-surface border border-soft rounded-2xl p-5 shadow-xs">
           <span className="text-2xs font-bold text-muted uppercase tracking-wider">Practice Streak</span>
           <div className="text-2xl font-black text-amber-500 mt-1 flex items-center gap-2">
-            <span>{profile?.currentStreak} Days</span>
+            <span>{profile?.currentStreak || 0} Days</span>
             <span className="text-lg">🔥</span>
           </div>
           <p className="text-xs text-muted mt-2">Active practice daily streak</p>

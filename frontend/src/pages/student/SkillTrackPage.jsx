@@ -30,7 +30,7 @@ export default function SkillTrackPage() {
     try {
       setLoading(true);
       setError(null);
-      const res = await axiosClient.get(`/api/v2/student/tracks/${interestId}`);
+      const res = await axiosClient.get(`/student/tracks/${interestId}`);
       if (res.data?.success) {
         setTrackData(res.data.data);
       }
@@ -63,7 +63,7 @@ export default function SkillTrackPage() {
           <p className="text-rose-600 dark:text-rose-400 font-semibold mb-4">{error || "Track not found"}</p>
           <button
             onClick={() => navigate("/student/quizzes")}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 rounded-xl font-medium text-sm hover:opacity-90 transition-opacity"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 rounded-xl font-medium text-sm hover:opacity-90 transition-opacity cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" /> Back to Quizzes
           </button>
