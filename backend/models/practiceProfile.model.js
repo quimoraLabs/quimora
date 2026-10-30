@@ -47,6 +47,12 @@ const practiceProfileSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    mode1LastResult: {
+      score: { type: Number, default: 0 },
+      correctCount: { type: Number, default: 0 },
+      totalQuestions: { type: Number, default: 0 },
+      completedAt: { type: Date, default: null },
+    },
 
     // --- MODE 2: Custom Daily Practice Tracker ---
     customPracticeDate: {
@@ -131,4 +137,3 @@ practiceProfileSchema.methods.checkAndResetDailyCycles = function () {
 
 const PracticeProfile = mongoose.model("PracticeProfile", practiceProfileSchema);
 export default PracticeProfile;
-

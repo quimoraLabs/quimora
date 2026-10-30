@@ -5,10 +5,11 @@ import StudentProfile from "../models/studentProfile.model.js";
 import Interest from "../models/interest.model.js";
 import Question from "../models/question.model.js";
 import Quiz from "../models/quiz.model.js";
+import { generateAIQuestionsService } from "./aiQuestion.service.js";
 
 /**
  * Service managing decoupled Practice Engine:
- * - Mode 1: Random Mind-Game (Daily 2-4 topics, 5-6 Qs each)
+ * - Mode 1: Random Mind-Game (Daily AI-curated diagnostic drill, 2-4 topics)
  * - Mode 2: Custom Daily Practice (Student Choice + Strict Midnight IST Reset)
  * - Independent Practice Scoreboard & Readiness Indicator
  */
@@ -67,8 +68,9 @@ class PracticeEngineService {
         available: !profile.randomDrillCompletedToday,
         lastCompletedDate: profile.randomDrillDate,
         completedToday: profile.randomDrillCompletedToday,
+        lastResult: profile.mode1LastResult || null,
         title: "Daily Mystery Mind-Game",
-        description: "2 to 4 surprise topics automatically selected from your interests.",
+        description: "Fresh diagnostic questions dynamically generated from your enrolled interests.",
       },
       mode2_customPractice: {
         targetSetToday: profile.customDailyTarget > 0,
@@ -118,7 +120,7 @@ class PracticeEngineService {
 
   /**
    * MODE 1: Starts Random Mind-Game drill.
-   * Auto-selects 2 to 4 topics, 5-6 questions each.
+   * Generates or curates fresh scenario questions across student interests.
    */
   async startRandomMindGame(userId) {
     const profile = await this.getOrCreateProfile(userId);
@@ -128,59 +130,68 @@ class PracticeEngineService {
 
     // Get student enrolled interests
     const studentProfile = await StudentProfile.findOne({ userId }).populate("interests").lean();
-    let interestIds = studentProfile?.interests?.map((i) => i._id) || [];
+    let interests = studentProfile?.interests || [];
 
-    let quizzes = await Quiz.find({
-      interestIds: { $in: interestIds },
-      status: "published",
-    })
-      .select("questions tags title")
-      .lean();
-
-    if (!quizzes || quizzes.length === 0) {
-      quizzes = await Quiz.find({ status: "published" }).select("questions tags title").limit(5).lean();
+    if (!interests || interests.length === 0) {
+      interests = await Interest.find({ isActive: true }).limit(3).lean();
     }
 
-    const allQuestionIds = quizzes.flatMap((q) => q.questions || []);
-    const questionsFromDb = await Question.find({ _id: { $in: allQuestionIds } }).lean();
+    // Pick 2 to 3 random topics across enrolled domains
+    const allTopicTags = interests.flatMap((i) => i.topicTags || [i.name]);
+    const shuffledTopics = allTopicTags.sort(() => 0.5 - Math.random());
+    const selectedTopics = shuffledTopics.slice(0, Math.min(3, Math.max(2, shuffledTopics.length)));
 
-    const pool = questionsFromDb.map((question) => ({
-      questionText: question.questionText,
-      options: question.options.map((opt) => ({
-        optionText: opt.optionText,
-        isCorrect: Boolean(opt.isCorrect),
-      })),
-      explanation: question.explanation || "Review fundamental concepts of this topic.",
-      topicTag: question.topicTag || "General",
-    }));
+    let practiceQuestions = [];
 
-    if (pool.length === 0) {
-      // Emergency fallback question set to guarantee drill availability
-      const fallbackQs = await Question.find().limit(10).lean();
-      for (const f of fallbackQs) {
-        pool.push({
-          questionText: f.questionText,
-          options: f.options.map((opt) => ({
+    // Try AI generation for completely fresh, non-repetitive scenario questions
+    try {
+      const topicString = selectedTopics.join(", ");
+      const aiQs = await generateAIQuestionsService({
+        topic: topicString,
+        count: 6,
+        difficulty: "mixed",
+        additionalContext: "Practical, conceptual problem-solving questions. Avoid rote memorization definitions.",
+      });
+
+      if (aiQs && aiQs.length >= 4) {
+        practiceQuestions = aiQs.map((q, idx) => ({
+          questionText: q.questionText,
+          options: q.options.map((opt) => ({
             optionText: opt.optionText,
             isCorrect: Boolean(opt.isCorrect),
           })),
-          explanation: f.explanation || "Diagnostic practice topic.",
-          topicTag: "General",
-        });
+          explanation: q.explanation || "Diagnostic analysis of conceptual execution.",
+          topicTag: selectedTopics[idx % selectedTopics.length] || "General",
+        }));
       }
+    } catch (aiErr) {
+      console.warn("AI generation fallback to database pool:", aiErr.message);
     }
 
-    const shuffled = pool.sort(() => 0.5 - Math.random());
-    const selectedQuestions = shuffled.slice(0, Math.min(15, Math.max(5, shuffled.length)));
-    const distinctTopics = Array.from(new Set(selectedQuestions.map((q) => q.topicTag)));
+    // Fallback if AI is offline or in test mode without API key
+    if (practiceQuestions.length < 5) {
+      const dbQuestions = await Question.find().limit(20).lean();
+      const shuffled = dbQuestions.sort(() => 0.5 - Math.random());
+      practiceQuestions = shuffled.slice(0, 6).map((q, idx) => ({
+        questionText: q.questionText,
+        options: q.options.map((opt) => ({
+          optionText: opt.optionText,
+          isCorrect: Boolean(opt.isCorrect),
+        })),
+        explanation: q.explanation || "Diagnostic practice concept review.",
+        topicTag: selectedTopics[idx % selectedTopics.length] || "General",
+      }));
+    }
+
+    const distinctTopics = Array.from(new Set(practiceQuestions.map((q) => q.topicTag)));
 
     const session = await PracticeSession.create({
       userId,
       mode: "random_mind_game",
       selectedScope: { type: "subject", targetName: "Random Mind-Game" },
       topicsCovered: distinctTopics,
-      questions: selectedQuestions,
-      timeLimitMinutes: 15,
+      questions: practiceQuestions,
+      timeLimitMinutes: 10,
       status: "in_progress",
     });
 
@@ -188,9 +199,9 @@ class PracticeEngineService {
       sessionId: session._id,
       mode: "random_mind_game",
       topicsCovered: distinctTopics,
-      totalQuestions: selectedQuestions.length,
-      timeLimitMinutes: 15,
-      questions: selectedQuestions.map((q, idx) => ({
+      totalQuestions: practiceQuestions.length,
+      timeLimitMinutes: 10,
+      questions: practiceQuestions.map((q, idx) => ({
         index: idx,
         questionText: q.questionText,
         options: q.options.map((o) => ({ optionText: o.optionText })),
@@ -217,59 +228,87 @@ class PracticeEngineService {
     }
 
     const normalizedTarget = (targetName || "General").trim();
-    const regex = new RegExp(normalizedTarget, "i");
+    let practiceQuestions = [];
 
-    const quizzes = await Quiz.find({
-      $or: [{ tags: regex }, { title: regex }, { description: regex }],
-      status: "published",
-    })
-      .select("questions tags")
-      .lean();
+    // Try AI generation for targeted remedial practice
+    try {
+      const aiQs = await generateAIQuestionsService({
+        topic: normalizedTarget,
+        count: 5,
+        difficulty: "medium",
+        additionalContext: "Targeted remedial diagnostic drill questions with detailed explanations.",
+      });
 
-    const matchedQIds = quizzes.flatMap((q) => q.questions || []);
-    let questionsFromDb = await Question.find({ _id: { $in: matchedQIds } }).lean();
-
-    if (questionsFromDb.length < 5) {
-      const anyQuestions = await Question.find().limit(10).lean();
-      questionsFromDb = [...questionsFromDb, ...anyQuestions];
+      if (aiQs && aiQs.length >= 4) {
+        practiceQuestions = aiQs.map((q) => ({
+          questionText: q.questionText,
+          options: q.options.map((opt) => ({
+            optionText: opt.optionText,
+            isCorrect: Boolean(opt.isCorrect),
+          })),
+          explanation: q.explanation || `Core principles of ${normalizedTarget}.`,
+          topicTag: normalizedTarget,
+        }));
+      }
+    } catch {
+      // Fallback to database
     }
 
-    const questionPool = questionsFromDb.map((question) => ({
-      questionText: question.questionText,
-      options: question.options.map((opt) => ({
-        optionText: opt.optionText,
-        isCorrect: Boolean(opt.isCorrect),
-      })),
-      explanation: question.explanation || `Core principles of ${normalizedTarget}.`,
-      topicTag: normalizedTarget,
-    }));
+    if (practiceQuestions.length < 5) {
+      const regex = new RegExp(normalizedTarget, "i");
+      const quizzes = await Quiz.find({
+        $or: [{ tags: regex }, { title: regex }, { description: regex }],
+        status: "published",
+      }).select("questions").lean();
 
-    const shuffled = questionPool.sort(() => 0.5 - Math.random());
-    const selectedQuestions = shuffled.slice(0, 5); // 5 focused questions per custom drill
+      const matchedQIds = quizzes.flatMap((q) => q.questions || []);
+      let questionsFromDb = await Question.find({ _id: { $in: matchedQIds } }).lean();
 
-    const session = await PracticeSession.create({
-      userId,
-      mode: "custom_drill",
-      selectedScope: { type: scopeType || "topic", targetName: normalizedTarget },
-      topicsCovered: [normalizedTarget],
-      questions: selectedQuestions,
-      timeLimitMinutes: 10,
-      status: "in_progress",
-    });
+      if (questionsFromDb.length < 5) {
+        const anyQuestions = await Question.find().limit(10).lean();
+        questionsFromDb = [...questionsFromDb, ...anyQuestions];
+      }
 
-    return {
-      sessionId: session._id,
-      mode: "custom_drill",
-      selectedScope: session.selectedScope,
-      totalQuestions: selectedQuestions.length,
-      timeLimitMinutes: 10,
-      questions: selectedQuestions.map((q, idx) => ({
-        index: idx,
+      const shuffled = questionsFromDb.sort(() => 0.5 - Math.random());
+      practiceQuestions = shuffled.slice(0, 5).map((q) => ({
         questionText: q.questionText,
-        options: q.options.map((o) => ({ optionText: o.optionText })),
-        topicTag: q.topicTag,
-      })),
-    };
+        options: q.options.map((opt) => ({
+          optionText: opt.optionText,
+          isCorrect: Boolean(opt.isCorrect),
+        })),
+        explanation: q.explanation || `Diagnostic drill on ${normalizedTarget}.`,
+        topicTag: normalizedTarget,
+      }));
+    }
+
+    try {
+      const session = await PracticeSession.create({
+        userId,
+        mode: "custom_drill",
+        selectedScope: { type: scopeType || "topic", targetName: normalizedTarget },
+        topicsCovered: [normalizedTarget],
+        questions: practiceQuestions,
+        timeLimitMinutes: 10,
+        status: "in_progress",
+      });
+
+      return {
+        sessionId: session._id,
+        mode: "custom_drill",
+        selectedScope: session.selectedScope,
+        totalQuestions: practiceQuestions.length,
+        timeLimitMinutes: 10,
+        questions: practiceQuestions.map((q, idx) => ({
+          index: idx,
+          questionText: q.questionText,
+          options: q.options.map((o) => ({ optionText: o.optionText })),
+          topicTag: q.topicTag,
+        })),
+      };
+    } catch (createErr) {
+      console.error("DEBUG startCustomDrill PracticeSession.create error:", createErr);
+      throw createErr;
+    }
   }
 
   /**
@@ -327,6 +366,12 @@ class PracticeEngineService {
     if (session.mode === "random_mind_game") {
       profile.randomDrillCompletedToday = true;
       profile.randomDrillDate = todayIST;
+      profile.mode1LastResult = {
+        score,
+        correctCount,
+        totalQuestions,
+        completedAt: new Date(),
+      };
     } else if (session.mode === "custom_drill") {
       profile.customAttemptsDoneToday = Math.min(
         profile.customDailyTarget,

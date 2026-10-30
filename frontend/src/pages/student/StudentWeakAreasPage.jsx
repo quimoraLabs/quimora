@@ -216,8 +216,19 @@ export default function StudentWeakAreasPage() {
           </div>
           <h2 className="text-2xl font-black">Daily Random Mind-Game</h2>
           <p className="text-xs text-amber-100 leading-relaxed">
-            Auto-selects 2 to 4 surprise topics from your enrolled courses. 10 to 15 quick mystery questions once every calendar day!
+            Fresh diagnostic questions generated across your enrolled courses. 10 to 15 quick mystery questions once every calendar day!
           </p>
+
+          {/* Show Last Result if Completed Today */}
+          {mode1_randomMindGame?.completedToday && mode1_randomMindGame.lastResult && (
+            <div className="mt-3 p-3 bg-black/20 rounded-xl backdrop-blur-xs flex items-center gap-4 text-xs">
+              <span>Today's Score: <strong className="text-amber-200">{mode1_randomMindGame.lastResult.score}%</strong></span>
+              <span>•</span>
+              <span>Correct: <strong>{mode1_randomMindGame.lastResult.correctCount}/{mode1_randomMindGame.lastResult.totalQuestions}</strong></span>
+              <span>•</span>
+              <span className="text-emerald-200 font-semibold">Done for today!</span>
+            </div>
+          )}
         </div>
 
         <div>

@@ -5,6 +5,7 @@ import { createTestUsersAndTokens } from "./helpers/seedAuth.js";
 import Interest from "../models/interest.model.js";
 import Quiz from "../models/quiz.model.js";
 import Question from "../models/question.model.js";
+import PracticeProfile from "../models/practiceProfile.model.js";
 
 describe("⚡ Module 7: Decoupled Practice Engine & Daily Midnight Reset APIs", () => {
   let authData;
@@ -13,6 +14,9 @@ describe("⚡ Module 7: Decoupled Practice Engine & Daily Midnight Reset APIs", 
   beforeAll(async () => {
     authData = await createTestUsersAndTokens();
     studentToken = authData.student.token;
+
+    // Reset student practice profile for clean test isolation
+    await PracticeProfile.deleteOne({ userId: authData.student.user._id });
 
     // Seed sample quiz with questions for practice drills
     const testInterest = await Interest.findOneAndUpdate(
