@@ -399,7 +399,7 @@ function QuizListPage() {
             interests={interests}
             activeInterestId={selectedInterestId}
             onSelectInterest={(id) => {
-              setSelectedInterestId(id);
+              setSelectedInterestId(id || interests[0]?._id);
               setSelectedSubtopic("all");
             }}
           />
