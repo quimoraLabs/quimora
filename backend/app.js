@@ -16,6 +16,7 @@ import interestRoutes from "./routes/interest.routes.js";
 import levelRoutes from "./routes/level.routes.js";
 import quizAssignmentRoutes from "./routes/quizAssignment.routes.js";
 import rewardsRoutes from "./routes/rewards.routes.js";
+import practiceRoutes from "./routes/practice.routes.js";
 import { redisCache } from "./config/redis.js";
 
 const app = express();
@@ -109,6 +110,7 @@ apiRouter.use("/levels", levelRoutes);
 apiRouter.use("/", quizAssignmentRoutes);
 apiRouter.use("/rewards", rewardsRoutes);
 apiRouter.use("/student/rewards", rewardsRoutes);
+apiRouter.use("/practice", practiceRoutes);
 
 // Mount the versioned router centrally (supports both /api/v2 and legacy /api/v1)
 app.use(config.apiPrefix, apiRouter);

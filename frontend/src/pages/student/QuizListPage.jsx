@@ -1,7 +1,27 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import { Play, Sparkles, SlidersHorizontal, BookOpen, RotateCcw, Search, Tag, X, CheckCircle2, Eye, Compass, ArrowRight } from "lucide-react";
+import {
+  Play,
+  Sparkles,
+  SlidersHorizontal,
+  BookOpen,
+  RotateCcw,
+  Search,
+  Tag,
+  X,
+  CheckCircle2,
+  Eye,
+  Compass,
+  ArrowRight,
+  Layers,
+  ListFilter,
+  Lock,
+  Unlock,
+  Clock,
+  Target,
+  ChevronRight,
+} from "lucide-react";
 import useQuizListStore from "../../features/student/quiz/store/useQuizListStore";
 import DataTable from "../../components/common/DataTable";
 import InterestFilterBar from "../../features/student/components/InterestFilterBar";
@@ -43,6 +63,7 @@ const getTopicBadge = (quiz) => {
 function QuizListPage() {
   const navigate = useNavigate();
   const { fetchAvailableQuizzes, quizzes } = useQuizListStore();
+  const [activeCatalogTab, setActiveCatalogTab] = useState("chapters"); // 'chapters' | 'all_quizzes'
   const [interests, setInterests] = useState([]);
   const [selectedInterestId, setSelectedInterestId] = useState(null);
   const [selectedSubtopic, setSelectedSubtopic] = useState("all");
@@ -50,7 +71,11 @@ function QuizListPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [inspectedQuiz, setInspectedQuiz] = useState(null);
 
-  // Fetch Student Selected Interests for strictly customized view
+  // Track / Chapters data
+  const [trackData, setTrackData] = useState(null);
+  const [loadingTrack, setLoadingTrack] = useState(false);
+  const [expandedChapterIndex, setExpandedChapterIndex] = useState(0);
+
   const fetchStudentInterests = useCallback(async () => {
     try {
       const res = await axiosClient.get("/api/v2/interests/student/profile");
@@ -67,10 +92,31 @@ function QuizListPage() {
     }
   }, []);
 
+  const fetchTrackData = useCallback(async (interestId) => {
+    if (!interestId) return;
+    try {
+      setLoadingTrack(true);
+      const res = await axiosClient.get(`/api/v2/student/tracks/${interestId}`);
+      if (res.data?.success) {
+        setTrackData(res.data.data);
+      }
+    } catch {
+      setTrackData(null);
+    } finally {
+      setLoadingTrack(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchStudentInterests();
     fetchAvailableQuizzes();
   }, [fetchStudentInterests, fetchAvailableQuizzes]);
+
+  useEffect(() => {
+    if (selectedInterestId) {
+      fetchTrackData(selectedInterestId);
+    }
+  }, [selectedInterestId, fetchTrackData]);
 
   const handleStartExam = useCallback((quiz) => {
     const quizId = quiz._id || quiz.id;
@@ -107,13 +153,8 @@ function QuizListPage() {
 
   // Base interest-filtered quizzes
   const interestFilteredQuizzes = useMemo(() => {
-    if (!quizzes || quizzes.length === 0) {
-      return [];
-    }
-
-    if (!interests || interests.length === 0) {
-      return quizzes;
-    }
+    if (!quizzes || quizzes.length === 0) return [];
+    if (!interests || interests.length === 0) return quizzes;
 
     const studentInterestIdStrings = new Set(
       interests.map((i) => (i._id?.toString() || i.id?.toString() || "").trim())
@@ -141,9 +182,7 @@ function QuizListPage() {
       });
     });
 
-    if (!selectedInterestId) {
-      return allowedQuizzes;
-    }
+    if (!selectedInterestId) return allowedQuizzes;
 
     const currentSelected = interests.find(
       (i) => (i._id?.toString() || i.id?.toString()) === selectedInterestId.toString()
@@ -155,7 +194,6 @@ function QuizListPage() {
         return idStr === selectedInterestId.toString();
       });
       if (matchesSelectedId) return true;
-
       if (!currentSelected) return false;
 
       const tags = (currentSelected.topicTags || []).map((t) => t.toLowerCase());
@@ -301,10 +339,6 @@ function QuizListPage() {
     );
   }, [handleStartExam]);
 
-  const activeInterestObj = useMemo(() => {
-    return interests.find((i) => (i._id?.toString() || i.id?.toString()) === selectedInterestId?.toString()) || interests[0];
-  }, [interests, selectedInterestId]);
-
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header Banner */}
@@ -312,26 +346,15 @@ function QuizListPage() {
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 mb-2">
             <Sparkles className="w-3 h-3" />
-            Adaptive Catalog
+            Curriculum & Assessment Catalog
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Available Quizzes</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Main Certification Quizzes</h1>
           <p className="text-sm text-muted mt-1">
-            Quizzes customized strictly to your chosen learning interests and electives.
+            HackerRank-style Chapter tracks and proctored examination modules.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          {activeInterestObj && (
-            <button
-              onClick={() => navigate(`/student/tracks/${activeInterestObj._id || activeInterestObj.id}`)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs font-bold transition-all shadow-md shadow-indigo-600/20 cursor-pointer"
-            >
-              <Compass className="w-4 h-4" />
-              <span>Open Skill Track</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          )}
-
           <button
             onClick={() => setIsModalOpen(true)}
             className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50/70 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-xs font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all cursor-pointer shadow-sm"
@@ -340,6 +363,33 @@ function QuizListPage() {
             Manage Interests
           </button>
         </div>
+      </div>
+
+      {/* Main View Mode Tabs: [ Chapters & Curriculum Track ] vs [ All Certification Quizzes ] */}
+      <div className="flex items-center gap-2 border-b border-soft pb-2">
+        <button
+          onClick={() => setActiveCatalogTab("chapters")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+            activeCatalogTab === "chapters"
+              ? "bg-accent text-white shadow-sm"
+              : "text-muted hover:text-main hover:bg-elevated"
+          }`}
+        >
+          <Layers className="w-4 h-4" />
+          <span>Chapters & Curriculum Tree</span>
+        </button>
+
+        <button
+          onClick={() => setActiveCatalogTab("all_quizzes")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+            activeCatalogTab === "all_quizzes"
+              ? "bg-accent text-white shadow-sm"
+              : "text-muted hover:text-main hover:bg-elevated"
+          }`}
+        >
+          <ListFilter className="w-4 h-4" />
+          <span>All Standalone Quizzes ({finalQuizzes.length})</span>
+        </button>
       </div>
 
       {/* Interest Filter Bar */}
@@ -356,74 +406,206 @@ function QuizListPage() {
         </div>
       )}
 
-      {/* Granular Topic Choice Toolbar: Search & Subtopic Chips */}
-      {interestFilteredQuizzes.length > 0 && (
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-slate-900/70 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-          {/* Subtopic Filter Chips */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
-            <span className="text-xs font-medium text-muted mr-1.5 flex items-center gap-1">
-              <Tag className="w-3 h-3" /> Topic:
-            </span>
-            <button
-              onClick={() => setSelectedSubtopic("all")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                selectedSubtopic === "all"
-                  ? "bg-indigo-600 text-white shadow-sm shadow-indigo-500/20"
-                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
-              }`}
-            >
-              All Topics ({interestFilteredQuizzes.length})
-            </button>
-            {availableSubtopics.map((sub) => {
-              const count = interestFilteredQuizzes.filter((q) => getTopicBadge(q).label === sub).length;
-              const isActive = selectedSubtopic === sub;
-              return (
-                <button
-                  key={sub}
-                  onClick={() => setSelectedSubtopic(sub)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                    isActive
-                      ? "bg-indigo-600 text-white shadow-sm shadow-indigo-500/20"
-                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+      {/* VIEW 1: CHAPTERS & CURRICULUM TREE */}
+      {activeCatalogTab === "chapters" && (
+        <div className="space-y-4">
+          {loadingTrack ? (
+            <div className="py-12 text-center text-sm text-muted">Loading Chapters Curriculum...</div>
+          ) : trackData && trackData.chapters?.length > 0 ? (
+            <div className="space-y-4">
+              {trackData.chapters.map((chapter, cIdx) => (
+                <div
+                  key={chapter._id}
+                  className={`rounded-2xl border transition-all overflow-hidden ${
+                    chapter.isUnlocked
+                      ? "bg-surface border-soft shadow-xs"
+                      : "bg-surface/50 border-soft opacity-60"
                   }`}
                 >
-                  {sub} ({count})
-                </button>
-              );
-            })}
-          </div>
+                  {/* Chapter Header */}
+                  <div
+                    onClick={() => chapter.isUnlocked && setExpandedChapterIndex(cIdx)}
+                    className={`p-5 flex items-center justify-between select-none ${
+                      chapter.isUnlocked ? "hover:bg-elevated/50 cursor-pointer" : "cursor-not-allowed"
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${
+                          chapter.isCompleted
+                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                            : chapter.isUnlocked
+                            ? "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
+                            : "bg-slate-100 dark:bg-slate-800 text-muted"
+                        }`}
+                      >
+                        {chapter.isCompleted ? (
+                          <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                        ) : (
+                          `0${chapter.orderIndex}`
+                        )}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-base font-bold text-main">{chapter.title}</h3>
+                          {!chapter.isUnlocked && (
+                            <span className="inline-flex items-center gap-1 text-2xs font-semibold text-muted bg-elevated px-2 py-0.5 rounded-md">
+                              <Lock className="w-3 h-3" /> Locked
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted mt-0.5">{chapter.description}</p>
+                      </div>
+                    </div>
 
-          {/* Quick Search Input */}
-          <div className="relative min-w-55">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-            <input
-              type="text"
-              placeholder="Search HTML, CSS, JS..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-7 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-main focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-main"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            )}
-          </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-semibold text-muted">
+                        {chapter.quizzes?.filter((q) => q.isCompleted).length}/{chapter.quizzes?.length} Solved
+                      </span>
+                      <ChevronRight
+                        className={`w-5 h-5 text-muted transition-transform duration-200 ${
+                          expandedChapterIndex === cIdx ? "rotate-90 text-accent" : ""
+                        }`}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Chapter Quizzes List */}
+                  {expandedChapterIndex === cIdx && chapter.isUnlocked && (
+                    <div className="border-t border-soft divide-y divide-soft bg-elevated/20">
+                      {chapter.quizzes?.map((quiz) => (
+                        <div
+                          key={quiz._id}
+                          className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="mt-1">
+                              {quiz.isCompleted ? (
+                                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                              ) : quiz.isUnlocked ? (
+                                <Unlock className="w-4 h-4 text-indigo-500" />
+                              ) : (
+                                <Lock className="w-4 h-4 text-muted" />
+                              )}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-2xs font-bold text-muted uppercase">Challenge {quiz.trackOrder}</span>
+                                <span className="text-2xs px-2 py-0.5 rounded-full font-semibold bg-surface border border-soft text-main">
+                                  {quiz.level}
+                                </span>
+                              </div>
+                              <h4 className="text-sm font-semibold text-main mt-0.5">{quiz.title}</h4>
+                              <div className="flex items-center gap-4 mt-1 text-xs text-muted">
+                                <span className="flex items-center gap-1">
+                                  <Clock className="w-3.5 h-3.5" /> {quiz.timeLimit} mins
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Target className="w-3.5 h-3.5" /> Min {quiz.passingScore}%
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div>
+                            {quiz.isUnlocked ? (
+                              <button
+                                onClick={() => handleStartExam(quiz)}
+                                className="px-4 py-2 rounded-xl text-xs font-bold bg-accent text-white hover:opacity-90 transition-all cursor-pointer flex items-center gap-1.5"
+                              >
+                                <Play className="w-3.5 h-3.5 fill-current" />
+                                {quiz.isCompleted ? "Retake Exam" : "Take Exam"}
+                              </button>
+                            ) : (
+                              <span className="text-xs text-muted font-semibold bg-elevated px-3 py-1.5 rounded-lg flex items-center gap-1 cursor-not-allowed">
+                                <Lock className="w-3 h-3" /> Locked
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-8 bg-surface border border-soft rounded-2xl text-center text-sm text-muted">
+              No structured chapters available for this domain track yet. Switch to "All Standalone Quizzes" tab.
+            </div>
+          )}
         </div>
       )}
 
-      {/* Main Quizzes Table */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-        <DataTable
-          headers={headers}
-          data={finalQuizzes}
-          renderRow={renderQuizRow}
-          emptyMessage="No quizzes found matching your current interest or filter. Try selecting another topic or manage your interests."
-        />
-      </div>
+      {/* VIEW 2: ALL STANDALONE QUIZZES TABLE */}
+      {activeCatalogTab === "all_quizzes" && (
+        <div className="space-y-4">
+          {interestFilteredQuizzes.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-surface p-3.5 rounded-2xl border border-soft shadow-xs">
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+                <span className="text-xs font-medium text-muted mr-1.5 flex items-center gap-1">
+                  <Tag className="w-3 h-3" /> Topic:
+                </span>
+                <button
+                  onClick={() => setSelectedSubtopic("all")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                    selectedSubtopic === "all"
+                      ? "bg-accent text-white shadow-xs"
+                      : "bg-elevated text-muted hover:text-main"
+                  }`}
+                >
+                  All Topics ({interestFilteredQuizzes.length})
+                </button>
+                {availableSubtopics.map((sub) => {
+                  const count = interestFilteredQuizzes.filter((q) => getTopicBadge(q).label === sub).length;
+                  const isActive = selectedSubtopic === sub;
+                  return (
+                    <button
+                      key={sub}
+                      onClick={() => setSelectedSubtopic(sub)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                        isActive
+                          ? "bg-accent text-white shadow-xs"
+                          : "bg-elevated text-muted hover:text-main"
+                      }`}
+                    >
+                      {sub} ({count})
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="relative min-w-55">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+                <input
+                  type="text"
+                  placeholder="Search HTML, CSS, JS..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-8 pr-7 py-1.5 text-xs rounded-xl border border-soft bg-surface text-main focus:outline-none focus:ring-2 focus:ring-accent/40"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-main"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="bg-surface rounded-2xl border border-soft shadow-xs overflow-hidden">
+            <DataTable
+              headers={headers}
+              data={finalQuizzes}
+              renderRow={renderQuizRow}
+              emptyMessage="No quizzes found matching your current interest or filter. Try selecting another topic or manage your interests."
+            />
+          </div>
+        </div>
+      )}
 
       {/* Onboarding / Interests Modal */}
       <InterestOnboardingModal
