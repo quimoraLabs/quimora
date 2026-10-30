@@ -2,13 +2,13 @@ import { Route } from "react-router-dom";
 import ProtectedRoutes from "./ProtectedRoutes";
 import StudentDashboardPage from "../pages/student/StudentDashboardPage";
 import QuizListPage from "../pages/student/QuizListPage";
+import SkillTrackPage from "../pages/student/SkillTrackPage";
+import LiveChallengesPage from "../pages/student/LiveChallengesPage";
 import StudentResult from "../pages/student/QuizHistoryPage";
 import ExamInstructionsPage from "../pages/student/ExamInstructionsPage";
 import TakeExamPage from "../pages/student/TakeExamPage";
 import SingleAttemptResultPage from "../pages/student/SingleAttemptResultPage";
 import StudentFullReportPage from "../pages/student/StudentFullReportPage";
-
-
 import StudentReportsPage from "../pages/student/StudentReportsPage";
 import StudentWeakAreasPage from "../pages/student/StudentWeakAreasPage";
 import StudentLeaderboardPage from "../pages/student/StudentLeaderboardPage";
@@ -20,6 +20,8 @@ export const StudentRoutes = () => (
     <Route element={<ProtectedRoutes allowedRoles={["user"]} />}>
       <Route path="/student" element={<StudentDashboardPage />} />
       <Route path="/student/quizzes" element={<QuizListPage />} />
+      <Route path="/student/tracks/:interestId" element={<SkillTrackPage />} />
+      <Route path="/student/challenges" element={<LiveChallengesPage />} />
       <Route path="/student/reports" element={<StudentReportsPage />} />
       <Route path="/student/my-attempts" element={<StudentResult />} />
       <Route path="/student/weak-areas" element={<StudentWeakAreasPage />} />

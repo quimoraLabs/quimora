@@ -11,13 +11,22 @@ import {
     checkStudentQuizEligibility,
 } from "../controllers/studentQuiz.controllers.js";
 import { getAvailableQuizzesForStudents } from "../controllers/quiz.controllers.js";
-import { validateObjectId } from "../middleware/validObjectId.middleware.js";
+import trackProgressionController from "../controllers/trackProgression.controllers.js";
+import challengeController from "../controllers/challenge.controllers.js";
 import authMiddleWare, {
     authorizeRoles,
     checkStudentOnboarding,
 } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
+
+// Live Challenges & Contests
+router.get("/challenges", authMiddleWare, authorizeRoles("user"), challengeController.getLiveChallenges);
+router.get("/challenges/:challengeId/leaderboard", authMiddleWare, authorizeRoles("user"), challengeController.getChallengeLeaderboard);
+
+// Student Tracks & Chapter Progression
+router.get("/tracks/:interestId", authMiddleWare, authorizeRoles("user"), checkStudentOnboarding, trackProgressionController.getDomainTrack);
+router.get("/tracks/next-challenge/:quizId", authMiddleWare, authorizeRoles("user"), checkStudentOnboarding, trackProgressionController.getNextChallenge);
 
 // Student Quizzes Discovery Endpoint (supports ?interestId=... and ?level=...)
 router.get("/quizzes", authMiddleWare, authorizeRoles("user"), getAvailableQuizzesForStudents);

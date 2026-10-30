@@ -67,6 +67,8 @@ const SingleAttemptResultPage = () => {
           <ResultActions 
             onExit={handleCleanExit} 
             attemptId={quizResults?.attemptId || quizResults?._id || quizResults?.id} 
+            quizId={quizResults?.quizId || quizResults?.quiz?._id}
+            passed={passed}
           />
         </div>
       </motion.div>

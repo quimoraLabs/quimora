@@ -19,6 +19,7 @@ All technical specifications, schemas, business rules, and roadmaps are maintain
 - 📋 **Product Spec**: [`docs/PRODUCT_SPEC.md`](file:///d:/quimora/docs/PRODUCT_SPEC.md)
 - 🧪 **Test Strategy**: [`docs/TEST_STRATEGY.md`](file:///d:/quimora/docs/TEST_STRATEGY.md)
 - 🤖 **AI Delegation SOP**: [`docs/AI_DELEGATION_GUIDE.md`](file:///d:/quimora/docs/AI_DELEGATION_GUIDE.md)
+- 🗣️ **Language Rules**: [`.agents/rules/language_rules.md`](file:///d:/quimora/.agents/rules/language_rules.md) (Code in English only, chat in Hinglish)
 
 ---
 

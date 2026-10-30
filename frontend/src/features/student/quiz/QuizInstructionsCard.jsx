@@ -676,3 +676,6 @@ export const QuizInstructionsCard = () => {
     </div>
   );
 };
+
+
+export default QuizInstructionsCard;

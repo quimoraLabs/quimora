@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import { Play, Sparkles, SlidersHorizontal, BookOpen, RotateCcw, Search, Tag, X, CheckCircle2, Eye } from "lucide-react";
+import { Play, Sparkles, SlidersHorizontal, BookOpen, RotateCcw, Search, Tag, X, CheckCircle2, Eye, Compass, ArrowRight } from "lucide-react";
 import useQuizListStore from "../../features/student/quiz/store/useQuizListStore";
 import DataTable from "../../components/common/DataTable";
 import InterestFilterBar from "../../features/student/components/InterestFilterBar";
@@ -48,37 +48,34 @@ function QuizListPage() {
   const [selectedSubtopic, setSelectedSubtopic] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [loadingInterests, setLoadingInterests] = useState(true);
-  const [selectedQuizForDetails, setSelectedQuizForDetails] = useState(null);
+  const [inspectedQuiz, setInspectedQuiz] = useState(null);
 
-  // Fetch only the student's chosen interests from their profile
+  // Fetch Student Selected Interests for strictly customized view
   const fetchStudentInterests = useCallback(async () => {
     try {
-      setLoadingInterests(true);
-      const res = await axiosClient.get("/interests/student/profile");
-      if (res.data?.success && res.data?.data?.profile) {
-        const studentInterests = res.data.data.profile.interests || [];
-        setInterests(studentInterests);
+      const res = await axiosClient.get("/api/v2/interests/student/profile");
+      if (res.data?.success && res.data?.data?.interests) {
+        setInterests(res.data.data.interests);
+        if (res.data.data.interests.length > 0) {
+          setSelectedInterestId(res.data.data.interests[0]._id);
+        }
       }
     } catch (err) {
-      console.error("Could not load student profile interests:", err);
-    } finally {
-      setLoadingInterests(false);
+      if (err.response?.status === 403 && err.response?.data?.requiresOnboarding) {
+        setIsModalOpen(true);
+      }
     }
   }, []);
 
   useEffect(() => {
-    fetchAvailableQuizzes({ interestId: selectedInterestId });
-  }, [fetchAvailableQuizzes, selectedInterestId]);
-
-  useEffect(() => {
     fetchStudentInterests();
-  }, [fetchStudentInterests]);
+    fetchAvailableQuizzes();
+  }, [fetchStudentInterests, fetchAvailableQuizzes]);
 
-  const handleStart = useCallback((quiz) => {
-    const quizId = quiz?._id || quiz?.id;
-    if (!quiz || !quizId) {
-      toast.error("Invalid quiz selection");
+  const handleStartExam = useCallback((quiz) => {
+    const quizId = quiz._id || quiz.id;
+    if (!quizId) {
+      toast.error("Quiz identifier is invalid or missing");
       return;
     }
 
@@ -114,7 +111,6 @@ function QuizListPage() {
       return [];
     }
 
-    // If student has no selected interests yet, show all available published quizzes
     if (!interests || interests.length === 0) {
       return quizzes;
     }
@@ -123,7 +119,6 @@ function QuizListPage() {
       interests.map((i) => (i._id?.toString() || i.id?.toString() || "").trim())
     );
 
-    // 1. Base filter: Quiz belongs strictly to student's chosen topics
     const allowedQuizzes = quizzes.filter((q) => {
       const matchesId = (q.interestIds || []).some((item) => {
         const idStr = (typeof item === "object" ? item?._id : item)?.toString() || "";
@@ -139,59 +134,53 @@ function QuizListPage() {
         const quizTags = (q.tags || []).map((t) => t.toLowerCase());
 
         return (
-          tags.some((t) => title.includes(t) || desc.includes(t) || quizTags.includes(t)) ||
+          tags.some((tag) => title.includes(tag) || desc.includes(tag) || quizTags.includes(tag)) ||
           title.includes(interestName) ||
           desc.includes(interestName)
         );
       });
     });
 
-    // 2. If a specific interest filter pill is clicked, filter strictly to that topic
-    if (selectedInterestId) {
-      const activeInterest = interests.find(
-        (i) => (i._id?.toString() || i.id?.toString()) === selectedInterestId.toString()
-      );
-      if (!activeInterest) return allowedQuizzes;
-
-      const targetId = (activeInterest._id?.toString() || activeInterest.id?.toString() || "").trim();
-      const tags = (activeInterest.topicTags || []).map((t) => t.toLowerCase());
-      const interestName = (activeInterest.name || "").toLowerCase();
-
-      return allowedQuizzes.filter((q) => {
-        const matchesId = (q.interestIds || []).some((item) => {
-          const idStr = (typeof item === "object" ? item?._id : item)?.toString() || "";
-          return idStr === targetId;
-        });
-        if (matchesId) return true;
-
-        const title = (q.title || "").toLowerCase();
-        const desc = (q.description || "").toLowerCase();
-        const quizTags = (q.tags || []).map((t) => t.toLowerCase());
-
-        return (
-          tags.some((t) => title.includes(t) || desc.includes(t) || quizTags.includes(t)) ||
-          title.includes(interestName) ||
-          desc.includes(interestName)
-        );
-      });
+    if (!selectedInterestId) {
+      return allowedQuizzes;
     }
 
-    return allowedQuizzes;
-  }, [quizzes, selectedInterestId, interests]);
+    const currentSelected = interests.find(
+      (i) => (i._id?.toString() || i.id?.toString()) === selectedInterestId.toString()
+    );
 
-  // Extract available subtopics from current pool of quizzes (e.g. HTML, CSS, JavaScript)
+    return allowedQuizzes.filter((q) => {
+      const matchesSelectedId = (q.interestIds || []).some((item) => {
+        const idStr = (typeof item === "object" ? item?._id : item)?.toString() || "";
+        return idStr === selectedInterestId.toString();
+      });
+      if (matchesSelectedId) return true;
+
+      if (!currentSelected) return false;
+
+      const tags = (currentSelected.topicTags || []).map((t) => t.toLowerCase());
+      const interestName = (currentSelected.name || "").toLowerCase();
+      const title = (q.title || "").toLowerCase();
+      const desc = (q.description || "").toLowerCase();
+      const quizTags = (q.tags || []).map((t) => t.toLowerCase());
+
+      return (
+        tags.some((tag) => title.includes(tag) || desc.includes(tag) || quizTags.includes(tag)) ||
+        title.includes(interestName) ||
+        desc.includes(interestName)
+      );
+    });
+  }, [quizzes, interests, selectedInterestId]);
+
   const availableSubtopics = useMemo(() => {
     const set = new Set();
     interestFilteredQuizzes.forEach((q) => {
       const badge = getTopicBadge(q);
-      if (badge && badge.label) {
-        set.add(badge.label);
-      }
+      if (badge?.label) set.add(badge.label);
     });
     return Array.from(set);
   }, [interestFilteredQuizzes]);
 
-  // Apply subtopic pill filter and search query filter
   const finalQuizzes = useMemo(() => {
     let result = interestFilteredQuizzes;
 
@@ -213,12 +202,9 @@ function QuizListPage() {
     return result;
   }, [interestFilteredQuizzes, selectedSubtopic, searchQuery]);
 
-  // Define headers for the DataTable
   const headers = useMemo(() => ["Quiz Title", "Time Limit", "Questions", "Attempts", ""], []);
 
-  // Define renderRow for DataTable
   const renderQuizRow = useCallback((quiz) => {
-    // Strictly clamp maxAttempts to 3
     const maxAttempts = Math.min(Number(quiz?.maxAttempts) || 3, 3);
     const attemptsUsed = Number(quiz?.attemptsUsed) || 0;
     const attemptsRemaining = quiz?.attemptsRemaining !== undefined
@@ -243,80 +229,89 @@ function QuizListPage() {
           </div>
           <div className="text-xs text-muted max-w-xl line-clamp-1">{quiz?.description}</div>
 
-          {/* Teacher / Evaluator Profile Badge */}
           <div className="mt-2 flex items-center gap-2">
             <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 text-2xs text-muted">
               <span className="w-4 h-4 rounded-full bg-linear-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white text-3xs font-bold">
                 {(quiz?.instructor?.name || quiz?.createdBy?.name || "Quimora Faculty").charAt(0).toUpperCase()}
               </span>
-              <span className="font-semibold text-slate-700 dark:text-slate-300">
-                {quiz?.instructor?.name || quiz?.createdBy?.name || "Quimora Faculty"}
+              <span className="font-medium text-slate-700 dark:text-slate-300">
+                {quiz?.instructor?.name || quiz?.createdBy?.name || "Academic Certified"}
               </span>
-              <span className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded-full text-3xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                <CheckCircle2 className="w-2.5 h-2.5 text-emerald-500" /> Verified Evaluator
+              <span className="text-indigo-600 dark:text-indigo-400 font-semibold text-3xs uppercase tracking-wider">
+                • Verified Faculty
               </span>
             </div>
           </div>
         </td>
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">
-          {quiz?.timeLimit} minutes
+
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-main">
+          {quiz?.timeLimit} mins
         </td>
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">
-          {quiz?.questions?.length || 0}
+
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-main">
+          {quiz?.questions?.length || 15}
         </td>
-        <td className="px-6 py-4 whitespace-nowrap text-sm">
+
+        <td className="px-6 py-4 whitespace-nowrap">
           <div className="flex flex-col gap-1">
-            <span
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold w-fit ${
-                !isExhausted
-                  ? "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800"
-                  : "bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800"
-              }`}
-            >
-              <RotateCcw className="w-3 h-3" />
-              {attemptsUsed} / {maxAttempts} Used
-            </span>
-            <span className="text-2xs text-muted">
-              {!isExhausted
-                ? `${attemptsRemaining} attempts left`
-                : "No attempts remaining"}
-            </span>
+            <div className="flex items-center gap-1 text-xs">
+              <span className="text-muted">Used:</span>
+              <span className="font-semibold text-main">{attemptsUsed}</span>
+              <span className="text-muted">/</span>
+              <span className="text-muted">{maxAttempts}</span>
+            </div>
+            <div className="text-2xs font-medium">
+              {isExhausted ? (
+                <span className="text-rose-500 font-bold">Exhausted (3/3)</span>
+              ) : (
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                  {attemptsRemaining} {attemptsRemaining === 1 ? "attempt" : "attempts"} left
+                </span>
+              )}
+            </div>
           </div>
         </td>
-        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+
+        <td className="px-6 py-4 whitespace-nowrap text-right">
           <div className="flex items-center justify-end gap-2">
             <button
-              onClick={() => setSelectedQuizForDetails(quiz)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 border border-main text-xs font-semibold rounded-xl text-main hover:bg-main transition-all cursor-pointer"
-              title="View quiz syllabus, evaluator & rules"
+              onClick={() => setInspectedQuiz(quiz)}
+              title="Inspect Assessment Specs & Topics"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold transition-all cursor-pointer shadow-xs"
             >
-              <Eye className="w-3.5 h-3.5 text-indigo-500" />
+              <Eye className="w-3.5 h-3.5 text-slate-500" />
               <span>Details</span>
             </button>
+
             <button
-              onClick={() => handleStart(quiz)}
+              onClick={() => handleStartExam(quiz)}
               disabled={isExhausted}
-              className={`inline-flex items-center gap-2 px-4 py-2 border border-transparent text-sm font-medium rounded-xl text-white transition-all shadow-sm ${
+              className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer ${
                 isExhausted
-                  ? "bg-gray-400 dark:bg-zinc-700 opacity-60 cursor-not-allowed"
-                  : "bg-indigo-600 hover:bg-indigo-700 cursor-pointer shadow-indigo-500/20 hover:shadow-indigo-500/30"
+                  ? "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed"
+                  : "bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-indigo-500/20 hover:shadow-indigo-500/30"
               }`}
             >
-              <Play className="w-4 h-4" /> {isExhausted ? "Limit Reached" : "Start"}
+              <Play className="w-3.5 h-3.5 fill-current" />
+              <span>{isExhausted ? "Limit Reached" : "Take Exam"}</span>
             </button>
           </div>
         </td>
       </>
     );
-  }, [handleStart]);
+  }, [handleStartExam]);
+
+  const activeInterestObj = useMemo(() => {
+    return interests.find((i) => (i._id?.toString() || i.id?.toString()) === selectedInterestId?.toString()) || interests[0];
+  }, [interests, selectedInterestId]);
 
   return (
-    <div className="p-4 md:p-8 text-main min-h-screen space-y-6">
-      {/* Title & Subtitle */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
+      {/* Header Banner */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-xs font-bold uppercase tracking-wider mb-2">
-            <Sparkles className="w-3.5 h-3.5" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 mb-2">
+            <Sparkles className="w-3 h-3" />
             Adaptive Catalog
           </div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Available Quizzes</h1>
@@ -326,6 +321,17 @@ function QuizListPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          {activeInterestObj && (
+            <button
+              onClick={() => navigate(`/student/tracks/${activeInterestObj._id || activeInterestObj.id}`)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs font-bold transition-all shadow-md shadow-indigo-600/20 cursor-pointer"
+            >
+              <Compass className="w-4 h-4" />
+              <span>Open Skill Track</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          )}
+
           <button
             onClick={() => setIsModalOpen(true)}
             className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50/70 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-xs font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all cursor-pointer shadow-sm"
@@ -333,14 +339,10 @@ function QuizListPage() {
             <SlidersHorizontal className="w-3.5 h-3.5" />
             Manage Interests
           </button>
-
-          <div className="text-xs font-semibold px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-            {finalQuizzes.length} Quizzes Available
-          </div>
         </div>
       </div>
 
-      {/* Interest Filter Bar (strictly displays only student's selected interests) */}
+      {/* Interest Filter Bar */}
       {interests.length > 0 && (
         <div className="bg-slate-50/50 dark:bg-slate-900/40 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2">
           <InterestFilterBar
@@ -399,98 +401,43 @@ function QuizListPage() {
               placeholder="Search HTML, CSS, JS..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-8 py-1.5 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 text-main placeholder:text-muted"
+              className="w-full pl-8 pr-7 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-main focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-main"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-3 h-3" />
               </button>
             )}
           </div>
         </div>
       )}
 
-      {/* Quizzes Table / Empty State */}
-      {finalQuizzes.length > 0 ? (
+      {/* Main Quizzes Table */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
         <DataTable
           headers={headers}
           data={finalQuizzes}
           renderRow={renderQuizRow}
-          isView={false}
-          isEdit={false}
-          isDelete={false}
-          type="quiz"
+          emptyMessage="No quizzes found matching your current interest or filter. Try selecting another topic or manage your interests."
         />
-      ) : (
-        <div className="py-16 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 max-w-lg mx-auto">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center mx-auto mb-4 text-indigo-600 dark:text-indigo-400">
-            <BookOpen className="w-6 h-6" />
-          </div>
-          <p className="text-base font-semibold text-slate-800 dark:text-slate-200">
-            {searchQuery || selectedSubtopic !== "all"
-              ? "No quizzes match your active filter or search"
-              : interests.length === 0
-              ? "No interests selected in your profile yet"
-              : selectedInterestId
-              ? "No quizzes found for this selected topic"
-              : "No quizzes match your selected interests"}
-          </p>
-          <p className="text-xs text-muted mt-1.5">
-            {searchQuery || selectedSubtopic !== "all"
-              ? "Try resetting the subtopic filter or clearing your search query."
-              : interests.length === 0
-              ? "Select your current topics or electives to unlock tailored quizzes."
-              : selectedInterestId
-              ? "Try switching to 'All Quizzes' or pick another topic from your interests."
-              : "Update your interests to explore quizzes across different engineering topics."}
-          </p>
-          <div className="mt-5 flex items-center justify-center gap-3">
-            {(searchQuery || selectedSubtopic !== "all") && (
-              <button
-                onClick={() => {
-                  setSearchQuery("");
-                  setSelectedSubtopic("all");
-                }}
-                className="px-4 py-2 text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl hover:bg-slate-200 transition-all cursor-pointer"
-              >
-                Reset Topic Filters
-              </button>
-            )}
-            {selectedInterestId && (
-              <button
-                onClick={() => setSelectedInterestId(null)}
-                className="px-4 py-2 text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl hover:bg-slate-200 transition-all cursor-pointer"
-              >
-                Clear Interest Filter
-              </button>
-            )}
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="px-4 py-2 text-xs font-bold bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all cursor-pointer shadow-md shadow-indigo-500/20"
-            >
-              Manage Interests
-            </button>
-          </div>
-        </div>
-      )}
+      </div>
 
-      {/* Onboarding / Interest Management Modal */}
+      {/* Onboarding / Interests Modal */}
       <InterestOnboardingModal
         isOpen={isModalOpen}
-        initialSelectedIds={interests.map((i) => i._id || i.id)}
         onClose={() => setIsModalOpen(false)}
         onComplete={handleOnboardingComplete}
       />
 
-      {/* Quiz Syllabus & Details Preview Modal */}
+      {/* Quiz Details Modal */}
       <QuizDetailsModal
-        isOpen={Boolean(selectedQuizForDetails)}
-        onClose={() => setSelectedQuizForDetails(null)}
-        quiz={selectedQuizForDetails}
-        onStartQuiz={handleStart}
+        isOpen={Boolean(inspectedQuiz)}
+        quiz={inspectedQuiz}
+        onClose={() => setInspectedQuiz(null)}
+        onTakeExam={handleStartExam}
       />
     </div>
   );

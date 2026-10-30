@@ -74,6 +74,22 @@ const quizSchema = new mongoose.Schema(
       enum: ["Beginner", "Learner", "Intermediate", "Advanced", "Master", "Expert"],
       default: "Beginner",
     },
+    chapterId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Chapter",
+      default: null,
+      index: true,
+    },
+    trackOrder: {
+      type: Number,
+      default: 1,
+      min: 1,
+    },
+    prerequisiteQuizId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Quiz",
+      default: null,
+    },
   },
   { timestamps: true, versionKey: false }
 );
@@ -95,6 +111,7 @@ quizSchema.index({ status: 1, startDate: 1, endDate: 1 });
 quizSchema.index({ createdBy: 1 });
 quizSchema.index({ interestIds: 1 });
 quizSchema.index({ interestIds: 1, level: 1 });
+quizSchema.index({ chapterId: 1, trackOrder: 1 });
 
 const Quiz = mongoose.model("Quiz", quizSchema);
 export default Quiz;
