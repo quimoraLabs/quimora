@@ -2,21 +2,22 @@ import mongoose from "mongoose";
 
 const chapterSchema = new mongoose.Schema(
   {
+    courseId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Course",
+      index: true,
+    },
+    // Optional interestId alias for legacy test backwards-compatibility
     interestId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Interest",
-      required: true,
+      default: null,
       index: true,
     },
     title: {
       type: String,
       required: true,
       trim: true,
-    },
-    description: {
-      type: String,
-      trim: true,
-      default: "",
     },
     orderIndex: {
       type: Number,
@@ -29,19 +30,14 @@ const chapterSchema = new mongoose.Schema(
       min: 0,
       max: 100,
     },
-    isPublished: {
-      type: Boolean,
-      default: true,
-    },
   },
   {
     timestamps: true,
   }
 );
 
-// Compound index to ensure uniqueness of chapter ordering per interest domain
-chapterSchema.index({ interestId: 1, orderIndex: 1 }, { unique: true });
+// Compound index to ensure uniqueness of chapter ordering per course
+chapterSchema.index({ courseId: 1, orderIndex: 1 }, { unique: true });
 
 const Chapter = mongoose.model("Chapter", chapterSchema);
 export default Chapter;
-

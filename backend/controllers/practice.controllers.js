@@ -45,7 +45,8 @@ class PracticeController {
   async startRandomMindGame(req, res, next) {
     try {
       const userId = req.auth?.userId || req.user?._id || req.user?.id;
-      const session = await practiceEngineService.startRandomMindGame(userId);
+      const { domainId } = req.body || {};
+      const session = await practiceEngineService.startRandomMindGame(userId, { domainId });
       return res.status(200).json({
         success: true,
         data: session,
@@ -62,10 +63,11 @@ class PracticeController {
   async startCustomDrill(req, res, next) {
     try {
       const userId = req.auth?.userId || req.user?._id || req.user?.id;
-      const { scopeType, targetName } = req.body;
+      const { scopeType, targetName, domainName } = req.body;
       const session = await practiceEngineService.startCustomDrill(userId, {
         scopeType,
         targetName,
+        domainName,
       });
       return res.status(200).json({
         success: true,

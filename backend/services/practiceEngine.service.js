@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 import PracticeProfile, { getTodayDateIST } from "../models/practiceProfile.model.js";
 import PracticeSession from "../models/practiceSession.model.js";
 import StudentProfile from "../models/studentProfile.model.js";
+import Domain from "../models/domain.model.js";
+import Course from "../models/course.model.js";
 import Interest from "../models/interest.model.js";
 import Question from "../models/question.model.js";
 import Quiz from "../models/quiz.model.js";
@@ -120,37 +122,43 @@ class PracticeEngineService {
 
   /**
    * MODE 1: Starts Random Mind-Game drill.
-   * Generates or curates fresh scenario questions across student interests.
+   * Generates or curates fresh scenario questions strictly within student's active Domain courses.
    */
-  async startRandomMindGame(userId) {
+  async startRandomMindGame(userId, { domainId } = {}) {
     const profile = await this.getOrCreateProfile(userId);
     if (profile.randomDrillCompletedToday) {
       throw new Error("You have already completed today's Random Mind-Game! Come back tomorrow.");
     }
 
-    // Get student enrolled interests
-    const studentProfile = await StudentProfile.findOne({ userId }).populate("interests").lean();
-    let interests = studentProfile?.interests || [];
-
-    if (!interests || interests.length === 0) {
-      interests = await Interest.find({ isActive: true }).limit(3).lean();
+    // Determine target Domain scope
+    let activeDomain = null;
+    if (domainId && mongoose.Types.ObjectId.isValid(domainId)) {
+      activeDomain = await Domain.findById(domainId).lean();
+    }
+    if (!activeDomain) {
+      activeDomain = await Domain.findOne({ isActive: true }).lean();
     }
 
-    // Pick 2 to 3 random topics across enrolled domains
-    const allTopicTags = interests.flatMap((i) => i.topicTags || [i.name]);
-    const shuffledTopics = allTopicTags.sort(() => 0.5 - Math.random());
-    const selectedTopics = shuffledTopics.slice(0, Math.min(3, Math.max(2, shuffledTopics.length)));
+    // Get courses belonging strictly to this Domain
+    const domainCourses = activeDomain
+      ? await Course.find({ domainId: activeDomain._id }).lean()
+      : [];
+    const courseTitles = domainCourses.map((c) => c.title);
+
+    let selectedTopics = courseTitles.length > 0 ? courseTitles : ["Web Fundamentals", "Application Architecture"];
+    const shuffledTopics = [...selectedTopics].sort(() => 0.5 - Math.random());
+    const targetTopics = shuffledTopics.slice(0, Math.min(3, Math.max(2, shuffledTopics.length)));
 
     let practiceQuestions = [];
 
-    // Try AI generation for completely fresh, non-repetitive scenario questions
+    // Try AI generation strictly locked to this Domain
     try {
-      const topicString = selectedTopics.join(", ");
+      const topicString = targetTopics.join(", ");
       const aiQs = await generateAIQuestionsService({
-        topic: topicString,
+        topic: `${activeDomain?.name ? activeDomain.name + ": " : ""}${topicString}`,
         count: 6,
         difficulty: "mixed",
-        additionalContext: "Practical, conceptual problem-solving questions. Avoid rote memorization definitions.",
+        additionalContext: `CRITICAL: You are locked strictly to the "${activeDomain?.name || "Target"}" Domain. Do NOT generate questions from any other domain or unrelated technology.`,
       });
 
       if (aiQs && aiQs.length >= 4) {
@@ -161,21 +169,22 @@ class PracticeEngineService {
             isCorrect: Boolean(opt.isCorrect),
           })),
           explanation: q.explanation || `Comprehensive explanation of concepts covered in this question.`,
-          topicTag: selectedTopics[idx % selectedTopics.length] || "General",
+          topicTag: targetTopics[idx % targetTopics.length] || activeDomain?.name || "General",
         }));
       }
     } catch (aiErr) {
       console.warn("AI generation fallback to database pool:", aiErr.message);
     }
 
-    // Fallback if AI is offline or in test mode without API key - strictly select from enrolled interests!
+    // Fallback if AI is offline - strictly select from Domain's courses quizzes
     if (practiceQuestions.length < 5) {
-      const interestQuizzes = await Quiz.find({
-        interestIds: { $in: interests.map((i) => i._id) },
-        status: "published",
+      const courseIds = domainCourses.map((c) => c._id);
+      const domainQuizzes = await Quiz.find({
+        courseId: { $in: courseIds },
+        isActive: true,
       }).select("questions tags").lean();
 
-      const matchedQIds = interestQuizzes.flatMap((q) => q.questions || []);
+      const matchedQIds = domainQuizzes.flatMap((q) => q.questions || []);
       const dbQuestions = await Question.find({ _id: { $in: matchedQIds } }).lean();
 
       const sourceQs = dbQuestions.length >= 5 ? dbQuestions : await Question.find().limit(15).lean();
@@ -186,8 +195,8 @@ class PracticeEngineService {
           optionText: opt.optionText,
           isCorrect: Boolean(opt.isCorrect),
         })),
-        explanation: q.explanation || `Key concept review for ${selectedTopics[idx % selectedTopics.length] || "the topic"}.`,
-        topicTag: selectedTopics[idx % selectedTopics.length] || "General",
+        explanation: q.explanation || `Key concept review for ${targetTopics[idx % targetTopics.length] || "the topic"}.`,
+        topicTag: targetTopics[idx % targetTopics.length] || activeDomain?.name || "General",
       }));
     }
 
@@ -221,8 +230,9 @@ class PracticeEngineService {
   /**
    * MODE 2: Starts Custom Daily Practice Drill.
    * Student chooses scope. Timer = 10 minutes.
+   * Locked to Domain/Course context.
    */
-  async startCustomDrill(userId, { scopeType, targetName }) {
+  async startCustomDrill(userId, { scopeType, targetName, domainName }) {
     const profile = await this.getOrCreateProfile(userId);
 
     if (profile.customDailyTarget === 0) {
@@ -238,13 +248,13 @@ class PracticeEngineService {
     const normalizedTarget = (targetName || "General").trim();
     let practiceQuestions = [];
 
-    // Try AI generation for targeted remedial practice
+    // Try AI generation for targeted remedial practice locked to Domain
     try {
       const aiQs = await generateAIQuestionsService({
-        topic: normalizedTarget,
+        topic: domainName ? `${domainName} - ${normalizedTarget}` : normalizedTarget,
         count: 5,
         difficulty: "medium",
-        additionalContext: "Targeted remedial diagnostic drill questions with detailed explanations.",
+        additionalContext: `Targeted remedial diagnostic drill questions. MUST BE 100% EXCLUSIVELY on "${normalizedTarget}"${domainName ? ` within ${domainName}` : ""}. Absolutely no questions from other domains or unrelated languages.`,
       });
 
       if (aiQs && aiQs.length >= 4) {

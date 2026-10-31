@@ -25,20 +25,24 @@ class TrackProgressionService {
     }
 
     // Fetch chapters ordered by orderIndex
-    let chapters = await Chapter.find({ interestId, isPublished: true })
+    let chapters = await Chapter.find({ interestId })
       .sort({ orderIndex: 1 })
       .lean();
 
     // If chapters don't exist yet, auto-generate default Chapter 1 to organize existing quizzes
     if (!chapters || chapters.length === 0) {
-      const defaultChapter = await Chapter.create({
-        interestId,
-        title: `${interest.name} Fundamentals`,
-        description: `Core fundamentals and principles of ${interest.name}.`,
-        orderIndex: 1,
-        requiredPassingScore: 50,
-      });
-      chapters = [defaultChapter.toObject()];
+      const defaultChapter = await Chapter.findOneAndUpdate(
+        { interestId, orderIndex: 1 },
+        {
+          interestId,
+          title: `${interest.name} Fundamentals`,
+          description: `Core fundamentals and principles of ${interest.name}.`,
+          orderIndex: 1,
+          requiredPassingScore: 50,
+        },
+        { upsert: true, returnDocument: "after" }
+      );
+      chapters = [defaultChapter.toObject ? defaultChapter.toObject() : defaultChapter];
 
       // Link unassigned quizzes of this interest to default chapter
       await Quiz.updateMany(

@@ -1,124 +1,39 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import {
   Play,
   Sparkles,
-  SlidersHorizontal,
   BookOpen,
-  RotateCcw,
-  Search,
-  Tag,
-  X,
-  CheckCircle2,
-  Eye,
-  Compass,
-  ArrowRight,
-  Layers,
-  ListFilter,
-  Lock,
-  Unlock,
+  ChevronRight,
   Clock,
   Target,
-  ChevronRight,
+  Layers,
+  FolderTree,
+  CheckCircle2,
+  Lock,
+  Eye,
 } from "lucide-react";
-import useQuizListStore from "../../features/student/quiz/store/useQuizListStore";
-import DataTable from "../../components/common/DataTable";
-import InterestFilterBar from "../../features/student/components/InterestFilterBar";
-import InterestOnboardingModal from "../../features/student/components/InterestOnboardingModal";
+import useHierarchyStore from "../../features/student/store/useHierarchyStore";
 import QuizDetailsModal from "../../features/student/quiz/QuizDetailsModal";
-import axiosClient from "../../api/axiosClient";
 
-const getTopicBadge = (quiz) => {
-  const t = (quiz?.title || "").toLowerCase();
-  const tags = (quiz?.tags || []).map((x) => x.toLowerCase());
-
-  if (t.includes("html") || tags.includes("html") || tags.includes("html5")) {
-    return { label: "HTML5", bg: "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20" };
-  }
-  if (t.includes("css") || tags.includes("css") || tags.includes("css3") || tags.includes("flexbox")) {
-    return { label: "CSS3", bg: "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20" };
-  }
-  if (t.includes("javascript") || t.includes(" js ") || tags.includes("javascript") || tags.includes("es6")) {
-    return { label: "JavaScript", bg: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20" };
-  }
-  if (t.includes("react") || tags.includes("react")) {
-    return { label: "React", bg: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20" };
-  }
-  if (t.includes("node") || t.includes("express") || tags.includes("node")) {
-    return { label: "Node.js", bg: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20" };
-  }
-  if (t.includes("sql") || tags.includes("sql")) {
-    return { label: "SQL", bg: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20" };
-  }
-  if (t.includes("mongo") || tags.includes("mongodb")) {
-    return { label: "MongoDB", bg: "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20" };
-  }
-  if (t.includes("comprehensive") || tags.includes("comprehensive")) {
-    return { label: "Comprehensive", bg: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20" };
-  }
-  return { label: "Specialized", bg: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20" };
-};
-
-function QuizListPage() {
+export default function QuizListPage() {
   const navigate = useNavigate();
-  const { fetchAvailableQuizzes, quizzes } = useQuizListStore();
-  const [activeCatalogTab, setActiveCatalogTab] = useState("chapters"); // 'chapters' | 'all_quizzes'
-  const [interests, setInterests] = useState([]);
-  const [selectedInterestId, setSelectedInterestId] = useState(null);
-  const [selectedSubtopic, setSelectedSubtopic] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const {
+    domains,
+    selectedDomain,
+    courses,
+    selectedCourse,
+    courseHierarchy,
+    loading,
+    selectDomain,
+    selectCourse,
+  } = useHierarchyStore();
+
+  const [expandedChapterIndex, setExpandedChapterIndex] = useState(0);
   const [inspectedQuiz, setInspectedQuiz] = useState(null);
 
-  // Track / Chapters data
-  const [trackData, setTrackData] = useState(null);
-  const [loadingTrack, setLoadingTrack] = useState(false);
-  const [expandedChapterIndex, setExpandedChapterIndex] = useState(0);
-
-  const fetchStudentInterests = useCallback(async () => {
-    try {
-      const res = await axiosClient.get("/interests/student/profile");
-      if (res.data?.success && res.data?.data?.interests) {
-        setInterests(res.data.data.interests);
-        if (res.data.data.interests.length > 0) {
-          setSelectedInterestId(res.data.data.interests[0]._id);
-        }
-      }
-    } catch (err) {
-      if (err.response?.status === 403 && err.response?.data?.requiresOnboarding) {
-        setIsModalOpen(true);
-      }
-    }
-  }, []);
-
-  const fetchTrackData = useCallback(async (interestId) => {
-    if (!interestId) return;
-    try {
-      setLoadingTrack(true);
-      const res = await axiosClient.get(`/student/tracks/${interestId}`);
-      if (res.data?.success) {
-        setTrackData(res.data.data);
-      }
-    } catch {
-      setTrackData(null);
-    } finally {
-      setLoadingTrack(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchStudentInterests();
-    fetchAvailableQuizzes();
-  }, [fetchStudentInterests, fetchAvailableQuizzes]);
-
-  useEffect(() => {
-    if (selectedInterestId) {
-      fetchTrackData(selectedInterestId);
-    }
-  }, [selectedInterestId, fetchTrackData]);
-
-  const handleStartExam = useCallback((quiz) => {
+  const handleStartExam = (quiz) => {
     const quizId = quiz._id || quiz.id;
     if (!quizId) {
       toast.error("Quiz identifier is invalid or missing");
@@ -128,8 +43,8 @@ function QuizListPage() {
     try {
       sessionStorage.setItem("activeExamQuizId", quizId);
       sessionStorage.setItem("activeExamQuizTitle", quiz.title || "Assessment");
-      sessionStorage.setItem("activeExamQuizDuration", String(quiz.timeLimit || 15));
-      sessionStorage.setItem("activeExamQuizQuestions", String(quiz.questions?.length || 15));
+      sessionStorage.setItem("activeExamQuizDuration", String(quiz.duration || quiz.timeLimit || 15));
+      sessionStorage.setItem("activeExamQuizQuestions", String(quiz.totalQuestions || quiz.questions?.length || 15));
     } catch (e) {
       console.warn("sessionStorage warning:", e);
     }
@@ -138,498 +53,200 @@ function QuizListPage() {
       state: {
         quizId,
         title: quiz.title,
-        timeLimit: quiz.timeLimit,
-        totalQuestions: quiz.questions?.length || 15,
+        timeLimit: quiz.duration || quiz.timeLimit || 15,
+        totalQuestions: quiz.totalQuestions || quiz.questions?.length || 15,
         tags: quiz.tags || [],
       },
     });
-  }, [navigate]);
-
-  const handleOnboardingComplete = useCallback(() => {
-    setIsModalOpen(false);
-    fetchStudentInterests();
-    fetchAvailableQuizzes();
-  }, [fetchStudentInterests, fetchAvailableQuizzes]);
-
-  // Base interest-filtered quizzes
-  const interestFilteredQuizzes = useMemo(() => {
-    if (!quizzes || quizzes.length === 0) return [];
-    if (!interests || interests.length === 0) return quizzes;
-
-    const studentInterestIdStrings = new Set(
-      interests.map((i) => (i._id?.toString() || i.id?.toString() || "").trim())
-    );
-
-    const allowedQuizzes = quizzes.filter((q) => {
-      const matchesId = (q.interestIds || []).some((item) => {
-        const idStr = (typeof item === "object" ? item?._id : item)?.toString() || "";
-        return studentInterestIdStrings.has(idStr);
-      });
-      if (matchesId) return true;
-
-      return interests.some((interest) => {
-        const tags = (interest.topicTags || []).map((t) => t.toLowerCase());
-        const interestName = (interest.name || "").toLowerCase();
-        const title = (q.title || "").toLowerCase();
-        const desc = (q.description || "").toLowerCase();
-        const quizTags = (q.tags || []).map((t) => t.toLowerCase());
-
-        return (
-          tags.some((tag) => title.includes(tag) || desc.includes(tag) || quizTags.includes(tag)) ||
-          title.includes(interestName) ||
-          desc.includes(interestName)
-        );
-      });
-    });
-
-    if (!selectedInterestId) return allowedQuizzes;
-
-    const currentSelected = interests.find(
-      (i) => (i._id?.toString() || i.id?.toString()) === selectedInterestId.toString()
-    );
-
-    return allowedQuizzes.filter((q) => {
-      const matchesSelectedId = (q.interestIds || []).some((item) => {
-        const idStr = (typeof item === "object" ? item?._id : item)?.toString() || "";
-        return idStr === selectedInterestId.toString();
-      });
-      if (matchesSelectedId) return true;
-      if (!currentSelected) return false;
-
-      const tags = (currentSelected.topicTags || []).map((t) => t.toLowerCase());
-      const interestName = (currentSelected.name || "").toLowerCase();
-      const title = (q.title || "").toLowerCase();
-      const desc = (q.description || "").toLowerCase();
-      const quizTags = (q.tags || []).map((t) => t.toLowerCase());
-
-      return (
-        tags.some((tag) => title.includes(tag) || desc.includes(tag) || quizTags.includes(tag)) ||
-        title.includes(interestName) ||
-        desc.includes(interestName)
-      );
-    });
-  }, [quizzes, interests, selectedInterestId]);
-
-  const availableSubtopics = useMemo(() => {
-    const set = new Set();
-    interestFilteredQuizzes.forEach((q) => {
-      const badge = getTopicBadge(q);
-      if (badge?.label) set.add(badge.label);
-    });
-    return Array.from(set);
-  }, [interestFilteredQuizzes]);
-
-  const finalQuizzes = useMemo(() => {
-    let result = interestFilteredQuizzes;
-
-    if (selectedSubtopic !== "all") {
-      result = result.filter((q) => getTopicBadge(q).label === selectedSubtopic);
-    }
-
-    if (searchQuery.trim()) {
-      const query = searchQuery.trim().toLowerCase();
-      result = result.filter((q) => {
-        const title = (q.title || "").toLowerCase();
-        const desc = (q.description || "").toLowerCase();
-        const tags = (q.tags || []).map((t) => t.toLowerCase());
-        const badge = getTopicBadge(q).label.toLowerCase();
-        return title.includes(query) || desc.includes(query) || tags.some((t) => t.includes(query)) || badge.includes(query);
-      });
-    }
-
-    return result;
-  }, [interestFilteredQuizzes, selectedSubtopic, searchQuery]);
-
-  const headers = useMemo(() => ["Quiz Title", "Time Limit", "Questions", "Attempts", ""], []);
-
-  const renderQuizRow = useCallback((quiz) => {
-    const maxAttempts = Math.min(Number(quiz?.maxAttempts) || 3, 3);
-    const attemptsUsed = Number(quiz?.attemptsUsed) || 0;
-    const attemptsRemaining = quiz?.attemptsRemaining !== undefined
-      ? Math.min(Number(quiz.attemptsRemaining), Math.max(0, maxAttempts - attemptsUsed))
-      : Math.max(0, maxAttempts - attemptsUsed);
-    const isExhausted = attemptsRemaining <= 0 || quiz?.canAttempt === false;
-    const badge = getTopicBadge(quiz);
-
-    return (
-      <>
-        <td className="px-6 py-4 whitespace-nowrap">
-          <div className="flex items-center gap-2 mb-1">
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-2xs font-bold uppercase tracking-wider border ${badge.bg}`}>
-              {badge.label}
-            </span>
-            {quiz?.level && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-2xs font-bold uppercase tracking-wider border bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20">
-                {quiz.level}
-              </span>
-            )}
-            <div className="text-sm font-semibold text-main">{quiz?.title}</div>
-          </div>
-          <div className="text-xs text-muted max-w-xl line-clamp-1">{quiz?.description}</div>
-
-          <div className="mt-2 flex items-center gap-2">
-            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 text-2xs text-muted">
-              <span className="w-4 h-4 rounded-full bg-linear-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white text-3xs font-bold">
-                {(quiz?.instructor?.name || quiz?.createdBy?.name || "Quimora Faculty").charAt(0).toUpperCase()}
-              </span>
-              <span className="font-medium text-slate-700 dark:text-slate-300">
-                {quiz?.instructor?.name || quiz?.createdBy?.name || "Academic Certified"}
-              </span>
-              <span className="text-indigo-600 dark:text-indigo-400 font-semibold text-3xs uppercase tracking-wider">
-                • Verified Faculty
-              </span>
-            </div>
-          </div>
-        </td>
-
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-main">
-          {quiz?.timeLimit} mins
-        </td>
-
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-main">
-          {quiz?.questions?.length || 15}
-        </td>
-
-        <td className="px-6 py-4 whitespace-nowrap">
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-1 text-xs">
-              <span className="text-muted">Used:</span>
-              <span className="font-semibold text-main">{attemptsUsed}</span>
-              <span className="text-muted">/</span>
-              <span className="text-muted">{maxAttempts}</span>
-            </div>
-            <div className="text-2xs font-medium">
-              {isExhausted ? (
-                <span className="text-rose-500 font-bold">Exhausted (3/3)</span>
-              ) : (
-                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
-                  {attemptsRemaining} {attemptsRemaining === 1 ? "attempt" : "attempts"} left
-                </span>
-              )}
-            </div>
-          </div>
-        </td>
-
-        <td className="px-6 py-4 whitespace-nowrap text-right">
-          <div className="flex items-center justify-end gap-2">
-            <button
-              onClick={() => setInspectedQuiz(quiz)}
-              title="Inspect Assessment Specs & Topics"
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold transition-all cursor-pointer shadow-xs"
-            >
-              <Eye className="w-3.5 h-3.5 text-slate-500" />
-              <span>Details</span>
-            </button>
-
-            <button
-              onClick={() => handleStartExam(quiz)}
-              disabled={isExhausted}
-              className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer ${
-                isExhausted
-                  ? "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed"
-                  : "bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-indigo-500/20 hover:shadow-indigo-500/30"
-              }`}
-            >
-              <Play className="w-3.5 h-3.5 fill-current" />
-              <span>{isExhausted ? "Limit Reached" : "Take Exam"}</span>
-            </button>
-          </div>
-        </td>
-      </>
-    );
-  }, [handleStartExam]);
+  };
 
   return (
-    <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
-      {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 mb-2">
-            <Sparkles className="w-3 h-3" />
-            Curriculum & Assessment Catalog
+    <div className="p-4 md:p-6 space-y-6 max-w-6xl mx-auto">
+      {/* 4-Level Breadcrumb & Header */}
+      <div>
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 mb-2">
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>Curriculum Hierarchy: Domain › Course › Chapter › Quiz</span>
+        </div>
+
+        <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
+          {selectedCourse?.title || "Course Curriculum"}
+        </h1>
+        <p className="text-sm text-muted mt-1">
+          {selectedDomain?.name ? `Domain: ${selectedDomain.name} • ` : ""}
+          {selectedCourse?.description || "Select a course to view its sequential chapters and challenge quizzes."}
+        </p>
+      </div>
+
+      {/* LEVEL 1: Root Domain Switcher Pills */}
+      <div className="space-y-2">
+        <div className="text-2xs font-extrabold text-muted uppercase tracking-wider flex items-center gap-1.5">
+          <FolderTree size={13} className="text-accent" />
+          <span>1. Select Domain</span>
+        </div>
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          {domains.map((dom) => (
+            <button
+              key={dom._id}
+              onClick={() => selectDomain(dom)}
+              className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                selectedDomain?._id === dom._id
+                  ? "bg-indigo-600 text-white shadow-sm shadow-indigo-500/30"
+                  : "bg-surface border border-soft text-muted hover:text-main hover:bg-elevated"
+              }`}
+            >
+              {dom.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* LEVEL 2: Course Selector Under Domain */}
+      <div className="space-y-2">
+        <div className="text-2xs font-extrabold text-muted uppercase tracking-wider flex items-center gap-1.5">
+          <BookOpen size={13} className="text-purple-500" />
+          <span>2. Select Course</span>
+        </div>
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          {courses.map((course) => (
+            <button
+              key={course._id}
+              onClick={() => selectCourse(course)}
+              className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                selectedCourse?._id === course._id
+                  ? "bg-purple-600 text-white shadow-sm shadow-purple-500/30"
+                  : "bg-surface border border-soft text-muted hover:text-main hover:bg-elevated"
+              }`}
+            >
+              {course.title}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* LEVEL 3 & 4: Chapters & Quizzes Drill-down */}
+      <div className="space-y-4 pt-2">
+        <div className="text-2xs font-extrabold text-muted uppercase tracking-wider flex items-center gap-1.5">
+          <Layers size={13} className="text-emerald-500" />
+          <span>3. Course Chapters & Associated Quizzes</span>
+        </div>
+
+        {loading ? (
+          <div className="p-12 text-center text-sm text-muted bg-surface rounded-2xl border border-soft">
+            Loading course curriculum tree...
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Main Certification Quizzes</h1>
-          <p className="text-sm text-muted mt-1">
-            HackerRank-style Chapter tracks and proctored examination modules.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50/70 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-xs font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-all cursor-pointer shadow-sm"
-          >
-            <SlidersHorizontal className="w-3.5 h-3.5" />
-            Manage Interests
-          </button>
-        </div>
-      </div>
-
-      {/* Main View Mode Tabs */}
-      <div className="flex items-center gap-2 border-b border-soft pb-2">
-        <button
-          onClick={() => setActiveCatalogTab("chapters")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
-            activeCatalogTab === "chapters"
-              ? "bg-accent text-white shadow-sm"
-              : "text-muted hover:text-main hover:bg-elevated"
-          }`}
-        >
-          <Layers className="w-4 h-4" />
-          <span>Chapters & Curriculum Tree</span>
-        </button>
-
-        <button
-          onClick={() => setActiveCatalogTab("all_quizzes")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
-            activeCatalogTab === "all_quizzes"
-              ? "bg-accent text-white shadow-sm"
-              : "text-muted hover:text-main hover:bg-elevated"
-          }`}
-        >
-          <ListFilter className="w-4 h-4" />
-          <span>All Standalone Quizzes ({finalQuizzes.length})</span>
-        </button>
-      </div>
-
-      {/* Interest Filter Bar */}
-      {interests.length > 0 && (
-        <div className="bg-slate-50/50 dark:bg-slate-900/40 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2">
-          <InterestFilterBar
-            interests={interests}
-            activeInterestId={selectedInterestId}
-            hideAll={activeCatalogTab === "chapters"}
-            onSelectInterest={(id) => {
-              setSelectedInterestId(id || interests[0]?._id);
-              setSelectedSubtopic("all");
-            }}
-          />
-        </div>
-      )}
-
-      {/* VIEW 1: CHAPTERS & CURRICULUM TREE */}
-      {activeCatalogTab === "chapters" && (
-        <div className="space-y-4">
-          {loadingTrack ? (
-            <div className="py-12 text-center text-sm text-muted">Loading Chapters Curriculum...</div>
-          ) : trackData && trackData.chapters?.length > 0 ? (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between px-1">
-                <div>
-                  <h3 className="text-sm font-bold text-main">{trackData.interest?.name} Track</h3>
-                  <p className="text-xs text-muted">Complete prerequisites sequentially to unlock subsequent chapters and certification challenges.</p>
-                </div>
-              </div>
-              {trackData.chapters.map((chapter, cIdx) => (
+        ) : courseHierarchy?.chapters?.length > 0 ? (
+          <div className="space-y-3">
+            {courseHierarchy.chapters.map((chapter, cIdx) => (
+              <div
+                key={chapter._id}
+                className="rounded-2xl border border-soft bg-surface shadow-xs transition-all overflow-hidden"
+              >
+                {/* Chapter Header Accordion */}
                 <div
-                  key={chapter._id}
-                  className={`rounded-2xl border transition-all overflow-hidden ${
-                    chapter.isUnlocked
-                      ? "bg-surface border-soft shadow-xs"
-                      : "bg-surface/50 border-soft opacity-60"
-                  }`}
+                  onClick={() =>
+                    setExpandedChapterIndex(expandedChapterIndex === cIdx ? -1 : cIdx)
+                  }
+                  className="p-4.5 flex items-center justify-between select-none cursor-pointer hover:bg-elevated/40 transition-colors"
                 >
-                  {/* Chapter Header */}
-                  <div
-                    onClick={() => chapter.isUnlocked && setExpandedChapterIndex(cIdx)}
-                    className={`p-5 flex items-center justify-between select-none ${
-                      chapter.isUnlocked ? "hover:bg-elevated/50 cursor-pointer" : "cursor-not-allowed"
-                    }`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div
-                        className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${
-                          chapter.isCompleted
-                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                            : chapter.isUnlocked
-                            ? "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
-                            : "bg-slate-100 dark:bg-slate-800 text-muted"
-                        }`}
-                      >
-                        {chapter.isCompleted ? (
-                          <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                        ) : (
-                          `0${chapter.orderIndex}`
-                        )}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-base font-bold text-main">{chapter.title}</h3>
-                          {!chapter.isUnlocked && (
-                            <span className="inline-flex items-center gap-1 text-2xs font-semibold text-muted bg-elevated px-2 py-0.5 rounded-md">
-                              <Lock className="w-3 h-3" /> Locked
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-muted mt-0.5">{chapter.description}</p>
-                      </div>
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                      0{chapter.orderIndex || cIdx + 1}
                     </div>
-
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-semibold text-muted">
-                        {chapter.quizzes?.filter((q) => q.isCompleted).length}/{chapter.quizzes?.length} Solved
-                      </span>
-                      <ChevronRight
-                        className={`w-5 h-5 text-muted transition-transform duration-200 ${
-                          expandedChapterIndex === cIdx ? "rotate-90 text-accent" : ""
-                        }`}
-                      />
+                    <div>
+                      <h3 className="text-sm font-bold text-main">{chapter.title}</h3>
+                      <p className="text-2xs text-muted">
+                        Passing Threshold: {chapter.requiredPassingScore || 50}% •{" "}
+                        {chapter.quizzes?.length || 0} Quizzes in this Chapter
+                      </p>
                     </div>
                   </div>
 
-                  {/* Chapter Quizzes List */}
-                  {expandedChapterIndex === cIdx && chapter.isUnlocked && (
-                    <div className="border-t border-soft divide-y divide-soft bg-elevated/20">
-                      {chapter.quizzes?.map((quiz) => (
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-semibold text-muted">
+                      {chapter.quizzes?.length} {chapter.quizzes?.length === 1 ? "Quiz" : "Quizzes"}
+                    </span>
+                    <ChevronRight
+                      className={`w-4 h-4 text-muted transition-transform duration-200 ${
+                        expandedChapterIndex === cIdx ? "rotate-90 text-accent" : ""
+                      }`}
+                    />
+                  </div>
+                </div>
+
+                {/* Level 4: Associated Quizzes inside Chapter */}
+                {expandedChapterIndex === cIdx && (
+                  <div className="border-t border-soft divide-y divide-soft bg-elevated/20">
+                    {chapter.quizzes && chapter.quizzes.length > 0 ? (
+                      chapter.quizzes.map((quiz, qIdx) => (
                         <div
                           key={quiz._id}
-                          className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                          className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                         >
-                          <div className="flex items-start gap-3">
-                            <div className="mt-1">
-                              {quiz.isCompleted ? (
-                                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                              ) : quiz.isUnlocked ? (
-                                <Unlock className="w-4 h-4 text-indigo-500" />
-                              ) : (
-                                <Lock className="w-4 h-4 text-muted" />
-                              )}
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-3xs font-extrabold uppercase px-1.5 py-0.5 rounded bg-surface border border-soft text-muted">
+                                Quiz #{qIdx + 1}
+                              </span>
+                              <span className="text-3xs font-bold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-500">
+                                {quiz.level || "Beginner"}
+                              </span>
                             </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-2xs font-bold text-muted uppercase">Challenge {quiz.trackOrder}</span>
-                                <span className="text-2xs px-2 py-0.5 rounded-full font-semibold bg-surface border border-soft text-main">
-                                  {quiz.level}
-                                </span>
-                              </div>
-                              <h4 className="text-sm font-semibold text-main mt-0.5">{quiz.title}</h4>
-                              <div className="flex items-center gap-4 mt-1 text-xs text-muted">
-                                <span className="flex items-center gap-1">
-                                  <Clock className="w-3.5 h-3.5" /> {quiz.timeLimit} mins
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <Target className="w-3.5 h-3.5" /> Min {quiz.passingScore}%
-                                </span>
-                              </div>
+                            <h4 className="text-sm font-semibold text-main mt-1">{quiz.title}</h4>
+                            <div className="flex items-center gap-3 mt-1 text-2xs text-muted">
+                              <span className="flex items-center gap-1">
+                                <Clock size={12} /> {quiz.duration || 15} mins
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Target size={12} /> {quiz.totalQuestions || 15} Questions
+                              </span>
+                              <span>Max Attempts: {quiz.maxAttempts || 3}</span>
                             </div>
                           </div>
 
-                          <div>
-                            {quiz.isUnlocked ? (
-                              <button
-                                onClick={() => handleStartExam(quiz)}
-                                className="px-4 py-2 rounded-xl text-xs font-bold bg-accent text-white hover:opacity-90 transition-all cursor-pointer flex items-center gap-1.5"
-                              >
-                                <Play className="w-3.5 h-3.5 fill-current" />
-                                {quiz.isCompleted ? "Retake Exam" : "Take Exam"}
-                              </button>
-                            ) : (
-                              <span className="text-xs text-muted font-semibold bg-elevated px-3 py-1.5 rounded-lg flex items-center gap-1 cursor-not-allowed">
-                                <Lock className="w-3 h-3" /> Locked
-                              </span>
-                            )}
+                          <div className="flex items-center gap-2 self-end sm:self-center">
+                            <button
+                              onClick={() => setInspectedQuiz(quiz)}
+                              className="px-3 py-1.5 rounded-xl border border-soft text-xs font-semibold text-muted hover:text-main hover:bg-elevated transition-colors flex items-center gap-1 cursor-pointer"
+                            >
+                              <Eye size={13} />
+                              <span>Details</span>
+                            </button>
+                            <button
+                              onClick={() => handleStartExam(quiz)}
+                              className="px-4 py-1.5 rounded-xl text-xs font-bold bg-accent text-white hover:opacity-90 transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                            >
+                              <Play size={13} className="fill-current" />
+                              <span>Take Exam</span>
+                            </button>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="p-8 bg-surface border border-soft rounded-2xl text-center text-sm text-muted">
-              No structured chapters available for this domain track yet. Switch to "All Standalone Quizzes" tab.
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* VIEW 2: ALL STANDALONE QUIZZES TABLE */}
-      {activeCatalogTab === "all_quizzes" && (
-        <div className="space-y-4">
-          {interestFilteredQuizzes.length > 0 && (
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-surface p-3.5 rounded-2xl border border-soft shadow-xs">
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
-                <span className="text-xs font-medium text-muted mr-1.5 flex items-center gap-1">
-                  <Tag className="w-3 h-3" /> Topic:
-                </span>
-                <button
-                  onClick={() => setSelectedSubtopic("all")}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                    selectedSubtopic === "all"
-                      ? "bg-accent text-white shadow-xs"
-                      : "bg-elevated text-muted hover:text-main"
-                  }`}
-                >
-                  All Topics ({interestFilteredQuizzes.length})
-                </button>
-                {availableSubtopics.map((sub) => {
-                  const count = interestFilteredQuizzes.filter((q) => getTopicBadge(q).label === sub).length;
-                  const isActive = selectedSubtopic === sub;
-                  return (
-                    <button
-                      key={sub}
-                      onClick={() => setSelectedSubtopic(sub)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                        isActive
-                          ? "bg-accent text-white shadow-xs"
-                          : "bg-elevated text-muted hover:text-main"
-                      }`}
-                    >
-                      {sub} ({count})
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="relative min-w-55">
-                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-                <input
-                  type="text"
-                  placeholder="Search HTML, CSS, JS..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-8 pr-7 py-1.5 text-xs rounded-xl border border-soft bg-surface text-main focus:outline-none focus:ring-2 focus:ring-accent/40"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-main"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
+                      ))
+                    ) : (
+                      <div className="p-4 text-center text-xs text-muted">
+                        No quizzes added to this chapter yet.
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
-            </div>
-          )}
-
-          <div className="bg-surface rounded-2xl border border-soft shadow-xs overflow-hidden">
-            <DataTable
-              headers={headers}
-              data={finalQuizzes}
-              renderRow={renderQuizRow}
-              emptyMessage="No quizzes found matching your current interest or filter. Try selecting another topic or manage your interests."
-            />
+            ))}
           </div>
-        </div>
-      )}
-
-      {/* Onboarding / Interests Modal */}
-      <InterestOnboardingModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onComplete={handleOnboardingComplete}
-      />
+        ) : (
+          <div className="p-8 text-center text-xs text-muted bg-surface rounded-2xl border border-soft">
+            No chapters found for this course.
+          </div>
+        )}
+      </div>
 
       {/* Quiz Details Modal */}
-      <QuizDetailsModal
-        isOpen={Boolean(inspectedQuiz)}
-        quiz={inspectedQuiz}
-        onClose={() => setInspectedQuiz(null)}
-        onTakeExam={handleStartExam}
-      />
+      {inspectedQuiz && (
+        <QuizDetailsModal
+          quiz={inspectedQuiz}
+          onClose={() => setInspectedQuiz(null)}
+          onStartExam={handleStartExam}
+        />
+      )}
     </div>
   );
 }
-
-export default QuizListPage;

@@ -80,6 +80,16 @@ const quizSchema = new mongoose.Schema(
       default: null,
       index: true,
     },
+    courseId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Course",
+      default: null,
+      index: true,
+    },
+    duration: {
+      type: Number,
+      default: 15,
+    },
     trackOrder: {
       type: Number,
       default: 1,
