@@ -125,3 +125,4 @@ class HierarchyController {
 
 export const hierarchyController = new HierarchyController();
 export default hierarchyController;
+

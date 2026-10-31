@@ -41,8 +41,14 @@ export const checkStudentQuizEligibility = async (req, res, next) => {
         isLocked: false,
         lockReason: "NONE",
         appealStatus: "NONE",
+        hasSeenFirstTimeModal: false,
       };
     }
+
+    // Check if this student has any prior attempt history on this quiz
+    const priorAttemptsCount = (progress.passAttemptsCount || 0) + (progress.failAttemptsCount || 0);
+    const hasPriorHistory = priorAttemptsCount > 0 || Boolean(progress.hasSeenFirstTimeModal);
+    const shouldShowFirstTimePracticeModal = !hasPriorHistory;
 
     const isLocked =
       progress.isLocked ||
@@ -63,6 +69,7 @@ export const checkStudentQuizEligibility = async (req, res, next) => {
       data: {
         ...eligibility,
         isEligible: eligibility.isEligible && !isLocked,
+        shouldShowFirstTimePracticeModal,
         progress: {
           ...progress,
           isLocked,
@@ -459,6 +466,35 @@ export const getStudentQuizWiseLeaderboard = async (req, res, next) => {
     return res.status(200).json({
       success: true,
       data: leaderboardData,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Acknowledge first-time practice modal for a quiz or course
+ * @route   POST /api/v2/student/quiz/:quizId/acknowledge-first-time-modal
+ * @access  Private (Student)
+ */
+export const acknowledgeFirstTimeModal = async (req, res, next) => {
+  try {
+    const { quizId } = req.params;
+    const userId = req.auth.userId.toString();
+
+    const progress = await StudentQuizProgress.findOneAndUpdate(
+      { userId, quizId },
+      { hasSeenFirstTimeModal: true },
+      { upsert: true, returnDocument: "after" }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "First-time practice modal acknowledged.",
+      data: {
+        quizId,
+        hasSeenFirstTimeModal: progress.hasSeenFirstTimeModal,
+      },
     });
   } catch (error) {
     next(error);

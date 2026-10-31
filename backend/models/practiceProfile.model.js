@@ -72,6 +72,19 @@ const practiceProfileSchema = new mongoose.Schema(
       max: 4,
     },
 
+    // First-Time Quiz Onboarding Modal Flag (HackerRank style)
+    // Tracks courses for which student has seen or interacted with the optional practice modal
+    firstTimePracticeModalSeenCourses: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Course",
+      },
+    ],
+    hasSeenFirstTimePracticeModalGlobal: {
+      type: Boolean,
+      default: false,
+    },
+
     // Weak Topic Accuracy Tracking (<60% accuracy flagged)
     topicMastery: [
       {

@@ -9,6 +9,7 @@ import {
     getStudentDashboardStats,
     getStudentQuizWiseLeaderboard,
     checkStudentQuizEligibility,
+    acknowledgeFirstTimeModal,
 } from "../controllers/studentQuiz.controllers.js";
 import { getAvailableQuizzesForStudents } from "../controllers/quiz.controllers.js";
 import trackProgressionController from "../controllers/trackProgression.controllers.js";
@@ -33,6 +34,7 @@ router.get("/quizzes", authMiddleWare, authorizeRoles("user"), getAvailableQuizz
 
 // eligibility,start and end Quiz Endpoint
 router.get("/quiz/:quizId/eligibility", authMiddleWare, authorizeRoles("user"), checkStudentOnboarding, checkStudentQuizEligibility);
+router.post("/quiz/:quizId/acknowledge-first-time-modal", authMiddleWare, authorizeRoles("user"), checkStudentOnboarding, acknowledgeFirstTimeModal);
 router.post("/quiz/start", authMiddleWare, authorizeRoles("user"), checkStudentOnboarding, startQuizAttempt);
 router.patch("/quiz/save-draft", authMiddleWare, authorizeRoles("user"), checkStudentOnboarding, saveQuizDraft);
 router.post("/quiz/submit", authMiddleWare, authorizeRoles("user"), checkStudentOnboarding, submitQuizAttempt);

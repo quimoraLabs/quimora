@@ -23,3 +23,4 @@ router.get("/chapters/:chapterId/quizzes", hierarchyController.getQuizzesByChapt
 router.get("/courses/:courseId/hierarchy", hierarchyController.getCourseHierarchy);
 
 export default router;
+

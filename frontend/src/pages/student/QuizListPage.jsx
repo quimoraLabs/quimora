@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import useHierarchyStore from "../../features/student/store/useHierarchyStore";
 import QuizDetailsModal from "../../features/student/quiz/QuizDetailsModal";
+import FirstTimePracticeModal from "../../features/student/quiz/FirstTimePracticeModal";
+import axiosClient from "../../api/axiosClient";
 
 export default function QuizListPage() {
   const navigate = useNavigate();
@@ -32,14 +34,13 @@ export default function QuizListPage() {
 
   const [expandedChapterIndex, setExpandedChapterIndex] = useState(0);
   const [inspectedQuiz, setInspectedQuiz] = useState(null);
+  const [pendingQuiz, setPendingQuiz] = useState(null);
+  const [showFirstTimeModal, setShowFirstTimeModal] = useState(false);
+  const [practiceStarting, setPracticeStarting] = useState(false);
 
-  const handleStartExam = (quiz) => {
+  // Directly navigate to exam instructions
+  const proceedToExamInstructions = (quiz) => {
     const quizId = quiz._id || quiz.id;
-    if (!quizId) {
-      toast.error("Quiz identifier is invalid or missing");
-      return;
-    }
-
     try {
       sessionStorage.setItem("activeExamQuizId", quizId);
       sessionStorage.setItem("activeExamQuizTitle", quiz.title || "Assessment");
@@ -58,6 +59,93 @@ export default function QuizListPage() {
         tags: quiz.tags || [],
       },
     });
+  };
+
+  const handleStartExam = async (quiz) => {
+    const quizId = quiz._id || quiz.id;
+    if (!quizId) {
+      toast.error("Quiz identifier is invalid or missing");
+      return;
+    }
+
+    // Check eligibility and whether this is a first-time attempt
+    try {
+      const res = await axiosClient.get(`/student/quiz/${quizId}/eligibility`);
+      if (res.data?.success) {
+        const { shouldShowFirstTimePracticeModal, isEligible, progress } = res.data.data;
+
+        if (progress?.isLocked) {
+          toast.error("You have reached the maximum attempt limit for this certification quiz.");
+          return;
+        }
+
+        if (shouldShowFirstTimePracticeModal) {
+          setPendingQuiz(quiz);
+          setShowFirstTimeModal(true);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("Eligibility check bypass on network glitch:", err);
+    }
+
+    // Default flow if not first time or already seen
+    proceedToExamInstructions(quiz);
+  };
+
+  // Student clicks "Start Practice Quiz" from First Time Modal
+  const handleStartPracticeFromModal = async () => {
+    if (!pendingQuiz) return;
+    try {
+      setPracticeStarting(true);
+      const quizId = pendingQuiz._id || pendingQuiz.id;
+
+      // 1. Acknowledge the modal so it won't show again
+      await axiosClient.post(`/student/quiz/${quizId}/acknowledge-first-time-modal`);
+
+      // 2. Launch targeted practice drill for this quiz topic
+      const topicName = pendingQuiz.title || selectedCourse?.title || "Fundamentals";
+      const domainName = selectedDomain?.name || "General";
+
+      const res = await axiosClient.post("/practice/mode2/start", {
+        scopeType: "quiz",
+        targetName: topicName,
+        domainName: domainName,
+      });
+
+      if (res.data?.success) {
+        sessionStorage.setItem("activePracticeSession", JSON.stringify(res.data.data));
+        setShowFirstTimeModal(false);
+        setPendingQuiz(null);
+        navigate("/student/practice/room");
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || "Failed to start practice quiz";
+      toast.error(msg);
+      // If daily target not set, redirect to weak-areas to set target or proceed to exam
+      if (msg.includes("daily practice target")) {
+        setShowFirstTimeModal(false);
+        navigate("/student/weak-areas");
+      }
+    } finally {
+      setPracticeStarting(false);
+    }
+  };
+
+  // Student clicks "Skip & Start Main Exam" from First Time Modal
+  const handleSkipPracticeFromModal = async () => {
+    if (!pendingQuiz) return;
+    try {
+      const quizId = pendingQuiz._id || pendingQuiz.id;
+      // Acknowledge so modal never shows again for this quiz
+      await axiosClient.post(`/student/quiz/${quizId}/acknowledge-first-time-modal`);
+    } catch (e) {
+      console.warn("Acknowledge warning:", e);
+    }
+    const target = pendingQuiz;
+    setShowFirstTimeModal(false);
+    setPendingQuiz(null);
+    proceedToExamInstructions(target);
   };
 
   return (
@@ -247,6 +335,16 @@ export default function QuizListPage() {
           onStartExam={handleStartExam}
         />
       )}
+
+      {/* Optional First-Time Practice Modal (HackerRank Style) */}
+      <FirstTimePracticeModal
+        isOpen={showFirstTimeModal}
+        onClose={() => setShowFirstTimeModal(false)}
+        topicTitle={pendingQuiz?.title || "this topic"}
+        onStartPractice={handleStartPracticeFromModal}
+        onSkipAndProceed={handleSkipPracticeFromModal}
+        loading={practiceStarting}
+      />
     </div>
   );
 }

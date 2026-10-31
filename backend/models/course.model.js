@@ -32,3 +32,4 @@ courseSchema.index({ domainId: 1, title: 1 });
 
 const Course = mongoose.model("Course", courseSchema);
 export default Course;
+

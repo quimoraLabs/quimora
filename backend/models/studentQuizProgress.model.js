@@ -67,6 +67,11 @@ const studentQuizProgressSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    // Optional first-time practice modal acknowledged for this quiz
+    hasSeenFirstTimeModal: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
