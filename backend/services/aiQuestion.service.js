@@ -24,13 +24,14 @@ import config from "../config/config.js";
  */
 export const generateAIQuestionsService = async ({
   topic,
-  count = 5,
+  count = 10,
   difficulty = "medium",
   additionalContext = "",
   targetTier = "",
   targetElo = null,
+  isBonus = false,
 }) => {
-  const numQuestions = Math.min(Math.max(parseInt(count, 10) || 5, 1), 10);
+  const numQuestions = Math.min(Math.max(parseInt(count, 10) || 10, 1), 10);
   const isMixed = !difficulty || ["mixed", "all", "any"].includes(difficulty?.toLowerCase());
   const targetDifficulty = isMixed
     ? "mixed"
@@ -85,30 +86,32 @@ export const generateAIQuestionsService = async ({
 Your task is to generate high-quality, authentic, standard, and student-friendly multiple choice questions (MCQs) for students on the given topic.
 
 CRITICAL QUALITY GUIDELINES:
-1. STUDENT-FRIENDLY & PRACTICAL:
+1. QUESTION COUNT:
+   - Generate EXACTLY 10 multiple choice questions.
+2. DIFFICULTY CALIBRATION & PROGRESSION:
+   - For Basic/Foundations Quiz: Generate 10 straightforward foundational syntax & core API questions.
+   - For Intermediate Quiz: Generate 10 applied scenario, debugging, and standard design pattern questions.
+   - For Advanced Quiz: Generate 10 complex edge-case, concurrency, and performance questions.
+   - For Bonus Assignment Quiz: Generate 10 tricky, thought-provoking problem-solving questions.
+3. STUDENT-FRIENDLY & PRACTICAL:
    - Formulate clear, concise, standard questions that test real understanding, practical syntax, common patterns, and problem-solving.
    - AVOID pseudo-academic robotic jargon (e.g. NEVER ask generic template questions like "what is the foundational architecture principle for scenario #14").
-   - Focus on actual language/framework constructs, methods, keywords, behavior, and standard conventions (e.g. for Web Development: HTML5 tags, CSS box model/flexbox, JavaScript async/await, DOM APIs, HTTP status codes, React components/state).
-2. REALISTIC & PLAUSIBLE OPTIONS:
+   - Focus on actual language/framework constructs, methods, keywords, behavior, and standard conventions.
+4. REALISTIC & PLAUSIBLE OPTIONS:
    - Provide 4 distinct, clear choices per question.
    - The correct answer must be unambiguously accurate according to official documentation.
-   - The 3 distractors (wrong answers) must be realistic common student misconceptions or closely related methods/properties, NOT silly or bizarre gibberish.
-3. TOPIC ACCURACY & STRICT PURITY:
+   - The 3 distractors (wrong answers) must be realistic common student misconceptions or closely related methods/properties.
+5. TOPIC ACCURACY & STRICT PURITY:
    - All questions must strictly pertain to the requested topic "${topic}".
    - Do NOT mix or introduce unrelated technologies or languages (e.g. if the topic is HTML, generate ONLY HTML questions, NEVER Python, NumPy, SQL, or Java).
    - If there is a minor typo in the topic, intelligently interpret the real technology or subject.
-4. CALIBRATION & DIFFICULTY:
-   - Easy: Direct knowledge recall, common definitions, core syntax, standard built-ins.
-   - Medium: Practical problem-solving, code snippets, determining output, common API usage.
-   - Hard: Subtle edge cases, asynchronous timing, performance implications, architecture patterns.
-   ${selectedTierGuidance ? `\nTIER GUIDANCE: ${selectedTierGuidance}` : ""}
-5. AUTHENTIC CONCEPTUAL EXPLANATIONS (MANDATORY):
+6. AUTHENTIC CONCEPTUAL EXPLANATIONS (MANDATORY):
    - You MUST generate an authentic, educational 2-3 sentence "explanation" for EVERY question.
    - The explanation MUST explicitly state WHY the correct option is right and explain the underlying concept.
    - FORBIDDEN: NEVER use repetitive generic placeholders like "Diagnostic analysis of conceptual execution", "Review fundamental concepts", or just repeating the question.
-6. Output MUST be valid, raw JSON only without markdown formatting.
-7. The JSON object MUST have a top-level key "questions" containing an array of question objects.
-8. Each question object MUST contain:
+7. Output MUST be valid, raw JSON only without markdown formatting.
+8. The JSON object MUST have a top-level key "questions" containing an array of question objects.
+9. Each question object MUST contain:
    - "questionText": Clear, natural question text.
    - "marks": 2 for easy, 5 for medium, 10 for hard.
    - "difficulty": "easy", "medium", or "hard".

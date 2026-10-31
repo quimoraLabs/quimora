@@ -100,6 +100,15 @@ const quizSchema = new mongoose.Schema(
       ref: "Quiz",
       default: null,
     },
+    // Bonus Assignment Quiz (does not block chapter completion, gives bonus XP/coins)
+    isBonus: {
+      type: Boolean,
+      default: false,
+    },
+    bonusXpMultiplier: {
+      type: Number,
+      default: 1.5,
+    },
   },
   { timestamps: true, versionKey: false }
 );
