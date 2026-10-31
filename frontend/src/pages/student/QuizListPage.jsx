@@ -166,27 +166,24 @@ export default function QuizListPage() {
         </p>
       </div>
 
-      {/* LEVEL 1: Root Domain Switcher Pills */}
-      <div className="space-y-2">
-        <div className="text-2xs font-extrabold text-muted uppercase tracking-wider flex items-center gap-1.5">
-          <FolderTree size={13} className="text-accent" />
-          <span>1. Select Domain</span>
+      {/* LEVEL 1: Active Domain Focus Header */}
+      <div className="flex items-center justify-between p-3.5 bg-indigo-500/10 dark:bg-indigo-950/30 border border-indigo-500/20 rounded-2xl">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold">
+            <FolderTree size={18} />
+          </div>
+          <div>
+            <div className="text-3xs font-extrabold uppercase tracking-wider text-indigo-500">
+              Active Focus Domain
+            </div>
+            <h2 className="text-base font-extrabold text-main">
+              {selectedDomain?.name || "Web Development"}
+            </h2>
+          </div>
         </div>
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-          {domains.map((dom) => (
-            <button
-              key={dom._id}
-              onClick={() => selectDomain(dom)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-                selectedDomain?._id === dom._id
-                  ? "bg-indigo-600 text-white shadow-sm shadow-indigo-500/30"
-                  : "bg-surface border border-soft text-muted hover:text-main hover:bg-elevated"
-              }`}
-            >
-              {dom.name}
-            </button>
-          ))}
-        </div>
+        <span className="text-2xs font-semibold px-2.5 py-1 rounded-lg bg-surface border border-soft text-muted">
+          All courses & drills locked to this domain
+        </span>
       </div>
 
       {/* LEVEL 2: Course Selector Under Domain */}

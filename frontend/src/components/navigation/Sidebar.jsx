@@ -138,7 +138,7 @@ export default function Sidebar({ isOpen, setIsOpen, role }) {
                   <span>Dashboard Overview</span>
                 </NavLink>
 
-                {/* 2. Focused Domain Selector (Level 1) */}
+                {/* 2. Focused Domain Banner (Level 1) */}
                 <div className="pt-2">
                   <div className="px-1 text-2xs font-extrabold uppercase tracking-wider text-muted mb-1.5 flex items-center justify-between">
                     <span>Active Domain</span>
@@ -147,47 +147,19 @@ export default function Sidebar({ isOpen, setIsOpen, role }) {
                     </span>
                   </div>
 
-                  <div className="relative">
-                    <button
-                      onClick={() => setIsDomainDropdownOpen(!isDomainDropdownOpen)}
-                      className="w-full flex items-center justify-between gap-2 p-2.5 rounded-xl border border-soft bg-elevated/40 hover:bg-elevated text-left text-xs font-bold text-main transition-colors cursor-pointer"
-                    >
-                      <div className="flex items-center gap-2 truncate">
-                        <FolderTree size={16} className="text-accent shrink-0" />
-                        <span className="truncate">
-                          {selectedDomain?.name || "Select Domain"}
-                        </span>
+                  {/* Clean Single Focused Domain Pill - No other domains shown */}
+                  <div className="p-3 rounded-2xl border border-indigo-500/30 bg-linear-to-r from-indigo-500/10 to-purple-500/10 text-left">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                        <FolderTree size={16} />
                       </div>
-                      <ChevronDown
-                        size={14}
-                        className={`text-muted transition-transform shrink-0 ${
-                          isDomainDropdownOpen ? "rotate-180" : ""
-                        }`}
-                      />
-                    </button>
-
-                    {/* Domain Dropdown */}
-                    {isDomainDropdownOpen && (
-                      <div className="absolute left-0 right-0 mt-1.5 p-1.5 bg-surface border border-soft rounded-xl shadow-lg z-30 space-y-1">
-                        {domains.map((dom) => (
-                          <button
-                            key={dom._id}
-                            onClick={() => {
-                              selectDomain(dom);
-                              setIsDomainDropdownOpen(false);
-                              navigate("/student/quizzes");
-                            }}
-                            className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer truncate ${
-                              selectedDomain?._id === dom._id
-                                ? "bg-accent text-white font-bold"
-                                : "text-muted hover:text-main hover:bg-elevated"
-                            }`}
-                          >
-                            {dom.name}
-                          </button>
-                        ))}
+                      <div className="truncate">
+                        <h3 className="text-xs font-bold text-main truncate">
+                          {selectedDomain?.name || "Web Development"}
+                        </h3>
+                        <p className="text-3xs text-muted truncate">Current Focused Track</p>
                       </div>
-                    )}
+                    </div>
                   </div>
                 </div>
 
