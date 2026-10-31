@@ -160,7 +160,7 @@ class PracticeEngineService {
             optionText: opt.optionText,
             isCorrect: Boolean(opt.isCorrect),
           })),
-          explanation: q.explanation || "Diagnostic analysis of conceptual execution.",
+          explanation: q.explanation || `Comprehensive explanation of concepts covered in this question.`,
           topicTag: selectedTopics[idx % selectedTopics.length] || "General",
         }));
       }
@@ -168,17 +168,25 @@ class PracticeEngineService {
       console.warn("AI generation fallback to database pool:", aiErr.message);
     }
 
-    // Fallback if AI is offline or in test mode without API key
+    // Fallback if AI is offline or in test mode without API key - strictly select from enrolled interests!
     if (practiceQuestions.length < 5) {
-      const dbQuestions = await Question.find().limit(20).lean();
-      const shuffled = dbQuestions.sort(() => 0.5 - Math.random());
+      const interestQuizzes = await Quiz.find({
+        interestIds: { $in: interests.map((i) => i._id) },
+        status: "published",
+      }).select("questions tags").lean();
+
+      const matchedQIds = interestQuizzes.flatMap((q) => q.questions || []);
+      const dbQuestions = await Question.find({ _id: { $in: matchedQIds } }).lean();
+
+      const sourceQs = dbQuestions.length >= 5 ? dbQuestions : await Question.find().limit(15).lean();
+      const shuffled = sourceQs.sort(() => 0.5 - Math.random());
       practiceQuestions = shuffled.slice(0, 6).map((q, idx) => ({
         questionText: q.questionText,
         options: q.options.map((opt) => ({
           optionText: opt.optionText,
           isCorrect: Boolean(opt.isCorrect),
         })),
-        explanation: q.explanation || "Diagnostic practice concept review.",
+        explanation: q.explanation || `Key concept review for ${selectedTopics[idx % selectedTopics.length] || "the topic"}.`,
         topicTag: selectedTopics[idx % selectedTopics.length] || "General",
       }));
     }
@@ -255,30 +263,56 @@ class PracticeEngineService {
     }
 
     if (practiceQuestions.length < 5) {
-      const regex = new RegExp(normalizedTarget, "i");
+      // Find quizzes strictly matching the target name or tags
+      const regex = new RegExp(`^${normalizedTarget}$|${normalizedTarget}`, "i");
       const quizzes = await Quiz.find({
-        $or: [{ tags: regex }, { title: regex }, { description: regex }],
+        $or: [{ tags: regex }, { title: regex }],
         status: "published",
       }).select("questions").lean();
 
       const matchedQIds = quizzes.flatMap((q) => q.questions || []);
       let questionsFromDb = await Question.find({ _id: { $in: matchedQIds } }).lean();
 
-      if (questionsFromDb.length < 5) {
-        const anyQuestions = await Question.find().limit(10).lean();
-        questionsFromDb = [...questionsFromDb, ...anyQuestions];
-      }
+      // If database questions exist for this topic, use them
+      if (questionsFromDb.length >= 5) {
+        const shuffled = questionsFromDb.sort(() => 0.5 - Math.random());
+        practiceQuestions = shuffled.slice(0, 5).map((q) => ({
+          questionText: q.questionText,
+          options: q.options.map((opt) => ({
+            optionText: opt.optionText,
+            isCorrect: Boolean(opt.isCorrect),
+          })),
+          explanation: q.explanation || `Key concept review for ${normalizedTarget}.`,
+          topicTag: normalizedTarget,
+        }));
+      } else {
+        // Fallback: Generate dedicated topic-specific questions without mixing other topics
+        const existingQs = questionsFromDb.map((q) => ({
+          questionText: q.questionText,
+          options: q.options.map((opt) => ({
+            optionText: opt.optionText,
+            isCorrect: Boolean(opt.isCorrect),
+          })),
+          explanation: q.explanation || `Core principles of ${normalizedTarget}.`,
+          topicTag: normalizedTarget,
+        }));
 
-      const shuffled = questionsFromDb.sort(() => 0.5 - Math.random());
-      practiceQuestions = shuffled.slice(0, 5).map((q) => ({
-        questionText: q.questionText,
-        options: q.options.map((opt) => ({
-          optionText: opt.optionText,
-          isCorrect: Boolean(opt.isCorrect),
-        })),
-        explanation: q.explanation || `Diagnostic drill on ${normalizedTarget}.`,
-        topicTag: normalizedTarget,
-      }));
+        practiceQuestions = [...existingQs];
+        const needed = 5 - practiceQuestions.length;
+        for (let i = 0; i < needed; i++) {
+          practiceQuestions.push({
+            questionText: `Which of the following is considered a foundational best practice when working with ${normalizedTarget} (Part ${i + 1})?`,
+            options: [
+              { optionText: `Adhering to standard syntax, design patterns, and documentation guidelines for ${normalizedTarget}`, isCorrect: true },
+              { optionText: `Avoiding all validation and runtime checks to optimize execution speed`, isCorrect: false },
+              { optionText: `Hardcoding dynamic configurations directly into source code`, isCorrect: false },
+              { optionText: `Deprecating backward compatibility without version migrations`, isCorrect: false },
+            ],
+            explanation: `Standard architectural patterns in ${normalizedTarget} emphasize strict validation, clean separation of concerns, and following official documentation.`,
+            topicTag: normalizedTarget,
+          });
+        }
+      }
     }
 
     try {

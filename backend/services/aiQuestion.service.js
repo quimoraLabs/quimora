@@ -93,20 +93,26 @@ CRITICAL QUALITY GUIDELINES:
    - Provide 4 distinct, clear choices per question.
    - The correct answer must be unambiguously accurate according to official documentation.
    - The 3 distractors (wrong answers) must be realistic common student misconceptions or closely related methods/properties, NOT silly or bizarre gibberish.
-3. TOPIC ACCURACY:
-   - All questions must strictly pertain to the requested topic.
+3. TOPIC ACCURACY & STRICT PURITY:
+   - All questions must strictly pertain to the requested topic "${topic}".
+   - Do NOT mix or introduce unrelated technologies or languages (e.g. if the topic is HTML, generate ONLY HTML questions, NEVER Python, NumPy, SQL, or Java).
    - If there is a minor typo in the topic, intelligently interpret the real technology or subject.
 4. CALIBRATION & DIFFICULTY:
    - Easy: Direct knowledge recall, common definitions, core syntax, standard built-ins.
    - Medium: Practical problem-solving, code snippets, determining output, common API usage.
    - Hard: Subtle edge cases, asynchronous timing, performance implications, architecture patterns.
    ${selectedTierGuidance ? `\nTIER GUIDANCE: ${selectedTierGuidance}` : ""}
-5. Output MUST be valid, raw JSON only without markdown formatting.
-6. The JSON object MUST have a top-level key "questions" containing an array of question objects.
-7. Each question object MUST contain:
+5. AUTHENTIC CONCEPTUAL EXPLANATIONS (MANDATORY):
+   - You MUST generate an authentic, educational 2-3 sentence "explanation" for EVERY question.
+   - The explanation MUST explicitly state WHY the correct option is right and explain the underlying concept.
+   - FORBIDDEN: NEVER use repetitive generic placeholders like "Diagnostic analysis of conceptual execution", "Review fundamental concepts", or just repeating the question.
+6. Output MUST be valid, raw JSON only without markdown formatting.
+7. The JSON object MUST have a top-level key "questions" containing an array of question objects.
+8. Each question object MUST contain:
    - "questionText": Clear, natural question text.
    - "marks": 2 for easy, 5 for medium, 10 for hard.
    - "difficulty": "easy", "medium", or "hard".
+   - "explanation": Concrete, authentic 2-3 sentence explanation of why the correct option is right.
    - "options": EXACTLY 4 option objects, each with "optionText" (string) and "isCorrect" (boolean).
    - EXACTLY ONE option MUST have "isCorrect": true, and the other 3 MUST have "isCorrect": false.`;
 
@@ -271,10 +277,14 @@ Generate ${numQuestions} multiple-choice questions now in pure JSON format.`;
 
     const qMarks = qDiff === "easy" ? 2 : qDiff === "hard" ? 10 : 5;
 
+    const explanation = String(q.explanation || "").trim() ||
+      `The correct answer is "${correctOption.optionText}" because it adheres to standard specifications and best practices for ${topic}.`;
+
     return {
       questionText,
       marks: qMarks,
       difficulty: qDiff,
+      explanation,
       options: finalOptions,
       ...(targetTier ? { targetTier } : {}),
     };
@@ -370,6 +380,7 @@ function generatePedagogicalFallbackQuestions({
         questionText: "In the Node.js event loop, which phase executes callbacks scheduled by setImmediate()?",
         difficulty: "medium",
         marks: 5,
+        explanation: "The Check phase of the Node.js libuv event loop is specifically designated to execute setImmediate() callbacks right after I/O polling.",
         options: [
           { optionText: "Check phase", isCorrect: true },
           { optionText: "Timers phase", isCorrect: false },
@@ -381,6 +392,7 @@ function generatePedagogicalFallbackQuestions({
         questionText: "What takes precedence in the Node.js microtask queue during event loop execution?",
         difficulty: "hard",
         marks: 10,
+        explanation: "process.nextTick() queue has higher priority than the Promise microtask queue; Node processes all nextTick callbacks before standard Promise resolutions.",
         options: [
           { optionText: "process.nextTick() callbacks before Promise resolution callbacks", isCorrect: true },
           { optionText: "Promise resolution callbacks before process.nextTick()", isCorrect: false },
@@ -392,6 +404,7 @@ function generatePedagogicalFallbackQuestions({
         questionText: "Which core Node.js module handles asynchronous file system operations?",
         difficulty: "easy",
         marks: 2,
+        explanation: "The 'fs' module provides standard POSIX file system wrappers and asynchronous promise-based APIs for reading, writing, and directory manipulations.",
         options: [
           { optionText: "fs (or fs/promises)", isCorrect: true },
           { optionText: "http", isCorrect: false },
@@ -403,6 +416,7 @@ function generatePedagogicalFallbackQuestions({
         questionText: "Which thread pool library does Node.js rely on under the hood for asynchronous I/O and crypto operations?",
         difficulty: "medium",
         marks: 5,
+        explanation: "Node.js utilizes libuv, a multi-platform support library focusing on asynchronous I/O and providing a default 4-thread worker pool.",
         options: [
           { optionText: "libuv", isCorrect: true },
           { optionText: "V8 Engine", isCorrect: false },
@@ -417,6 +431,7 @@ function generatePedagogicalFallbackQuestions({
         questionText: "In React, what hook is used to perform side effects such as data fetching or subscriptions?",
         difficulty: "easy",
         marks: 2,
+        explanation: "useEffect lets functional components synchronize with external systems, perform network requests, and manage subscriptions after DOM updates.",
         options: [
           { optionText: "useEffect", isCorrect: true },
           { optionText: "useMemo", isCorrect: false },
@@ -428,6 +443,7 @@ function generatePedagogicalFallbackQuestions({
         questionText: "Why should state updates never be mutated directly in React components?",
         difficulty: "medium",
         marks: 5,
+        explanation: "React relies on referential identity and shallow equality checks on state; mutating objects directly prevents re-renders and breaks component diffing.",
         options: [
           { optionText: "React relies on shallow object equality to trigger re-renders and calculate virtual DOM diffs", isCorrect: true },
           { optionText: "Direct mutations throw a runtime TypeError in strict mode", isCorrect: false },
@@ -439,6 +455,7 @@ function generatePedagogicalFallbackQuestions({
         questionText: "What is the primary benefit of React.memo in component optimization?",
         difficulty: "medium",
         marks: 5,
+        explanation: "React.memo is a higher-order component that prevents unnecessary child renders by shallowly comparing incoming props between renders.",
         options: [
           { optionText: "It skips re-rendering a component if its incoming props have not changed", isCorrect: true },
           { optionText: "It caches API response payloads across page transitions", isCorrect: false },
@@ -455,6 +472,7 @@ function generatePedagogicalFallbackQuestions({
       questionText: `In ${topic}, what is the fundamental purpose of adhering to standard modular design patterns?`,
       difficulty: "easy",
       marks: 2,
+      explanation: `Modular software architecture organizes ${topic} codebases into cohesive, loosely coupled units, improving maintainability, testing, and team collaboration.`,
       options: [
         { optionText: "To increase maintainability, reusability, and separation of concerns", isCorrect: true },
         { optionText: "To eliminate all runtime memory allocations", isCorrect: false },
@@ -466,6 +484,7 @@ function generatePedagogicalFallbackQuestions({
       questionText: `When building applications in ${topic}, what is the best practice for handling asynchronous errors?`,
       difficulty: "medium",
       marks: 5,
+      explanation: `Catching asynchronous exceptions using try/catch wrappers or promise rejection handlers prevents unhandled process crashes and logs errors centrally.`,
       options: [
         { optionText: "Use try/catch blocks with async/await and centralize error logging/handling", isCorrect: true },
         { optionText: "Silently suppress errors to prevent crashes in production", isCorrect: false },
@@ -477,6 +496,7 @@ function generatePedagogicalFallbackQuestions({
       questionText: `Which HTTP status code accurately signals that a resource was successfully created on the server?`,
       difficulty: "easy",
       marks: 2,
+      explanation: `HTTP 201 Created indicates the request succeeded and resulted in one or more new resources being created on the origin server.`,
       options: [
         { optionText: "201 Created", isCorrect: true },
         { optionText: "200 OK", isCorrect: false },
@@ -488,6 +508,7 @@ function generatePedagogicalFallbackQuestions({
       questionText: `What is the key advantage of using parameterized database queries in backend engineering?`,
       difficulty: "medium",
       marks: 5,
+      explanation: `Parameterized queries treat user input strictly as literals rather than executable SQL commands, neutralizing injection attack vectors completely.`,
       options: [
         { optionText: "Preventing SQL/NoSQL injection vulnerabilities", isCorrect: true },
         { optionText: "Compressing network traffic over TCP sockets", isCorrect: false },
@@ -499,6 +520,7 @@ function generatePedagogicalFallbackQuestions({
       questionText: `In modern software architecture, what does idempotent operation mean in an API contract?`,
       difficulty: "hard",
       marks: 10,
+      explanation: `An idempotent method (such as GET, PUT, or DELETE) produces the exact same end state regardless of whether it is called once or multiple consecutive times.`,
       options: [
         { optionText: "Making multiple identical requests produces the exact same server state as a single request", isCorrect: true },
         { optionText: "The operation executes in zero milliseconds without touching memory", isCorrect: false },
@@ -520,6 +542,7 @@ function generatePedagogicalFallbackQuestions({
       questionText: base.questionText,
       difficulty: diff,
       marks: marks,
+      explanation: base.explanation || `Core fundamental concept in ${topic}.`,
       options: [...base.options],
       ...(targetTier ? { targetTier } : {}),
     });

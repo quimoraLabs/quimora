@@ -398,6 +398,7 @@ function QuizListPage() {
           <InterestFilterBar
             interests={interests}
             activeInterestId={selectedInterestId}
+            hideAll={activeCatalogTab === "chapters"}
             onSelectInterest={(id) => {
               setSelectedInterestId(id || interests[0]?._id);
               setSelectedSubtopic("all");

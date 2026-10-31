@@ -4,22 +4,25 @@ import { Sparkles, Layers } from "lucide-react";
 export default function InterestFilterBar({
   interests = [],
   activeInterestId = null,
+  hideAll = false,
   onSelectInterest,
 }) {
   return (
     <div className="w-full flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none py-1">
       {/* All Topics Pill */}
-      <button
-        onClick={() => onSelectInterest(null)}
-        className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-          activeInterestId === null
-            ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/20"
-            : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-500"
-        }`}
-      >
-        <Layers className="w-3.5 h-3.5" />
-        All Quizzes
-      </button>
+      {!hideAll && (
+        <button
+          onClick={() => onSelectInterest(null)}
+          className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+            activeInterestId === null
+              ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/20"
+              : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-500"
+          }`}
+        >
+          <Layers className="w-3.5 h-3.5" />
+          All Quizzes
+        </button>
+      )}
 
       {/* Individual Interest Pills */}
       {interests.map((interest) => {
