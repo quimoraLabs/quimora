@@ -302,6 +302,33 @@ export const submitQuizAttempt = async (req, res, next) => {
         result.scorePercentage
       );
       result.rewards = rewardResult;
+
+      // 3.5 Sync Weak Area Topic Mastery (Remedial Mode triggers if accuracy < 60%)
+      try {
+        const quizDoc = await Quiz.findById(attempt.quizId).select("title tags").lean();
+        const topicName = quizDoc?.tags?.[0] || quizDoc?.title || "General Concepts";
+        const practiceEngine = (await import("../services/practiceEngine.service.js")).default;
+        const profile = await practiceEngine.getOrCreateProfile(userId);
+
+        let topicEntry = profile.topicMastery.find((t) => t.topicTag.toLowerCase() === topicName.toLowerCase());
+        if (!topicEntry) {
+          profile.topicMastery.push({
+            topicTag: topicName,
+            accuracy: result.scorePercentage,
+            totalAttempted: 1,
+            totalCorrect: result.scorePercentage >= 60 ? 1 : 0,
+            status: result.scorePercentage < 60 ? "critical" : result.scorePercentage >= 75 ? "ready" : "learning",
+          });
+        } else {
+          topicEntry.totalAttempted += 1;
+          if (result.scorePercentage >= 60) topicEntry.totalCorrect += 1;
+          topicEntry.accuracy = Math.round((topicEntry.accuracy + result.scorePercentage) / 2);
+          topicEntry.status = topicEntry.accuracy < 60 ? "critical" : topicEntry.accuracy >= 75 ? "ready" : "learning";
+        }
+        await profile.save();
+      } catch (profErr) {
+        console.warn("Could not sync practice mastery:", profErr.message);
+      }
     }
 
     // 4. Send Success Response

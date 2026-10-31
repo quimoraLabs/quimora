@@ -255,87 +255,79 @@ export default function StudentWeakAreasPage() {
           <div>
             <h2 className="text-xl font-bold text-main">Mode 2: Targeted Weak Areas</h2>
             <p className="text-xs text-muted">
-              Choose a specific concept to run a 10-minute diagnostic drill.
+              Auto-detected topics where your exam score dropped below 60%. Run a 10-minute diagnostic drill to master them.
             </p>
           </div>
         </div>
 
-        {topicMastery && topicMastery.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {topicMastery.map((tm, idx) => (
-              <div
-                key={idx}
-                className="bg-surface border border-soft rounded-2xl p-5 flex flex-col justify-between space-y-4 shadow-xs"
-              >
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-main">{tm.topicTag}</span>
-                    <span
-                      className={`text-2xs font-extrabold px-2 py-0.5 rounded-md uppercase border ${
-                        tm.status === "ready"
-                          ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                          : tm.status === "improving"
-                          ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
-                          : "bg-rose-500/10 text-rose-600 border-rose-500/20"
-                      }`}
-                    >
-                      {tm.status}
-                    </span>
-                  </div>
+        {(() => {
+          const criticalWeakAreas = topicMastery?.filter(
+            (t) => t.status === "critical" || (t.accuracy !== undefined && t.accuracy < 60)
+          ) || [];
 
-                  <div className="mt-3">
-                    <div className="flex justify-between text-xs font-semibold mb-1">
-                      <span className="text-muted">Mastery</span>
-                      <span className="text-main font-bold">{tm.accuracy}%</span>
-                    </div>
-                    <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all ${
-                          tm.accuracy >= 75
-                            ? "bg-emerald-500"
-                            : tm.accuracy >= 60
-                            ? "bg-amber-500"
-                            : "bg-rose-500"
-                        }`}
-                        style={{ width: `${tm.accuracy}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => handleStartMode2(tm.topicTag)}
-                  disabled={startingMode === tm.topicTag}
-                  className="w-full py-2.5 px-4 bg-accent hover:opacity-90 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs"
+          return criticalWeakAreas.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {criticalWeakAreas.map((tm, idx) => (
+                <div
+                  key={idx}
+                  className="bg-surface border border-rose-500/20 rounded-2xl p-5 flex flex-col justify-between space-y-4 shadow-xs"
                 >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>{startingMode === tm.topicTag ? "Starting..." : "Practice 10-Min Drill"}</span>
-                </button>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="p-8 bg-surface border border-soft rounded-3xl text-center space-y-3">
-            <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto" />
-            <h3 className="text-base font-bold text-main">No Critical Weak Areas Recorded</h3>
-            <p className="text-xs text-muted max-w-md mx-auto">
-              Your concept accuracy across quizzes is healthy! You can still launch diagnostic drills on custom topics below.
-            </p>
-            <div className="flex flex-wrap justify-center gap-2 pt-2">
-              {["React Components", "Async & Promises", "CSS Grid & Flexbox", "State Architecture"].map(
-                (topic) => (
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-main">{tm.topicTag}</span>
+                      <span className="text-2xs font-extrabold px-2 py-0.5 rounded-md uppercase border bg-rose-500/10 text-rose-600 border-rose-500/20">
+                        {tm.accuracy < 60 ? "Critical (<60%)" : tm.status}
+                      </span>
+                    </div>
+
+                    <div className="mt-3">
+                      <div className="flex justify-between text-xs font-semibold mb-1">
+                        <span className="text-muted">Exam Accuracy</span>
+                        <span className="text-main font-bold">{tm.accuracy}%</span>
+                      </div>
+                      <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all bg-rose-500"
+                          style={{ width: `${tm.accuracy}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
                   <button
-                    key={topic}
-                    onClick={() => handleStartMode2(topic)}
-                    className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-main text-xs font-semibold hover:bg-accent hover:text-white transition-all cursor-pointer"
+                    onClick={() => handleStartMode2(tm.topicTag)}
+                    disabled={startingMode === tm.topicTag}
+                    className="w-full py-2.5 px-4 bg-accent hover:opacity-90 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs"
                   >
-                    Drill: {topic}
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>{startingMode === tm.topicTag ? "Starting..." : "Practice 10-Min Remedial Drill"}</span>
                   </button>
-                )
-              )}
+                </div>
+              ))}
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="p-8 bg-surface border border-soft rounded-3xl text-center space-y-3">
+              <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto" />
+              <h3 className="text-base font-bold text-main">No Critical Weak Areas Recorded</h3>
+              <p className="text-xs text-muted max-w-md mx-auto">
+                Your concept accuracy across certification quizzes is healthy (≥ 60%)! Weak areas only appear when exam accuracy falls below 60%. You can still launch voluntary diagnostic drills below.
+              </p>
+              <div className="flex flex-wrap justify-center gap-2 pt-2">
+                {["React Components", "Async & Promises", "CSS Grid & Flexbox", "State Architecture"].map(
+                  (topic) => (
+                    <button
+                      key={topic}
+                      onClick={() => handleStartMode2(topic)}
+                      className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-main text-xs font-semibold hover:bg-accent hover:text-white transition-all cursor-pointer"
+                    >
+                      Drill: {topic}
+                    </button>
+                  )
+                )}
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

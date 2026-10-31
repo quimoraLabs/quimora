@@ -1,9 +1,10 @@
 import React from "react";
-import { Target, ArrowRight, Sparkles, X, ShieldAlert } from "lucide-react";
+import { Target, ArrowRight, Sparkles, X } from "lucide-react";
 
 /**
- * Optional First-Time Practice Modal (HackerRank style)
+ * Optional First-Time Demo Quiz Modal (HackerRank style)
  * Triggered on fresh quiz attempt before entering rules/start.
+ * Tutorial Mode: 2-3 questions to learn exam UI (timer, next button, submit).
  */
 export default function FirstTimePracticeModal({
   isOpen,
@@ -33,10 +34,10 @@ export default function FirstTimePracticeModal({
             </div>
             <div>
               <span className="text-3xs font-extrabold uppercase px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">
-                First Attempt Guidance
+                Exam Onboarding Tutorial
               </span>
               <h2 className="text-lg sm:text-xl font-extrabold text-main mt-1">
-                New to {topicTitle}?
+                Try a Demo Quiz to understand the exam format
               </h2>
             </div>
           </div>
@@ -53,35 +54,35 @@ export default function FirstTimePracticeModal({
         {/* Body Message */}
         <div className="space-y-3">
           <p className="text-xs sm:text-sm text-muted leading-relaxed">
-            Would you like to try a quick practice quiz first to get familiar with the format? This is{" "}
+            Would you like to try a quick 3-question demo mock quiz first to get familiar with the exam interface? This is{" "}
             <span className="font-bold text-main">completely optional</span> and does not consume your 3 certification exam attempts.
           </p>
 
           <div className="p-3.5 rounded-2xl bg-elevated/40 border border-soft text-2xs text-muted space-y-1.5">
             <div className="flex items-center gap-2 text-main font-semibold">
               <Target size={14} className="text-indigo-500" />
-              <span>What happens in the Practice Quiz?</span>
+              <span>What will you learn in the Demo Quiz?</span>
             </div>
             <p>
-              • 5 targeted diagnostic questions on this exact concept.
+              • How the live countdown timer and auto-submit behave.
               <br />
-              • Zero risk to your Elo rating or certification eligibility.
+              • How to navigate between questions and mark choices.
               <br />
-              • Instant explanations for each answer.
+              • Instant preview of the scoring and diagnostic report.
             </p>
           </div>
         </div>
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
-          {/* Button 1: Start Practice Quiz */}
+          {/* Button 1: Start Demo Quiz */}
           <button
             onClick={onStartPractice}
             disabled={loading}
             className="w-full sm:flex-1 py-3 px-4 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
             <Target size={15} />
-            <span>🎯 Start Practice Quiz</span>
+            <span>🎯 Try Demo Quiz (Tutorial)</span>
           </button>
 
           {/* Button 2: Skip & Start Main Exam */}

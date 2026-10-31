@@ -154,88 +154,7 @@ const CURRICULUM_BLUEPRINT = [
 /**
  * Creates 10 high-quality, authentic questions strictly for a given quiz topic and difficulty.
  */
-function createQuestionsForQuiz(quizTitle, topicDomain, level, difficulty) {
-  const isHard = difficulty === "hard";
-  const isMedium = difficulty === "medium";
-
-  return Array.from({ length: 10 }, (_, qIdx) => {
-    const qNum = qIdx + 1;
-    let questionText = "";
-    let correctOption = "";
-    let wrongOptions = [];
-    let explanation = "";
-
-    if (quizTitle.includes("HTML5")) {
-      questionText = `In modern HTML5 development, which statement is true regarding specification practice #${qNum} for "${quizTitle}"?`;
-      correctOption = `Semantic tags such as <header>, <article>, and <section> provide structural context for assistive accessibility tools.`;
-      wrongOptions = [
-        `Using generic <div> containers with inline style overrides provides equal structural accessibility semantics.`,
-        `HTML5 deprecates all semantic markup in favor of dynamic JavaScript template strings.`,
-        `All semantic tags strictly require custom Web Component definitions to render.`,
-      ];
-      explanation = `The HTML5 living specification explicitly recommends semantic containers over generic div elements to maintain a clear document outline and enhance screen reader navigation.`;
-    } else if (quizTitle.includes("Flexbox")) {
-      questionText = `When structuring layouts with CSS3 Flexbox (Scenario #${qNum} on ${quizTitle}), what is the exact behavior?`;
-      correctOption = `Setting flex: 1 1 0% allows flex items to grow and shrink proportionally based strictly on available container space.`;
-      wrongOptions = [
-        `Flexbox forces all elements into a rigid 2D grid matrix automatically.`,
-        `The align-items property operates along the primary main axis regardless of flex-direction.`,
-        `Flex items can never wrap unless a fixed pixel width is defined on every child item.`,
-      ];
-      explanation = `flex: 1 1 0% sets flex-grow, flex-shrink, and a 0% flex-basis, ensuring equal distribution of free space regardless of intrinsic item content size.`;
-    } else if (quizTitle.includes("CSS Grid")) {
-      questionText = `In CSS Grid layouts (${quizTitle} Question #${qNum}), how does the rendering engine evaluate fractional units?`;
-      correctOption = `The 1fr unit distributes a proportional fraction of the remaining free space after non-fractional tracks are allocated.`;
-      wrongOptions = [
-        `1fr strictly calculates 100% of the entire viewport width.`,
-        `Fractional tracks can only be declared inside media queries.`,
-        `CSS Grid prohibits combining pixel dimensions with fractional units.`,
-      ];
-      explanation = `The fr unit represents a fraction of the unused remaining space in the grid container, enabling fully responsive columns without calc() computations.`;
-    } else if (quizTitle.includes("JavaScript") || quizTitle.includes("ES6") || quizTitle.includes("DOM")) {
-      questionText = `In JavaScript ES6+ execution (${quizTitle} Challenge #${qNum}), which concept is accurate?`;
-      correctOption = `Promises schedule their resolution callbacks in the microtask queue, which drains prior to the next macrotask turn.`;
-      wrongOptions = [
-        `setTimeout with delay 0 executes synchronously before subsequent variable assignments.`,
-        `Arrow functions bind their own dynamic 'this' context upon execution.`,
-        `const declarations create immutable object values whose nested properties cannot be modified.`,
-      ];
-      explanation = `The JavaScript event loop guarantees that all pending microtasks (Promise reactions, queueMicrotask) are completely executed before picking the next macrotask from the task queue.`;
-    } else if (quizTitle.includes("React")) {
-      questionText = `In React component lifecycles (${quizTitle} Problem #${qNum}), what is the primary consideration?`;
-      correctOption = `State must be treated as immutable; returning new object references enables React to perform shallow equality checks.`;
-      wrongOptions = [
-        `Mutating state directly triggers immediate synchronous re-renders across all child components.`,
-        `useEffect callbacks run synchronously before the DOM is painted on initial mount.`,
-        `React.memo guarantees that a component will never re-render under any circumstances.`,
-      ];
-      explanation = `React's reconciliation algorithm relies on referential equality to determine if props or state have changed. Direct mutations break this diffing process.`;
-    } else {
-      questionText = `In software engineering principles (${quizTitle} Lesson #${qNum}), which practice is recommended?`;
-      correctOption = `Adhering to single responsibility and modular architecture ensures clean testability and code maintainability.`;
-      wrongOptions = [
-        `Coupling business logic directly to presentation templates to eliminate abstraction layers.`,
-        `Suppresing all error handling to avoid console log overhead in production.`,
-        `Using global variable state across all service modules for universal access.`,
-      ];
-      explanation = `Modular architecture and clear separation of concerns isolate side-effects, making applications robust, easy to refactor, and thoroughly testable.`;
-    }
-
-    return {
-      questionText,
-      options: [
-        { optionText: correctOption, isCorrect: true },
-        { optionText: wrongOptions[0], isCorrect: false },
-        { optionText: wrongOptions[1], isCorrect: false },
-        { optionText: wrongOptions[2], isCorrect: false },
-      ],
-      marks: isHard ? 10 : isMedium ? 5 : 2,
-      difficulty: difficulty,
-      explanation: explanation,
-    };
-  });
-}
-
+import { getAuthenticQuestions } from "./curriculumQuestionBank.js";
 import { cleanAllCollections } from "./clean_all_data.js";
 
 async function seedStructuredCurriculum() {
@@ -323,7 +242,7 @@ async function seedStructuredCurriculum() {
 
             // 2. Clear old questions for this quiz and create 10 new validated questions
             await Question.deleteMany({ quizId: regularQuiz._id });
-            const rawQuestions = createQuestionsForQuiz(qDef.title, domain.name, qDef.level, qDef.difficulty);
+            const rawQuestions = getAuthenticQuestions(qDef.title, qDef.level, qDef.difficulty);
 
             const createdQIds = [];
             for (const qObj of rawQuestions) {
@@ -374,7 +293,7 @@ async function seedStructuredCurriculum() {
             );
 
             await Question.deleteMany({ quizId: bonusQuiz._id });
-            const bonusRawQs = createQuestionsForQuiz(bDef.title, domain.name, bDef.level, bDef.difficulty);
+            const bonusRawQs = getAuthenticQuestions(bDef.title, bDef.level, bDef.difficulty);
             const createdBonusQIds = [];
             for (const bObj of bonusRawQs) {
               const bDoc = await Question.create({

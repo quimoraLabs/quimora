@@ -9,6 +9,10 @@ import Question from "../models/question.model.js";
 import Quiz from "../models/quiz.model.js";
 import { generateAIQuestionsService } from "./aiQuestion.service.js";
 
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 /**
  * Service managing decoupled Practice Engine:
  * - Mode 1: Random Mind-Game (Daily AI-curated diagnostic drill, 2-4 topics)
@@ -228,21 +232,94 @@ class PracticeEngineService {
   }
 
   /**
+   * DEMO PRACTICE (TUTORIAL MODE):
+   * Strictly a 2-3 question how-to tutorial for first-time exam takers.
+   * Teaches the exam UI (timer, next button, submit).
+   * Not tied to weak areas or daily targets.
+   */
+  async startDemoTutorialSession(userId) {
+    const demoQuestions = [
+      {
+        questionText: "How does the countdown timer work during a live certification exam?",
+        options: [
+          { optionText: "The timer runs continuously and your exam automatically submits when time reaches 00:00", isCorrect: true },
+          { optionText: "The timer pauses whenever you switch to another browser tab", isCorrect: false },
+          { optionText: "You can freely restart or pause the exam timer whenever needed", isCorrect: false },
+          { optionText: "There is no time limit on any Quimora certification exams", isCorrect: false },
+        ],
+        explanation: "The countdown timer is strictly enforced by the server. Always manage your time and ensure answers are selected before the timer expires.",
+        topicTag: "Exam Interface Tutorial",
+      },
+      {
+        questionText: "How do you navigate through questions and complete your certification exam?",
+        options: [
+          { optionText: "Use 'Next', 'Previous', or Question numbers to navigate, and click the red 'Finish & Submit' button when done", isCorrect: true },
+          { optionText: "You must only answer the first question to pass the test", isCorrect: false },
+          { optionText: "Closing the browser tab automatically grades and passes your test", isCorrect: false },
+          { optionText: "Answers are locked immediately and cannot be changed before submission", isCorrect: false },
+        ],
+        explanation: "You can navigate between questions freely, change your selected choices anytime before submitting, and finalize by clicking 'Finish & Submit'.",
+        topicTag: "Exam Interface Tutorial",
+      },
+      {
+        questionText: "What happens immediately after you submit your certification exam?",
+        options: [
+          { optionText: "You receive an instant performance scorecard with concept breakdowns and accuracy percentages", isCorrect: true },
+          { optionText: "Your answers are deleted without any score or diagnostic report", isCorrect: false },
+          { optionText: "You must wait 48 hours for an instructor to manually review your multiple-choice questions", isCorrect: false },
+          { optionText: "Your student account is automatically logged out and suspended", isCorrect: false },
+        ],
+        explanation: "Quimora provides real-time automated scoring with category mastery, performance metrics, and immediate review feedback.",
+        topicTag: "Exam Interface Tutorial",
+      },
+    ];
+
+    const session = await PracticeSession.create({
+      userId,
+      mode: "demo_tutorial",
+      selectedScope: { type: "tutorial", targetName: "Exam Interface Tutorial" },
+      topicsCovered: ["Exam Interface Tutorial"],
+      questions: demoQuestions,
+      timeLimitMinutes: 3,
+      status: "in_progress",
+    });
+
+    return {
+      sessionId: session._id,
+      isDemo: true,
+      mode: "demo_tutorial",
+      topicsCovered: ["Exam Interface Tutorial"],
+      totalQuestions: demoQuestions.length,
+      timeLimitMinutes: 3,
+      questions: demoQuestions.map((q, idx) => ({
+        index: idx,
+        questionText: q.questionText,
+        options: q.options.map((o) => ({ optionText: o.optionText })),
+        topicTag: q.topicTag,
+      })),
+    };
+  }
+
+  /**
    * MODE 2: Starts Custom Daily Practice Drill.
    * Student chooses scope. Timer = 10 minutes.
    * Locked to Domain/Course context.
    */
-  async startCustomDrill(userId, { scopeType, targetName, domainName }) {
+  async startCustomDrill(userId, { scopeType, targetName, domainName } = {}) {
     const profile = await this.getOrCreateProfile(userId);
 
-    if (profile.customDailyTarget === 0) {
-      throw new Error("Please set your daily practice target (1 to 4 drills) before starting.");
+    // If daily target was not set, auto-initialize target to 1 so the drill can start seamlessly
+    if (!profile.customDailyTarget || profile.customDailyTarget === 0) {
+      profile.customDailyTarget = 1;
+      await profile.save();
     }
 
     if (profile.customAttemptsDoneToday >= profile.customDailyTarget) {
-      throw new Error(
+      const error = new Error(
         `Daily target reached (${profile.customAttemptsDoneToday}/${profile.customDailyTarget}). Targets reset at midnight!`
       );
+      error.statusCode = 400;
+      throw error;
     }
 
     const normalizedTarget = (targetName || "General").trim();
@@ -273,8 +350,9 @@ class PracticeEngineService {
     }
 
     if (practiceQuestions.length < 5) {
-      // Find quizzes strictly matching the target name or tags
-      const regex = new RegExp(`^${normalizedTarget}$|${normalizedTarget}`, "i");
+      // Safely escape regex to prevent crashes on special characters like (ARIA), &, etc.
+      const escaped = escapeRegex(normalizedTarget);
+      const regex = new RegExp(`^${escaped}$|${escaped}`, "i");
       const quizzes = await Quiz.find({
         $or: [{ tags: regex }, { title: regex }],
         status: "published",
@@ -395,6 +473,26 @@ class PracticeEngineService {
     session.status = "completed";
     session.completedAt = new Date();
     await session.save();
+
+    // If Demo Tutorial mode, complete without modifying daily targets or mastery
+    if (session.mode === "demo_tutorial") {
+      return {
+        sessionId: session._id,
+        isDemo: true,
+        score,
+        correctCount,
+        totalQuestions,
+        xpEarned: 10,
+        practiceLevel: 1,
+        newTotalXp: 10,
+        currentStreak: 1,
+        feedback: evaluatedQuestions.map((q) => ({
+          questionText: q.questionText,
+          isCorrect: q.isCorrect,
+          explanation: q.explanation,
+        })),
+      };
+    }
 
     // Update Practice Profile
     const profile = await this.getOrCreateProfile(userId);

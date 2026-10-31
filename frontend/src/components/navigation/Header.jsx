@@ -79,29 +79,29 @@ export function Header({ title, setSidebarOpen, toggleDarkMode, darkMode }) {
   return (
     <header className="h-16 bg-surface/80 backdrop-blur-xl border-b border-main flex items-center justify-between px-4 sm:px-8 sticky top-0 z-40 w-full transition-colors">
       {/* Left: Mobile Menu Toggle & Page Title */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1 mr-2">
         <button
           type="button"
-          className="lg:hidden p-2 rounded-full hover:bg-main transition-colors text-muted hover:text-main cursor-pointer"
+          className="lg:hidden p-1.5 sm:p-2 rounded-full hover:bg-main transition-colors text-muted hover:text-main cursor-pointer shrink-0"
           onClick={() => setSidebarOpen(true)}
           aria-label="Open sidebar"
         >
           <Menu size={20} className="w-5 h-5" />
         </button>
-        <h1 className="text-xl font-bold text-main capitalize tracking-tight">
+        <h1 className="text-base sm:text-xl font-bold text-main capitalize tracking-tight truncate">
           {title}
         </h1>
       </div>
 
       {/* Right: Gamification Badges, Theme Toggle & User Profile Dropdown */}
-      <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
         {/* Student Gamification Badges: Coins & Elo */}
         {role === "student" && (
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             {/* Coins Balance Pill */}
             <Link
               to="/student/profile"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/25 transition-all font-mono font-bold text-xs shadow-xs"
+              className="flex items-center gap-1 sm:gap-1.5 px-2 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/25 transition-all font-mono font-bold text-xs shadow-xs"
               title="Quimora Coins Balance (Click to view Profile & Rewards)"
             >
               <Coins className="w-3.5 h-3.5 text-amber-500 shrink-0" />
@@ -111,7 +111,7 @@ export function Header({ title, setSidebarOpen, toggleDarkMode, darkMode }) {
             {/* Elo Rating Pill */}
             <Link
               to="/student/leaderboard"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/25 transition-all font-mono font-bold text-xs shadow-xs"
+              className="flex items-center gap-1 sm:gap-1.5 px-2 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/25 transition-all font-mono font-bold text-xs shadow-xs"
               title="Arena Calibrated Elo Rating (Click to view Leaderboard)"
             >
               <Zap className="w-3.5 h-3.5 text-indigo-500 fill-indigo-500/30 shrink-0" />

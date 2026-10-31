@@ -114,6 +114,7 @@ apiRouter.use("/student/rewards", rewardsRoutes);
 apiRouter.use("/practice", practiceRoutes);
 apiRouter.use("/hierarchy", hierarchyRoutes);
 apiRouter.use("/", hierarchyRoutes); // mount directly for clean REST e.g. /api/v2/domains
+apiRouter.use("/api/v2", apiRouter); // resilience alias for clients with baseURL prefixing
 
 // Mount the versioned router centrally (supports both /api/v2 and legacy /api/v1)
 app.use(config.apiPrefix, apiRouter);

@@ -10,11 +10,41 @@ class PracticeController {
    */
   async getStatus(req, res, next) {
     try {
-      const userId = req.auth?.userId || req.user?._id || req.user?.id;
+      const userId = req.auth?.userId || req.user?._id || req.user?.id || req.query?.userId;
+      if (!userId) {
+        return res.status(200).json({
+          success: true,
+          data: {
+            profile: { practiceLevel: 1, practiceXp: 0, levelProgressPercent: 0, currentStreak: 0 },
+            mode1_randomMindGame: { available: true, completedToday: false, title: "Daily Mystery Mind-Game" },
+            mode2_customPractice: { targetSetToday: false, dailyTarget: 0, attemptsDoneToday: 0, attemptsRemaining: 0, maxAllowedPerDay: 4, timerMinutesPerDrill: 10 },
+            topicMastery: [],
+            enrolledInterests: [],
+            readiness: { isReadyForChallenge: false, message: "Diagnostic practice recommended on critical topics." },
+          },
+        });
+      }
       const status = await practiceEngineService.getPracticeStatus(userId);
       return res.status(200).json({
         success: true,
         data: status,
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * POST /api/v2/practice/demo/start
+   * Starts Demo Tutorial Mock Quiz (2-3 questions to learn exam interface)
+   */
+  async startDemoTutorial(req, res, next) {
+    try {
+      const userId = req.auth?.userId || req.user?._id || req.user?.id;
+      const session = await practiceEngineService.startDemoTutorialSession(userId);
+      return res.status(200).json({
+        success: true,
+        data: session,
       });
     } catch (err) {
       next(err);

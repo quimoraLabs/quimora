@@ -103,30 +103,24 @@ export default function QuizListPage() {
       // 1. Acknowledge the modal so it won't show again
       await axiosClient.post(`/student/quiz/${quizId}/acknowledge-first-time-modal`);
 
-      // 2. Launch targeted practice drill for this quiz topic
-      const topicName = pendingQuiz.title || selectedCourse?.title || "Fundamentals";
-      const domainName = selectedDomain?.name || "General";
-
-      const res = await axiosClient.post("/practice/mode2/start", {
-        scopeType: "quiz",
-        targetName: topicName,
-        domainName: domainName,
-      });
+      // 2. Launch tutorial Demo Quiz (How-to tutorial for exam UI)
+      const res = await axiosClient.post("/practice/demo/start");
 
       if (res.data?.success) {
-        sessionStorage.setItem("activePracticeSession", JSON.stringify(res.data.data));
+        sessionStorage.setItem("activePracticeSession", JSON.stringify({
+          ...res.data.data,
+          targetQuizId: quizId,
+          targetQuizTitle: pendingQuiz.title,
+        }));
         setShowFirstTimeModal(false);
         setPendingQuiz(null);
         navigate("/student/practice/room");
       }
     } catch (err) {
-      const msg = err.response?.data?.message || "Failed to start practice quiz";
+      const msg = err.response?.data?.message || "Failed to start demo tutorial";
       toast.error(msg);
-      // If daily target not set, redirect to weak-areas to set target or proceed to exam
-      if (msg.includes("daily practice target")) {
-        setShowFirstTimeModal(false);
-        navigate("/student/weak-areas");
-      }
+      // Fallback directly to exam rules if demo failed
+      proceedToExamInstructions(pendingQuiz);
     } finally {
       setPracticeStarting(false);
     }
@@ -154,7 +148,7 @@ export default function QuizListPage() {
       <div>
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 mb-2">
           <Sparkles className="w-3.5 h-3.5" />
-          <span>Curriculum Hierarchy: Domain › Course › Chapter › Quiz</span>
+          <span>Your Learning Path</span>
         </div>
 
         <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
@@ -181,7 +175,7 @@ export default function QuizListPage() {
             </h2>
           </div>
         </div>
-        <span className="text-2xs font-semibold px-2.5 py-1 rounded-lg bg-surface border border-soft text-muted">
+        <span className="hidden sm:inline-block text-2xs font-semibold px-2.5 py-1 rounded-lg bg-surface border border-soft text-muted">
           All courses & drills locked to this domain
         </span>
       </div>
@@ -190,7 +184,7 @@ export default function QuizListPage() {
       <div className="space-y-2">
         <div className="text-2xs font-extrabold text-muted uppercase tracking-wider flex items-center gap-1.5">
           <BookOpen size={13} className="text-purple-500" />
-          <span>2. Select Course</span>
+          <span>Select Course</span>
         </div>
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
           {courses.map((course) => (

@@ -22,7 +22,7 @@ export default function LiveChallengesPage() {
     try {
       setLoading(true);
       setError(null);
-      const res = await axiosClient.get("/api/v2/student/challenges");
+      const res = await axiosClient.get("/student/challenges");
       if (res.data?.success) {
         setChallenges(res.data.data || []);
       }

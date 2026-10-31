@@ -86,33 +86,33 @@ export const generateAIQuestionsService = async ({
 Your task is to generate high-quality, authentic, standard, and student-friendly multiple choice questions (MCQs) for students on the given topic.
 
 CRITICAL QUALITY GUIDELINES:
-1. QUESTION COUNT:
-   - Generate EXACTLY 10 multiple choice questions.
+1. QUESTION COUNT & UNIQUENESS (MANDATORY):
+   - Generate EXACTLY ${numQuestions} multiple choice questions.
+   - EVERY single question MUST test a DIFFERENT sub-concept or technique within the topic. No two questions may test the same concept or syntax.
+   - ABSOLUTELY FORBIDDEN: NEVER include question numbers or templates like "practice #1", "scenario #5", "specification practice", or repeating the quiz title in the question text.
 2. DIFFICULTY CALIBRATION & PROGRESSION:
-   - For Basic/Foundations Quiz: Generate 10 straightforward foundational syntax & core API questions.
-   - For Intermediate Quiz: Generate 10 applied scenario, debugging, and standard design pattern questions.
-   - For Advanced Quiz: Generate 10 complex edge-case, concurrency, and performance questions.
-   - For Bonus Assignment Quiz: Generate 10 tricky, thought-provoking problem-solving questions.
-3. STUDENT-FRIENDLY & PRACTICAL:
-   - Formulate clear, concise, standard questions that test real understanding, practical syntax, common patterns, and problem-solving.
-   - AVOID pseudo-academic robotic jargon (e.g. NEVER ask generic template questions like "what is the foundational architecture principle for scenario #14").
-   - Focus on actual language/framework constructs, methods, keywords, behavior, and standard conventions.
+   - For Basic / Foundations: Focus strictly on core definitions, fundamental syntax, element/property usage, and direct behavior.
+   - For Intermediate: Focus on real-world practical usage, multi-element interactions, error handling, and debugging common problems.
+   - For Advanced: Focus on performance optimization, runtime internals, browser/engine execution mechanics, edge cases, and architectural tradeoffs.
+   - For Bonus Assignment: Focus on tricky, high-depth diagnostic questions testing nuanced behavior under edge conditions.
+3. ACADEMICALLY VALID & PRACTICAL:
+   - Formulate clear, natural, standard questions that assess genuine understanding of standard APIs, keywords, specifications, and code snippets.
+   - Avoid generic robotic filler. Ask about specific behaviors (e.g. "What is the result of...", "Which HTML5 element should be used for...", "How does CSS grid compute...").
 4. REALISTIC & PLAUSIBLE OPTIONS:
-   - Provide 4 distinct, clear choices per question.
-   - The correct answer must be unambiguously accurate according to official documentation.
-   - The 3 distractors (wrong answers) must be realistic common student misconceptions or closely related methods/properties.
+   - Provide EXACTLY 4 distinct, meaningful choices per question.
+   - The correct answer must be unambiguously accurate according to official specifications (MDN, W3C, ECMAScript).
+   - Distractors (wrong answers) must be realistic common student misconceptions or closely related methods/properties.
 5. TOPIC ACCURACY & STRICT PURITY:
    - All questions must strictly pertain to the requested topic "${topic}".
    - Do NOT mix or introduce unrelated technologies or languages (e.g. if the topic is HTML, generate ONLY HTML questions, NEVER Python, NumPy, SQL, or Java).
-   - If there is a minor typo in the topic, intelligently interpret the real technology or subject.
 6. AUTHENTIC CONCEPTUAL EXPLANATIONS (MANDATORY):
    - You MUST generate an authentic, educational 2-3 sentence "explanation" for EVERY question.
    - The explanation MUST explicitly state WHY the correct option is right and explain the underlying concept.
-   - FORBIDDEN: NEVER use repetitive generic placeholders like "Diagnostic analysis of conceptual execution", "Review fundamental concepts", or just repeating the question.
+   - FORBIDDEN: NEVER use repetitive generic placeholders like "Diagnostic analysis of conceptual execution", "Review fundamental concepts", or repeating the question.
 7. Output MUST be valid, raw JSON only without markdown formatting.
 8. The JSON object MUST have a top-level key "questions" containing an array of question objects.
 9. Each question object MUST contain:
-   - "questionText": Clear, natural question text.
+   - "questionText": Clear, natural question text without numbers or generic templates.
    - "marks": 2 for easy, 5 for medium, 10 for hard.
    - "difficulty": "easy", "medium", or "hard".
    - "explanation": Concrete, authentic 2-3 sentence explanation of why the correct option is right.
