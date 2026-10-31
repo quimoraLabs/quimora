@@ -19,9 +19,47 @@ export const useHierarchyStore = create((set, get) => ({
         const domains = res.data.data || [];
         set({ domains });
 
-        // Auto-select first domain or restore saved
+        // Auto-select first domain, restore saved, or align with student's enrolled profile
         const savedDomainId = localStorage.getItem("selectedDomainId");
-        const found = domains.find((d) => d._id === savedDomainId) || domains[0];
+        let found = domains.find((d) => d._id === savedDomainId);
+
+        try {
+          const profRes = await axiosClient.get("/interests/student/profile");
+          const userInterests =
+            profRes.data?.data?.interests ||
+            profRes.data?.data?.profile?.interests ||
+            [];
+          if (userInterests.length > 0) {
+            const firstInterest = userInterests[0];
+            const interestName = (typeof firstInterest === "object" ? firstInterest.name || "" : "").toLowerCase();
+            const interestSlug = (typeof firstInterest === "object" ? firstInterest.slug || "" : "").toLowerCase();
+
+            const matchedByInterest = domains.find((d) => {
+              const domName = d.name.toLowerCase();
+              if (interestName.includes("python") || interestName.includes("data science") || interestSlug.includes("data-science")) {
+                return domName.includes("python") || domName.includes("data science");
+              }
+              if (interestName.includes("web") || interestSlug.includes("web")) {
+                return domName.includes("web");
+              }
+              return domName.includes(interestName) || interestName.includes(domName);
+            });
+
+            if (matchedByInterest) {
+              const isSavedStillMatching = found && (
+                (found.name.toLowerCase().includes("python") && (interestName.includes("python") || interestName.includes("data science"))) ||
+                (found.name.toLowerCase().includes("web") && interestName.includes("web"))
+              );
+              if (!savedDomainId || !isSavedStillMatching) {
+                found = matchedByInterest;
+              }
+            }
+          }
+        } catch (e) {
+          console.warn("Could not fetch student interest profile for domain auto-select:", e);
+        }
+
+        found = found || domains[0];
         if (found) {
           get().selectDomain(found);
         }

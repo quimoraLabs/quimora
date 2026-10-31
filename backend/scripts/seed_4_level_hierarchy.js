@@ -149,6 +149,136 @@ const CURRICULUM_BLUEPRINT = [
       },
     ],
   },
+  {
+    domain: {
+      name: "Python & Data Science",
+      description: "Python core programming, data structures, scientific computing with NumPy, and data manipulation with Pandas.",
+    },
+    courses: [
+      {
+        title: "Python Foundations & Applied Programming",
+        description: "Comprehensive Python programming track: data structures, object-oriented architecture, file I/O, error handling, and concurrency.",
+        chapters: [
+          {
+            title: "Python Syntax, Data Types & Control Flow",
+            orderIndex: 1,
+            requiredPassingScore: 50,
+            regularQuizzes: [
+              { title: "Python Variables, Numeric Types & Conditional Logic", level: "Beginner", difficulty: "easy" },
+              { title: "Python Collections: Lists, Tuples, Dictionaries & Sets", level: "Intermediate", difficulty: "medium" },
+              { title: "Comprehensions, Lambda Functions & Generator Expressions", level: "Advanced", difficulty: "hard" },
+            ],
+            bonusQuiz: { title: "Bonus Challenge: High-Efficiency Itertools & Memory Generators", level: "Master", difficulty: "hard" },
+          },
+          {
+            title: "Object-Oriented Python & Functional Patterns",
+            orderIndex: 2,
+            requiredPassingScore: 50,
+            regularQuizzes: [
+              { title: "Classes, Objects, Methods & The __init__ Constructor", level: "Beginner", difficulty: "easy" },
+              { title: "Inheritance, Polymorphism & Dunder Magic Methods", level: "Intermediate", difficulty: "medium" },
+              { title: "Decorators, Context Managers & Property Encapsulation", level: "Advanced", difficulty: "hard" },
+            ],
+            bonusQuiz: { title: "Bonus Challenge: Metaclasses & Custom Descriptor Protocols", level: "Master", difficulty: "hard" },
+          },
+          {
+            title: "File Handling, Exceptions & Standard Library",
+            orderIndex: 3,
+            requiredPassingScore: 50,
+            regularQuizzes: [
+              { title: "File I/O, Pathlib & Working with JSON/CSV Data", level: "Beginner", difficulty: "easy" },
+              { title: "Exception Handling, try-except-finally & Custom Errors", level: "Intermediate", difficulty: "medium" },
+              { title: "Python Standard Library, Math, Random & Datetime", level: "Advanced", difficulty: "hard" },
+            ],
+            bonusQuiz: { title: "Bonus Challenge: Concurrent File Processing & Resource Locks", level: "Master", difficulty: "hard" },
+          },
+          {
+            title: "Data Structures & Algorithmic Thinking in Python",
+            orderIndex: 4,
+            requiredPassingScore: 50,
+            regularQuizzes: [
+              { title: "Stacks, Queues & Collections Module (deque, Counter)", level: "Beginner", difficulty: "easy" },
+              { title: "Recursion, Binary Search & Custom Sorting Key Functions", level: "Intermediate", difficulty: "medium" },
+              { title: "Hash Tables, Tree Traversals & Big-O Complexity", level: "Advanced", difficulty: "hard" },
+            ],
+            bonusQuiz: { title: "Bonus Challenge: Shortest Path Algorithms & Heapq Priority Queues", level: "Master", difficulty: "hard" },
+          },
+          {
+            title: "Concurrency, Asynchronous Python & Web Requests",
+            orderIndex: 5,
+            requiredPassingScore: 50,
+            regularQuizzes: [
+              { title: "The requests Module, REST API Ingestion & Serialization", level: "Beginner", difficulty: "easy" },
+              { title: "Multithreading vs Multiprocessing & GIL Fundamentals", level: "Intermediate", difficulty: "medium" },
+              { title: "asyncio, async/await Syntax & Non-Blocking Event Loops", level: "Advanced", difficulty: "hard" },
+            ],
+            bonusQuiz: { title: "Bonus Challenge: High-Throughput Non-Blocking Async Pipeline", level: "Master", difficulty: "hard" },
+          },
+        ],
+      },
+      {
+        title: "Data Analysis with NumPy & Pandas",
+        description: "Data science essentials: multi-dimensional arrays, dataframes, data cleaning, transformations, grouping, and visualization.",
+        chapters: [
+          {
+            title: "NumPy Arrays & Multi-Dimensional Computing",
+            orderIndex: 1,
+            requiredPassingScore: 50,
+            regularQuizzes: [
+              { title: "NumPy ndarray Creation, Array Shapes, Data Types & Indexing", level: "Beginner", difficulty: "easy" },
+              { title: "Array Slicing, Boolean Masking & Vectorized Operations", level: "Intermediate", difficulty: "medium" },
+              { title: "Broadcasting Rules, Matrix Multiplication & Linear Algebra", level: "Advanced", difficulty: "hard" },
+            ],
+            bonusQuiz: { title: "Bonus Challenge: Memory Strides, In-Place Mutability & Performance", level: "Master", difficulty: "hard" },
+          },
+          {
+            title: "Pandas Series & DataFrame Foundations",
+            orderIndex: 2,
+            requiredPassingScore: 50,
+            regularQuizzes: [
+              { title: "Pandas Series, DataFrame Creation & CSV Ingestion", level: "Beginner", difficulty: "easy" },
+              { title: "Indexing with loc & iloc, Column Selection & Filtering", level: "Intermediate", difficulty: "medium" },
+              { title: "Handling Missing Data: isnull, dropna & fillna Strategies", level: "Advanced", difficulty: "hard" },
+            ],
+            bonusQuiz: { title: "Bonus Challenge: Large Dataset Chunking & Downcasting Memory Optimization", level: "Master", difficulty: "hard" },
+          },
+          {
+            title: "Data Wrangling, GroupBy & Aggregations",
+            orderIndex: 3,
+            requiredPassingScore: 50,
+            regularQuizzes: [
+              { title: "Descriptive Statistics: mean, median, mode, std & describe", level: "Beginner", difficulty: "easy" },
+              { title: "groupby Operations, Multiple Aggregations & transform", level: "Intermediate", difficulty: "medium" },
+              { title: "Merging, Joining & Concatenating Multi-Table Datasets", level: "Advanced", difficulty: "hard" },
+            ],
+            bonusQuiz: { title: "Bonus Challenge: Hierarchical MultiIndex Reshaping & Pivot Tables", level: "Master", difficulty: "hard" },
+          },
+          {
+            title: "Feature Engineering & Time Series in Pandas",
+            orderIndex: 4,
+            requiredPassingScore: 50,
+            regularQuizzes: [
+              { title: "String Methods (str accessor) & Categorical Data Types", level: "Beginner", difficulty: "easy" },
+              { title: "DateTime Parsing, Timestamps, Resampling & Rolling Windows", level: "Intermediate", difficulty: "medium" },
+              { title: "Outlier Detection with IQR/Z-score & Feature Binning", level: "Advanced", difficulty: "hard" },
+            ],
+            bonusQuiz: { title: "Bonus Challenge: High-Frequency Financial Time-Series Resampling Pipeline", level: "Master", difficulty: "hard" },
+          },
+          {
+            title: "Data Visualization & Exploratory Data Analysis",
+            orderIndex: 5,
+            requiredPassingScore: 50,
+            regularQuizzes: [
+              { title: "Matplotlib Fundamentals: Line, Scatter & Bar Charts", level: "Beginner", difficulty: "easy" },
+              { title: "Seaborn Statistical Plots: Boxplots, Heatmaps & Pairplots", level: "Intermediate", difficulty: "medium" },
+              { title: "Correlation Analysis, Skewness Correction & Distribution Insights", level: "Advanced", difficulty: "hard" },
+            ],
+            bonusQuiz: { title: "Bonus Challenge: End-to-End Automated EDA Pipeline Report", level: "Master", difficulty: "hard" },
+          },
+        ],
+      },
+    ],
+  },
 ];
 
 /**
@@ -317,6 +447,55 @@ async function seedStructuredCurriculum() {
     }
 
     console.log("\n🎉 Standard E-Learning (Udemy/Coursera) Curriculum Seeded Successfully!");
+
+    // Ensure Interest records match the domains for student onboarding compatibility
+    const Interest = (await import("../models/interest.model.js")).default;
+    const StudentProfile = (await import("../models/studentProfile.model.js")).default;
+
+    const pythonInterest = await Interest.findOneAndUpdate(
+      { slug: "data-science" },
+      {
+        name: "Python & Data Science",
+        slug: "data-science",
+        description: "Python programming, data analysis, Pandas, NumPy, and statistics.",
+        topicTags: ["python", "pandas", "numpy", "statistics", "analytics"],
+        icon: "database",
+        isCore: true,
+        isActive: true,
+      },
+      { upsert: true, returnDocument: "after" }
+    );
+
+    const webInterest = await Interest.findOneAndUpdate(
+      { slug: "web-foundations" },
+      {
+        name: "Web Development",
+        slug: "web-foundations",
+        description: "HTML5 semantic structure, CSS3 styling, Flexbox, and core JavaScript basics.",
+        topicTags: ["html5", "css3", "javascript", "dom", "flexbox"],
+        icon: "globe",
+        isCore: true,
+        isActive: true,
+      },
+      { upsert: true, returnDocument: "after" }
+    );
+
+    // Sync demo student account student_alex to Python & Data Science
+    const studentUser = await User.findOne({ username: "student_alex" });
+    if (studentUser) {
+      await StudentProfile.findOneAndUpdate(
+        { userId: studentUser._id },
+        {
+          userId: studentUser._id,
+          interests: [pythonInterest._id],
+          onboardingCompleted: true,
+          levelName: "Beginner",
+          coinsBalance: 100,
+        },
+        { upsert: true }
+      );
+      console.log(`✅ Synced student_alex profile to default active interest: "Python & Data Science"`);
+    }
   } catch (err) {
     console.error("Curriculum seed failed:", err);
   } finally {

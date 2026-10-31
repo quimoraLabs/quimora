@@ -161,9 +161,9 @@ export default function QuizListPage() {
       </div>
 
       {/* LEVEL 1: Active Domain Focus Header */}
-      <div className="flex items-center justify-between p-3.5 bg-indigo-500/10 dark:bg-indigo-950/30 border border-indigo-500/20 rounded-2xl">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-indigo-500/10 dark:bg-indigo-950/30 border border-indigo-500/20 rounded-2xl">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold">
+          <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold shrink-0">
             <FolderTree size={18} />
           </div>
           <div>
@@ -171,13 +171,33 @@ export default function QuizListPage() {
               Active Focus Domain
             </div>
             <h2 className="text-base font-extrabold text-main">
-              {selectedDomain?.name || "Web Development"}
+              {selectedDomain?.name || "Select Track"}
             </h2>
           </div>
         </div>
-        <span className="hidden sm:inline-block text-2xs font-semibold px-2.5 py-1 rounded-lg bg-surface border border-soft text-muted">
-          All courses & drills locked to this domain
-        </span>
+
+        {/* Quick domain switcher pills */}
+        {domains.length > 1 ? (
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+            {domains.map((dom) => (
+              <button
+                key={dom._id}
+                onClick={() => selectDomain(dom)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                  selectedDomain?._id === dom._id
+                    ? "bg-indigo-600 text-white shadow-xs"
+                    : "bg-surface border border-soft text-muted hover:text-main hover:bg-elevated"
+                }`}
+              >
+                {dom.name}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <span className="hidden sm:inline-block text-2xs font-semibold px-2.5 py-1 rounded-lg bg-surface border border-soft text-muted">
+            All courses & drills locked to this domain
+          </span>
+        )}
       </div>
 
       {/* LEVEL 2: Course Selector Under Domain */}

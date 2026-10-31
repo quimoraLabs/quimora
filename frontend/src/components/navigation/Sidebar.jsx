@@ -142,12 +142,22 @@ export default function Sidebar({ isOpen, setIsOpen, role }) {
                 <div className="pt-2">
                   <div className="px-1 text-2xs font-extrabold uppercase tracking-wider text-muted mb-1.5 flex items-center justify-between">
                     <span>Active Domain</span>
-                    <span className="text-3xs font-semibold px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-500">
-                      Level 1
-                    </span>
+                    {domains.length > 1 ? (
+                      <button
+                        onClick={() => setIsDomainDropdownOpen(!isDomainDropdownOpen)}
+                        className="text-3xs font-semibold px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500/20 transition-colors cursor-pointer flex items-center gap-1"
+                      >
+                        <span>Switch</span>
+                        <ChevronDown size={10} className={`transition-transform duration-200 ${isDomainDropdownOpen ? "rotate-180" : ""}`} />
+                      </button>
+                    ) : (
+                      <span className="text-3xs font-semibold px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-500">
+                        Level 1
+                      </span>
+                    )}
                   </div>
 
-                  {/* Clean Single Focused Domain Pill - No other domains shown */}
+                  {/* Clean Focused Domain Pill */}
                   <div className="p-3 rounded-2xl border border-indigo-500/30 bg-linear-to-r from-indigo-500/10 to-purple-500/10 text-left">
                     <div className="flex items-center gap-2.5">
                       <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm">
@@ -155,12 +165,38 @@ export default function Sidebar({ isOpen, setIsOpen, role }) {
                       </div>
                       <div className="truncate">
                         <h3 className="text-xs font-bold text-main truncate">
-                          {selectedDomain?.name || "Web Development"}
+                          {selectedDomain?.name || "Select Track"}
                         </h3>
                         <p className="text-3xs text-muted truncate">Current Focused Track</p>
                       </div>
                     </div>
                   </div>
+
+                  {/* Clean Dropdown for Domain Switching */}
+                  {isDomainDropdownOpen && domains.length > 1 && (
+                    <div className="mt-1.5 p-1 bg-surface border border-soft rounded-2xl shadow-lg space-y-0.5 z-20">
+                      <div className="px-2 py-1 text-3xs font-bold text-muted uppercase">
+                        Available Tracks
+                      </div>
+                      {domains.map((dom) => (
+                        <button
+                          key={dom._id}
+                          onClick={() => {
+                            selectDomain(dom);
+                            setIsDomainDropdownOpen(false);
+                          }}
+                          className={`w-full text-left px-2.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center justify-between ${
+                            selectedDomain?._id === dom._id
+                              ? "bg-indigo-600 text-white shadow-xs font-bold"
+                              : "text-muted hover:text-main hover:bg-elevated"
+                          }`}
+                        >
+                          <span className="truncate">{dom.name}</span>
+                          {selectedDomain?._id === dom._id && <CheckCircle2 size={13} className="shrink-0" />}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* 3. Domain's Focused Courses (Level 2) */}

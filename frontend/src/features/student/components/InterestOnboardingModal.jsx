@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import axiosClient from "../../../api/axiosClient";
+import useHierarchyStore from "../store/useHierarchyStore";
 
 const ICON_MAP = {
   globe: Globe,
@@ -212,6 +213,12 @@ export default function InterestOnboardingModal({
 
       if (res.data?.success) {
         toast.success("Welcome aboard! Your personalized quizzes are ready.");
+        try {
+          localStorage.removeItem("selectedDomainId");
+          useHierarchyStore.getState().fetchDomains();
+        } catch (e) {
+          console.warn("Could not refresh hierarchy domain:", e);
+        }
         if (onComplete) onComplete(res.data.data);
         if (onClose) onClose();
       }

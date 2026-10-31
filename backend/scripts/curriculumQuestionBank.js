@@ -1,11 +1,15 @@
 import fs from "fs";
 import path from "path";
+import { PYTHON_DATA_SCIENCE_QUESTION_REGISTRY } from "./pythonQuestionBank.js";
 
 export function getAuthenticQuestions(title, level, difficulty) {
   // We'll return 10 authentic questions tailored specifically to this quiz title
   // Let's check our registry first
   if (REGISTRY[title]) {
     return REGISTRY[title];
+  }
+  if (PYTHON_DATA_SCIENCE_QUESTION_REGISTRY[title]) {
+    return PYTHON_DATA_SCIENCE_QUESTION_REGISTRY[title];
   }
   // Fallback if title not matched exactly
   return generateTailoredQuestions(title, level, difficulty);
@@ -510,3 +514,4 @@ function generateTailoredQuestions(title, level, difficulty) {
     explanation: `Official documentation specifies standard syntax and structured architecture for ${title} to ensure cross-platform compatibility, testability, and accessibility.`
   }));
 }
+
