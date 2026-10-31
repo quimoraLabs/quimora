@@ -236,10 +236,15 @@ function createQuestionsForQuiz(quizTitle, topicDomain, level, difficulty) {
   });
 }
 
+import { cleanAllCollections } from "./clean_all_data.js";
+
 async function seedStructuredCurriculum() {
   try {
     await mongoose.connect(MONGO_URI);
     console.log("Connected to MongoDB for E-Learning Standard Curriculum Seeding...");
+
+    // First wipe all dirty/old data completely
+    await cleanAllCollections();
 
     // Find default instructor / admin to assign createdBy
     let creator = await User.findOne({ role: "admin" });
