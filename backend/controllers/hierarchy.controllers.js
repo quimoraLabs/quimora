@@ -3,17 +3,41 @@ import Course from "../models/course.model.js";
 import Chapter from "../models/chapter.model.js";
 import Quiz from "../models/quiz.model.js";
 import StudentQuizProgress from "../models/studentQuizProgress.model.js";
+import { DomainCurriculumService } from "../services/domainCurriculum.service.js";
 
 /**
  * Controller strictly enforcing the 4-level hierarchy:
  * Domain -> Course -> Chapter -> Quiz
  */
 class HierarchyController {
-  // LEVEL 1: Get all active root Domains
+  // LEVEL 1: Get all active root Domains (auto-ensures student's chosen tracks exist)
   async getDomains(req, res, next) {
     try {
+      const userId = req.auth?.userId || req.user?._id || req.user?.id;
+      if (userId) {
+        try {
+          await DomainCurriculumService.ensureDomainsForStudent(userId);
+        } catch (e) {
+          console.warn("Student auto-domain ensure warning:", e);
+        }
+      }
+
       const domains = await Domain.find({ isActive: true }).sort({ name: 1 }).lean();
       return res.status(200).json({ success: true, data: domains });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // LEVEL 1 AUTO-CREATE: Ensure or auto-create a Domain & its 4-level hierarchy on demand
+  async ensureDomain(req, res, next) {
+    try {
+      const { topic } = req.body;
+      if (!topic) {
+        return res.status(400).json({ success: false, message: "topic is required" });
+      }
+      const domain = await DomainCurriculumService.ensureDomainForTopic(topic);
+      return res.status(200).json({ success: true, data: domain });
     } catch (error) {
       next(error);
     }

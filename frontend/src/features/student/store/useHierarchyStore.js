@@ -117,6 +117,26 @@ export const useHierarchyStore = create((set, get) => ({
       set({ loading: false });
     }
   },
+
+  // Auto-create or ensure a topic domain on the fly when student chooses it
+  ensureAndSelectTopic: async (topic) => {
+    try {
+      set({ loading: true });
+      const res = await axiosClient.post("/hierarchy/domains/ensure", { topic });
+      if (res.data?.success && res.data?.data) {
+        const domain = res.data.data;
+        const listRes = await axiosClient.get("/hierarchy/domains");
+        if (listRes.data?.success) {
+          set({ domains: listRes.data.data || [] });
+        }
+        await get().selectDomain(domain);
+      }
+    } catch (err) {
+      console.error("Failed to auto-create and select domain for topic:", err);
+    } finally {
+      set({ loading: false });
+    }
+  },
 }));
 
 export default useHierarchyStore;

@@ -1,5 +1,6 @@
 import Interest from "../models/interest.model.js";
 import StudentProfileService from "../services/studentProfile.service.js";
+import { DomainCurriculumService } from "../services/domainCurriculum.service.js";
 import { redisCache } from "../config/redis.js";
 
 const CORE_DEFAULT_INTERESTS = [
@@ -156,6 +157,13 @@ export const completeStudentOnboarding = async (req, res, next) => {
       interestIds
     );
 
+    // Auto-create/ensure Domain and 4-level hierarchy for all chosen student interests
+    try {
+      await DomainCurriculumService.ensureDomainsForStudent(req.auth.userId);
+    } catch (domainErr) {
+      console.warn("Auto domain creation warning:", domainErr);
+    }
+
     await redisCache.delPattern("quizzes:student:*");
 
     res.status(200).json({
@@ -190,6 +198,13 @@ export const updateStudentInterests = async (req, res, next) => {
       req.auth.userId,
       interestIds
     );
+
+    // Auto-create/ensure Domain and 4-level hierarchy for all chosen student interests
+    try {
+      await DomainCurriculumService.ensureDomainsForStudent(req.auth.userId);
+    } catch (domainErr) {
+      console.warn("Auto domain creation warning:", domainErr);
+    }
 
     await redisCache.delPattern("quizzes:student:*");
 
