@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import PracticeProfile, { getTodayDateIST } from "../models/practiceProfile.model.js";
+import PracticeProfile, { getTodayDateIST, getYesterdayDateIST } from "../models/practiceProfile.model.js";
 import PracticeSession from "../models/practiceSession.model.js";
 import StudentProfile from "../models/studentProfile.model.js";
 import Domain from "../models/domain.model.js";
@@ -191,7 +191,13 @@ class PracticeEngineService {
       const matchedQIds = domainQuizzes.flatMap((q) => q.questions || []);
       const dbQuestions = await Question.find({ _id: { $in: matchedQIds } }).lean();
 
-      const sourceQs = dbQuestions.length >= 5 ? dbQuestions : await Question.find().limit(15).lean();
+      let sourceQs = dbQuestions;
+      if (sourceQs.length < 5) {
+        const publishedQuizzes = await Quiz.find({ status: "published", isActive: true }).select("questions").limit(10).lean();
+        const pubQIds = publishedQuizzes.flatMap((q) => q.questions || []);
+        const fallbackQs = await Question.find({ _id: { $in: pubQIds } }).limit(15).lean();
+        sourceQs = fallbackQs.length > 0 ? fallbackQs : dbQuestions;
+      }
       const shuffled = sourceQs.sort(() => 0.5 - Math.random());
       practiceQuestions = shuffled.slice(0, 6).map((q, idx) => ({
         questionText: q.questionText,
@@ -437,12 +443,14 @@ class PracticeEngineService {
    * Submits practice session answers, awards XP, updates streaks, and recalculates topic mastery.
    */
   async submitPracticeSession(userId, { sessionId, answers, timeSpentSeconds }) {
-    const session = await PracticeSession.findOne({ _id: sessionId, userId });
+    // Atomically lock session from being evaluated or submitted multiple times
+    const session = await PracticeSession.findOneAndUpdate(
+      { _id: sessionId, userId, status: { $ne: "completed" } },
+      { $set: { status: "evaluating" } },
+      { returnDocument: "after" }
+    );
     if (!session) {
-      throw new Error("Practice session not found.");
-    }
-    if (session.status === "completed") {
-      throw new Error("This practice session has already been submitted.");
+      throw new Error("Practice session not found or already submitted.");
     }
 
     let correctCount = 0;
@@ -501,7 +509,13 @@ class PracticeEngineService {
 
     const todayIST = getTodayDateIST();
     if (profile.lastActiveDate !== todayIST) {
-      profile.currentStreak += 1;
+      const yesterdayIST = getYesterdayDateIST();
+      if (profile.lastActiveDate === yesterdayIST) {
+        profile.currentStreak += 1;
+      } else {
+        // First practice ever or missed at least one day
+        profile.currentStreak = 1;
+      }
       profile.lastActiveDate = todayIST;
     }
 

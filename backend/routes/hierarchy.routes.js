@@ -9,7 +9,7 @@ router.use(authMiddleware, authorizeRoles("user", "instructor", "admin"));
 
 // Level 1: Root Domains
 router.get("/domains", hierarchyController.getDomains);
-router.post("/domains/ensure", hierarchyController.ensureDomain);
+router.post("/domains/ensure", authorizeRoles("admin", "instructor"), hierarchyController.ensureDomain);
 
 // Level 2: Courses under Domain
 router.get("/domains/:domainId/courses", hierarchyController.getCoursesByDomain);

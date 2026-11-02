@@ -19,7 +19,7 @@ export const useHierarchyStore = create((set, get) => ({
         const domains = res.data.data || [];
         set({ domains });
 
-        // Auto-select first domain, restore saved, or align with student's enrolled profile
+        // Auto-select domain matching student's enrolled profile, restore saved, or pick first
         const savedDomainId = localStorage.getItem("selectedDomainId");
         let found = domains.find((d) => d._id === savedDomainId);
 
@@ -46,13 +46,7 @@ export const useHierarchyStore = create((set, get) => ({
             });
 
             if (matchedByInterest) {
-              const isSavedStillMatching = found && (
-                (found.name.toLowerCase().includes("python") && (interestName.includes("python") || interestName.includes("data science"))) ||
-                (found.name.toLowerCase().includes("web") && interestName.includes("web"))
-              );
-              if (!savedDomainId || !isSavedStillMatching) {
-                found = matchedByInterest;
-              }
+              found = matchedByInterest;
             }
           }
         } catch (e) {

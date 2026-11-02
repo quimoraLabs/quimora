@@ -14,14 +14,23 @@ class HierarchyController {
   async getDomains(req, res, next) {
     try {
       const userId = req.auth?.userId || req.user?._id || req.user?.id;
-      if (userId) {
+      const role = req.auth?.role || req.user?.role;
+
+      // For students (role "user" or default student), strictly return only their enrolled/chosen domain(s)
+      if (userId && (role === "user" || !["admin", "instructor"].includes(role))) {
+        let studentDomains = [];
         try {
-          await DomainCurriculumService.ensureDomainsForStudent(userId);
+          studentDomains = await DomainCurriculumService.ensureDomainsForStudent(userId);
         } catch (e) {
           console.warn("Student auto-domain ensure warning:", e);
         }
+
+        if (studentDomains && studentDomains.length > 0) {
+          return res.status(200).json({ success: true, data: studentDomains });
+        }
       }
 
+      // Admins and instructors see all active domains
       const domains = await Domain.find({ isActive: true }).sort({ name: 1 }).lean();
       return res.status(200).json({ success: true, data: domains });
     } catch (error) {
@@ -85,7 +94,12 @@ class HierarchyController {
         return res.status(404).json({ success: false, message: "Chapter not found" });
       }
 
-      const quizzes = await Quiz.find({ chapterId, isActive: true })
+      const role = req.auth?.role;
+      const quizFilter = (role === "admin" || role === "instructor")
+        ? { chapterId, isActive: true }
+        : { chapterId, isActive: true, status: "published" };
+
+      const quizzes = await Quiz.find(quizFilter)
         .select("title description duration timeLimit maxAttempts passingScore level questions trackOrder")
         .sort({ trackOrder: 1, createdAt: 1 })
         .lean();
@@ -120,7 +134,12 @@ class HierarchyController {
       const chapters = await Chapter.find({ courseId }).sort({ orderIndex: 1 }).lean();
       const chapterIds = chapters.map((c) => c._id);
 
-      const quizzes = await Quiz.find({ chapterId: { $in: chapterIds }, isActive: true })
+      const role = req.auth?.role;
+      const compositeFilter = (role === "admin" || role === "instructor")
+        ? { chapterId: { $in: chapterIds }, isActive: true }
+        : { chapterId: { $in: chapterIds }, isActive: true, status: "published" };
+
+      const quizzes = await Quiz.find(compositeFilter)
         .select("title description duration timeLimit maxAttempts passingScore level chapterId courseId trackOrder questions isBonus prerequisiteQuizId")
         .sort({ isBonus: 1, trackOrder: 1, createdAt: 1 })
         .lean();

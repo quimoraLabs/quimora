@@ -9,6 +9,16 @@ export function getTodayDateIST() {
   return formatter.format(new Date());
 }
 
+/**
+ * Returns yesterday's date formatted as YYYY-MM-DD in Asia/Kolkata (IST).
+ */
+export function getYesterdayDateIST() {
+  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const options = { timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit" };
+  const formatter = new Intl.DateTimeFormat("en-CA", options);
+  return formatter.format(yesterday);
+}
+
 const practiceProfileSchema = new mongoose.Schema(
   {
     userId: {
@@ -133,6 +143,12 @@ const practiceProfileSchema = new mongoose.Schema(
  */
 practiceProfileSchema.methods.checkAndResetDailyCycles = function () {
   const todayIST = getTodayDateIST();
+  const yesterdayIST = getYesterdayDateIST();
+
+  // Reset streak to 0 if student missed yesterday (inactivity broke streak)
+  if (this.lastActiveDate && this.lastActiveDate !== todayIST && this.lastActiveDate !== yesterdayIST) {
+    this.currentStreak = 0;
+  }
 
   // Reset Mode 1 if new calendar date in IST
   if (this.randomDrillDate !== todayIST) {
