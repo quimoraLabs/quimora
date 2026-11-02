@@ -59,22 +59,32 @@ class ChallengeService {
     }
 
     // Aggregate attempts on this quiz submitted within challenge window
+    const quizObjectId = new mongoose.Types.ObjectId(challenge.quizId.toString());
+    const matchStage = {
+      quizId: quizObjectId,
+      status: "completed",
+    };
+
+    if (challenge.startTime && challenge.endTime) {
+      matchStage.completedAt = {
+        $gte: new Date(challenge.startTime),
+        $lte: new Date(challenge.endTime),
+      };
+    }
+
     const topAttempts = await QuizAttempt.aggregate([
       {
-        $match: {
-          quizId: challenge.quizId,
-          submittedAt: { $gte: challenge.startTime, $lte: challenge.endTime },
-        },
+        $match: matchStage,
       },
       {
-        $sort: { score: -1, durationMinutes: 1, submittedAt: 1 },
+        $sort: { score: -1, timeTaken: 1, completedAt: 1 },
       },
       {
         $group: {
           _id: "$userId",
           bestScore: { $first: "$score" },
-          bestDuration: { $first: "$durationMinutes" },
-          submittedAt: { $first: "$submittedAt" },
+          bestDuration: { $first: "$timeTaken" },
+          submittedAt: { $first: "$completedAt" },
           attemptId: { $first: "$_id" },
         },
       },
@@ -98,7 +108,7 @@ class ChallengeService {
           username: "$user.username",
           avatar: "$user.avatar",
           score: "$bestScore",
-          durationMinutes: "$bestDuration",
+          durationMinutes: { $round: [{ $divide: ["$bestDuration", 60] }, 1] },
           submittedAt: 1,
         },
       },

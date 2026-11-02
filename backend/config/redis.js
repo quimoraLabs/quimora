@@ -10,10 +10,13 @@ try {
   redisClient = new Redis(redisUri, {
     maxRetriesPerRequest: 1,
     retryStrategy(times) {
-      if (times > 3) {
-        return null; // Stop retrying after 3 attempts in local fallback mode
+      if (process.env.NODE_ENV === "test") {
+        if (times > 1) return null;
       }
-      return Math.min(times * 200, 1000);
+      if (times > 10) {
+        return Math.min(times * 1000, 10000); // Exponential backoff capped at 10s for production resilience
+      }
+      return Math.min(times * 200, 2000);
     },
     lazyConnect: true,
   });
@@ -75,10 +78,14 @@ export const redisCache = {
   async delPattern(pattern) {
     if (!isRedisConnected || !redisClient) return false;
     try {
-      const keys = await redisClient.keys(pattern);
-      if (keys && keys.length > 0) {
-        await redisClient.del(...keys);
-      }
+      const stream = redisClient.scanStream({ match: pattern, count: 100 });
+      stream.on("data", async (keys) => {
+        if (keys && keys.length > 0) {
+          const pipeline = redisClient.pipeline();
+          keys.forEach((key) => pipeline.del(key));
+          await pipeline.exec().catch(() => {});
+        }
+      });
       return true;
     } catch {
       return false;

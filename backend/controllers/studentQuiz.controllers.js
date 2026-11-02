@@ -100,6 +100,14 @@ export const startQuizAttempt = async (req, res, next) => {
       return res.status(400).json({ error: "Quiz is currently unavailable" });
     }
 
+    const now = new Date();
+    if (quiz.startDate && now < new Date(quiz.startDate)) {
+      return res.status(400).json({ success: false, error: "This quiz has not started yet." });
+    }
+    if (quiz.endDate && now > new Date(quiz.endDate)) {
+      return res.status(400).json({ success: false, error: "This quiz has already ended." });
+    }
+
     // 1.1 Validate Question Limit (Options: 10, 15, 20, 25, 30, 40, 50, or total bank)
     const totalQuizQuestions = Array.isArray(quiz.questions) ? quiz.questions.length : 15;
     const ALLOWED_LIMITS = Array.from(new Set([10, 15, 20, 25, 30, 40, 50, totalQuizQuestions])).filter(n => n > 0);
@@ -188,13 +196,12 @@ export const startQuizAttempt = async (req, res, next) => {
       selectedOptions: ans.selectedOptions,
     }));
 
-    // Calibrate time limit proportionally to questions count (1 min per question, minimum 5 mins)
-    const sessionTimeLimit = attempt.totalQuestions
-      ? Math.max(5, Math.ceil(attempt.totalQuestions * 1))
-      : (quiz.timeLimit || 10);
+    // Single source of truth: unified attempt time limit in seconds
+    const sessionTimeLimitSeconds = attempt.timeLimitSeconds || (quiz.timeLimit ? quiz.timeLimit * 60 : 600);
+    const sessionTimeLimitMinutes = Math.ceil(sessionTimeLimitSeconds / 60);
 
     const elapsedSeconds = Math.floor((Date.now() - new Date(attempt.startedAt).getTime()) / 1000);
-    const remainingTimeSeconds = sessionTimeLimit ? Math.max(0, (sessionTimeLimit * 60) - elapsedSeconds) : null;
+    const remainingTimeSeconds = Math.max(0, sessionTimeLimitSeconds - elapsedSeconds);
 
     // 5. Send Clean Secure Payload Response
     return res.status(200).json({
@@ -209,7 +216,7 @@ export const startQuizAttempt = async (req, res, next) => {
           _id: quiz._id,
           title: quiz.title,
           description: quiz.description,
-          timeLimit: sessionTimeLimit,
+          timeLimit: sessionTimeLimitMinutes,
           totalQuestions: questionsForResponse.length,
           questions: sanitizeQuestionsForStudent(questionsForResponse),
         },
@@ -296,12 +303,21 @@ export const submitQuizAttempt = async (req, res, next) => {
     // 3. Record Pass/Fail Trackers and Award Coins
     const attempt = await QuizAttempt.findById(attemptId).select("quizId").lean();
     if (attempt && attempt.quizId) {
-      const rewardResult = await recordAttemptRewards(
-        userId,
-        attempt.quizId,
-        result.scorePercentage
-      );
-      result.rewards = rewardResult;
+      try {
+        const rewardResult = await recordAttemptRewards(
+          userId,
+          attempt.quizId,
+          result.scorePercentage
+        );
+        result.rewards = rewardResult;
+      } catch (rewardErr) {
+        console.warn("[SUBMIT REWARDS] Non-blocking reward record warning:", rewardErr.message);
+        result.rewards = {
+          coinsAwarded: 0,
+          breakdown: [],
+          message: rewardErr.message,
+        };
+      }
 
       // 3.5 Sync Weak Area Topic Mastery (Remedial Mode triggers if accuracy < 60%)
       try {
@@ -393,12 +409,17 @@ export const getStudentAttemptDetails = async (req, res, next) => {
 export const getStudentAttemptHistory = async (req, res, next) => {
   try {
     const userId = req.auth.userId.toString();
+    let { limit = 50, page = 1 } = req.query;
+    page = Math.max(1, parseInt(page, 10) || 1);
+    limit = Math.min(Math.max(1, parseInt(limit, 10) || 50), 100);
 
     const attempts = await QuizAttempt.find({ userId })
       .sort({ startedAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
       .populate({
         path: "quizId",
-        select: "title tags",
+        select: "title tags passingScore",
       })
       .lean();
 

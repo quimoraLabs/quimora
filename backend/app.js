@@ -1,4 +1,5 @@
 import express from "express";
+import mongoose from "mongoose";
 import cors from "cors";
 import morgan from "morgan";
 import helmet from "helmet";
@@ -21,6 +22,9 @@ import hierarchyRoutes from "./routes/hierarchy.routes.js";
 import { redisCache } from "./config/redis.js";
 
 const app = express();
+
+// Trust reverse proxy (Render, Vercel, Nginx, Cloudflare) for accurate client IP rate limiting
+app.set("trust proxy", 1);
 
 // ============================================================
 // 1️⃣ ETAG DISABLE (Development only)
@@ -52,27 +56,33 @@ app.use((req, res, next) => {
     console.log(`🌐 ${req.method} ${req.url} - Origin: ${origin || "No Origin"}`);
   }
 
+  const isVercelOrigin = origin && (origin.endsWith(".vercel.app") || origin.includes("quimora"));
   const isAllowed =
     !origin ||
     allowedOrigins.includes(origin) ||
+    (process.env.CLIENT_URL && origin === process.env.CLIENT_URL) ||
+    isVercelOrigin ||
     (config.nodeENV === "development" && (origin.includes("localhost") || origin.includes("127.0.0.1")));
 
   if (isAllowed && origin) {
     res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Vary", "Origin");
+    res.setHeader(
+      "Access-Control-Allow-Methods",
+      "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    );
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization, Cache-Control, Pragma, Expires, X-Requested-With"
+    );
+    res.setHeader("Access-Control-Max-Age", "86400"); // Cache preflight for 24 hours
   } else if (origin) {
     console.log(`❌ CORS Blocked: ${origin}`);
+    if (req.method === "OPTIONS") {
+      return res.status(403).end();
+    }
   }
-
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-  );
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization, Cache-Control, Pragma, Expires, X-Requested-With"
-  );
-  res.setHeader("Access-Control-Max-Age", "86400"); // Cache preflight for 24 hours
 
   if (req.method === "OPTIONS") {
     return res.status(204).end();
@@ -91,9 +101,29 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // ============================================================
-// 4️⃣ API ROUTES
+// 4️⃣ API ROUTES & HEALTH CHECK
 // ============================================================
 const apiRouter = express.Router();
+
+// Health check handler (unprotected, genuine DB & Redis status)
+const healthHandler = (req, res) => {
+  const isDbConnected = mongoose.connection.readyState === 1;
+  const status = isDbConnected ? "ok" : "degraded";
+  const statusCode = isDbConnected ? 200 : 503;
+
+  res.status(statusCode).json({
+    status,
+    database: isDbConnected ? "connected" : "disconnected",
+    uptimeSeconds: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+    environment: config.nodeENV,
+    redis: redisCache.isConnected() ? "connected" : "fallback_mode",
+  });
+};
+
+app.get("/", healthHandler);
+app.get("/health", healthHandler);
+apiRouter.get("/health", healthHandler);
 
 apiRouter.use("/auth", authRoutes);
 apiRouter.use("/users", userRoutes);
@@ -113,8 +143,6 @@ apiRouter.use("/rewards", rewardsRoutes);
 apiRouter.use("/student/rewards", rewardsRoutes);
 apiRouter.use("/practice", practiceRoutes);
 apiRouter.use("/hierarchy", hierarchyRoutes);
-apiRouter.use("/", hierarchyRoutes); // mount directly for clean REST e.g. /api/v2/domains
-apiRouter.use("/api/v2", apiRouter); // resilience alias for clients with baseURL prefixing
 
 // Mount the versioned router centrally (supports both /api/v2 and legacy /api/v1)
 app.use(config.apiPrefix, apiRouter);
@@ -123,25 +151,7 @@ if (config.apiPrefix !== "/api/v1") {
 }
 
 // ============================================================
-// 5️⃣ HEALTH CHECK ENDPOINTS
-// ============================================================
-const healthHandler = (req, res) => {
-  res.status(200).json({
-    status: "ok",
-    message: "Quimora Server is healthy and operational",
-    uptimeSeconds: Math.floor(process.uptime()),
-    timestamp: new Date().toISOString(),
-    environment: config.nodeENV,
-    redis: redisCache.isConnected() ? "connected" : "fallback_mode",
-  });
-};
-
-app.get("/", healthHandler);
-app.get("/health", healthHandler);
-apiRouter.get("/health", healthHandler);
-
-// ============================================================
-// 6️⃣ 404 HANDLER
+// 5️⃣ 404 HANDLER
 // ============================================================
 app.use((req, res) => {
   res.status(404).json({

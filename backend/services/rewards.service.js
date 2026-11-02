@@ -117,7 +117,7 @@ export const recordAttemptRewards = async (userId, quizId, scorePercentage) => {
     userId,
     quizId,
     amount: coinsAwarded,
-    type: isPass ? "QUIZ_SCORE_REWARD" : "QUIZ_SCORE_REWARD",
+    type: "QUIZ_SCORE_REWARD",
     balanceAfter: profile.coinsBalance,
     description: `Earned ${coinsAwarded} coins on quiz attempt (${scorePercentage}%)`,
   });
@@ -139,6 +139,13 @@ export const recordAttemptRewards = async (userId, quizId, scorePercentage) => {
  * 3. failAttemptsCount NEVER decrements
  */
 export const purchaseDirectPass = async (userId, quizId) => {
+  const quiz = await Quiz.findOne({ _id: quizId, status: "published", isActive: true });
+  if (!quiz) {
+    const err = new Error("Quiz not found or is currently unavailable");
+    err.statusCode = 404;
+    throw err;
+  }
+
   let progress = await StudentQuizProgress.findOne({ userId, quizId });
   if (!progress) {
     progress = new StudentQuizProgress({ userId, quizId });
@@ -162,18 +169,22 @@ export const purchaseDirectPass = async (userId, quizId) => {
     throw err;
   }
 
-  const profile = await StudentProfile.findOne({ userId });
-  if (!profile || (profile.coinsBalance || 0) < COSTS.DIRECT_PASS) {
+  // Atomic coin balance check & deduction (eliminates double-spend race conditions)
+  const profile = await StudentProfile.findOneAndUpdate(
+    { userId, coinsBalance: { $gte: COSTS.DIRECT_PASS } },
+    { $inc: { coinsBalance: -COSTS.DIRECT_PASS } },
+    { returnDocument: "after" }
+  );
+
+  if (!profile) {
+    const currentProfile = await StudentProfile.findOne({ userId });
+    const currentBalance = currentProfile?.coinsBalance || 0;
     const err = new Error(
-      `Insufficient coins. Required: ${COSTS.DIRECT_PASS} coins. Current balance: ${profile?.coinsBalance || 0}`
+      `Insufficient coins. Required: ${COSTS.DIRECT_PASS} coins. Current balance: ${currentBalance}`
     );
     err.statusCode = 400;
     throw err;
   }
-
-  // Deduct coins
-  profile.coinsBalance -= COSTS.DIRECT_PASS;
-  await profile.save();
 
   // Apply Direct Pass (FAIL COUNT IS NEVER REDUCED OR CLEARED)
   progress.passAttemptsCount += 1;
@@ -207,23 +218,34 @@ export const purchaseDirectPass = async (userId, quizId) => {
  * Buy Extra Pass Attempt (+1 maxPassAllowed)
  */
 export const purchaseExtraPassAttempt = async (userId, quizId) => {
+  const quiz = await Quiz.findOne({ _id: quizId, status: "published", isActive: true });
+  if (!quiz) {
+    const err = new Error("Quiz not found or is currently unavailable");
+    err.statusCode = 404;
+    throw err;
+  }
+
   let progress = await StudentQuizProgress.findOne({ userId, quizId });
   if (!progress) {
     progress = new StudentQuizProgress({ userId, quizId });
   }
 
-  const profile = await StudentProfile.findOne({ userId });
-  if (!profile || (profile.coinsBalance || 0) < COSTS.EXTRA_PASS_ATTEMPT) {
+  // Atomic coin balance check & deduction
+  const profile = await StudentProfile.findOneAndUpdate(
+    { userId, coinsBalance: { $gte: COSTS.EXTRA_PASS_ATTEMPT } },
+    { $inc: { coinsBalance: -COSTS.EXTRA_PASS_ATTEMPT } },
+    { returnDocument: "after" }
+  );
+
+  if (!profile) {
+    const currentProfile = await StudentProfile.findOne({ userId });
+    const currentBalance = currentProfile?.coinsBalance || 0;
     const err = new Error(
-      `Insufficient coins. Required: ${COSTS.EXTRA_PASS_ATTEMPT} coins. Current balance: ${profile?.coinsBalance || 0}`
+      `Insufficient coins. Required: ${COSTS.EXTRA_PASS_ATTEMPT} coins. Current balance: ${currentBalance}`
     );
     err.statusCode = 400;
     throw err;
   }
-
-  // Deduct coins
-  profile.coinsBalance -= COSTS.EXTRA_PASS_ATTEMPT;
-  await profile.save();
 
   // Unlock an extra pass attempt
   progress.maxPassAllowed += 1;
@@ -308,6 +330,22 @@ export const reviewPassAppeal = async (
     const err = new Error(`Appeal is already ${appeal.status}`);
     err.statusCode = 400;
     throw err;
+  }
+
+  if (!["approved", "rejected"].includes(status)) {
+    const err = new Error("Status must be either 'approved' or 'rejected'");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  if (status === "approved" && deductCoins) {
+    const profile = await StudentProfile.findOne({ userId: appeal.studentId });
+    if (!profile || profile.coinsBalance < COSTS.DIRECT_PASS) {
+      const currentBal = profile?.coinsBalance || 0;
+      const err = new Error(`Insufficient student coins to approve with deduction. Required: ${COSTS.DIRECT_PASS}, Available: ${currentBal}`);
+      err.statusCode = 400;
+      throw err;
+    }
   }
 
   const progress = await StudentQuizProgress.findOne({

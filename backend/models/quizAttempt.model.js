@@ -158,10 +158,15 @@ const quizAttemptSchema = new mongoose.Schema(
       required: true,
       default: 0,
     },
+    // Single source of truth for allocated time limit for this specific attempt (in seconds)
+    timeLimitSeconds: {
+      type: Number,
+      default: 600,
+    },
     status: {
       type: String,
       required: true,
-      enum: ["in-progress", "started", "completed", "abandoned"],
+      enum: ["in-progress", "started", "submitting", "completed", "abandoned"],
       default: "in-progress",
     },
     startedAt: {

@@ -12,22 +12,28 @@ export const errorHandler = (err, req, res, next) => {
   // Log full stack diagnostic trace in terminal for developmental debugging
   console.error("DEBUG ERROR ❌:", err.stack || err.message);
 
-  // 2. Intercept Mongoose Invalid ObjectId Structure (CastError)
+  // 2. Intercept Multer File Upload Errors
+  if (err.name === "MulterError" || (err.message && err.message.includes("Only images are allowed"))) {
+    error = new Error(err.message || "File upload validation failed");
+    error.statusCode = 400;
+  }
+
+  // 3. Intercept Mongoose Invalid ObjectId Structure (CastError)
   if (err.name === "CastError") {
     const message = `Resource not found. Invalid field: ${err.path}`;
     error = new Error(message);
     error.statusCode = 400;
   }
 
-  // 3. Intercept MongoDB Duplicate Field Key Violations (Code 11000)
+  // 4. Intercept MongoDB Duplicate Field Key Violations (Code 11000)
   if (err.code === 11000) {
-    const duplicateField = Object.keys(err.keyValue)[0];
+    const duplicateField = Object.keys(err.keyValue || {})[0] || "field";
     const message = `Duplicate value entered for field: '${duplicateField}'. Please use another value.`;
     error = new Error(message);
     error.statusCode = 400;
   }
 
-  // 4. Intercept Mongoose Schema Internal Validation Constraints (ValidationError)
+  // 5. Intercept Mongoose Schema Internal Validation Constraints (ValidationError)
   if (err.name === "ValidationError") {
     // Flatten array message details to display all missing/invalid fields at once
     const message = Object.values(err.errors).map((val) => val.message).join(", ");

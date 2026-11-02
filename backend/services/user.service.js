@@ -99,13 +99,14 @@ export class UserService {
       throw error;
     }
 
-    // 1. Update User basic safe fields
-    const safeUserFields = ["username", "email", "name", "avatar"];
-    safeUserFields.forEach((field) => {
-      if (updateData[field] !== undefined) {
-        user[field] = updateData[field];
-      }
-    });
+    // 1. Update User basic safe fields (Name only, username routed through throttled validator)
+    if (updateData.name && typeof updateData.name === "string") {
+      user.name = updateData.name.trim();
+    }
+
+    if (updateData.username && updateData.username !== user.username) {
+      await this.updateUsername(userId, updateData.username);
+    }
     await user.save();
 
     // 2. Update Role-Specific Profile (Student / Instructor)

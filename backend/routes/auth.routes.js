@@ -13,12 +13,25 @@ import authMiddleware, {
 } from "../middleware/auth.middleware.js";
 import rateLimit from "express-rate-limit";
 
-const otpLimiter = rateLimit({
+// Dedicated limiter for sending OTP (strict to prevent email flooding)
+const requestOtpLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 requests per window
+  max: 5, // Limit each IP to 5 OTP send requests per window
   message: {
     success: false,
     message: "Too many OTP requests. Please try again after 15 minutes.",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Dedicated limiter for OTP verification attempts (permits retries without consuming send quota)
+const verifyOtpLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Limit each IP to 10 OTP verification requests per window
+  message: {
+    success: false,
+    message: "Too many OTP verification attempts. Please try again after 15 minutes.",
   },
   standardHeaders: true,
   legacyHeaders: false,
@@ -46,8 +59,8 @@ router.post(
 );
 router.post("/login", loginLimiter, loginUser);
 router.get("/me", authMiddleware, getMe);
-router.patch("/request-otp", otpLimiter, forgetPasswordRequest);
-router.patch("/verify-otp", otpLimiter, verifyOTP);
+router.patch("/request-otp", requestOtpLimiter, forgetPasswordRequest);
+router.patch("/verify-otp", verifyOtpLimiter, verifyOTP);
 router.patch("/change-password", authMiddleware, changePassword);
 
 export default router;

@@ -2,6 +2,12 @@ import User from "../models/user.model.js";
 import Quiz from "../models/quiz.model.js";
 import Question from "../models/question.model.js";
 import QuizAttempt from "../models/quizAttempt.model.js";
+import StudentProfile from "../models/studentProfile.model.js";
+import InstructorProfile from "../models/instructorProfile.model.js";
+import PracticeProfile from "../models/practiceProfile.model.js";
+import PracticeSession from "../models/practiceSession.model.js";
+import EloRating from "../models/eloRating.model.js";
+import CoinTransaction from "../models/coinTransaction.model.js";
 import imagekit, { deleteMedia, uploadMedia } from "../utils/imagekit.utils.js";
 import { assertUserExists as checkUser } from "../utils/assertion.utils.js";
 import UserService from "../services/user.service.js";
@@ -14,11 +20,23 @@ import UserService from "../services/user.service.js";
  */
 export const getAllUsers = async (req, res, next) => {
   try {
-    const users = await User.find().select("-password");
-     res.status(200).json({
+    let { page = 1, limit = 50 } = req.query;
+    page = Math.max(1, parseInt(page, 10) || 1);
+    limit = Math.min(Math.max(1, parseInt(limit, 10) || 50), 100);
+
+    const totalUsers = await User.countDocuments();
+    const users = await User.find()
+      .select("-password -otp")
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    res.status(200).json({
       success: true,
+      totalUsers,
+      currentPage: page,
+      totalPages: Math.ceil(totalUsers / limit) || 1,
       count: users.length,
-      users: users
+      users: users,
     });
   } catch (err) {
     next(err);
@@ -26,17 +44,30 @@ export const getAllUsers = async (req, res, next) => {
 };
 
 /**
- * @desc    Get user by ID with consistent response format
+ * @desc    Get user by ID with consistent response format (Admin or Owner only)
  * @route   GET /api/v2/users/:userId
- * @access  Private (Admin only)
+ * @access  Private (Admin or Owner)
  * @returns { success, user }
  */
 
 export const getUserById = async (req, res, next) => {
   try {
+    const currentUserId = req.auth?.userId?.toString();
+    const currentUserRole = req.auth?.role;
+
+    // Strict owner or admin authorization check
+    if (currentUserRole !== "admin" && currentUserId !== req.params.userId?.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "Access forbidden: you may only inspect your own user record",
+      });
+    }
+
     const { user, profile } = await UserService.getUserProfile(req.params.userId);
     const userObj = user.toObject ? user.toObject() : { ...user };
     delete userObj.password;
+    delete userObj.otp;
+
     res.status(200).json({
       ...userObj,
       profile: profile || null,
@@ -92,22 +123,35 @@ export const deleteUser = async (req, res, next) => {
 
     const user = await UserService.deleteUser(userId, currentUserId);
 
-    // Cascade deletion: attempts by user
-    await QuizAttempt.deleteMany({ userId });
+    // Cascade cleanup of associated profile, attempts, sessions and gamification records
+    await Promise.allSettled([
+      StudentProfile.deleteOne({ userId }),
+      InstructorProfile.deleteOne({ userId }),
+      PracticeProfile.deleteOne({ userId }),
+      PracticeSession.deleteMany({ userId }),
+      EloRating.deleteMany({ userId }),
+      CoinTransaction.deleteMany({ userId }),
+      QuizAttempt.deleteMany({ userId }),
+    ]);
 
-    // Cascade deletion: quizzes created by instructor user
+    // Archive quizzes created by instructor so student history isn't broken
     const instructorQuizzes = await Quiz.find({ createdBy: userId }).select("_id");
     if (instructorQuizzes.length > 0) {
       const quizIds = instructorQuizzes.map((q) => q._id);
-      await Question.deleteMany({ quizId: { $in: quizIds } });
-      await QuizAttempt.deleteMany({ quizId: { $in: quizIds } });
-      await Quiz.deleteMany({ createdBy: userId });
+      await Quiz.updateMany(
+        { _id: { $in: quizIds } },
+        { $set: { isActive: false, status: "archived" } }
+      );
     }
 
     await User.findByIdAndDelete(userId);
 
     if (user.avatar && user.avatar.fileId) {
-      await deleteMedia(user.avatar.fileId);
+      try {
+        await deleteMedia(user.avatar.fileId);
+      } catch (mediaErr) {
+        console.warn("Could not delete avatar from ImageKit:", mediaErr.message);
+      }
     }
 
     res.status(200).json({ 
@@ -205,10 +249,7 @@ export const updateAvatar = async (req, res, next) => {
       return res.status(400).json({ message: "Please upload an image" });
     }
 
-    // 1. Delete the OLD avatar from ImageKit if it exists
-    if (user.avatar && user.avatar.fileId) {
-      await deleteMedia(user.avatar.fileId);
-    }
+    const oldFileId = user.avatar?.fileId;
 
     const uploadResponse = await uploadMedia({
       fileBuffer: req.file.buffer,
@@ -223,6 +264,15 @@ export const updateAvatar = async (req, res, next) => {
     };
 
     await user.save();
+
+    // Safely delete old avatar after new one is successfully stored
+    if (oldFileId && oldFileId !== uploadResponse.fileId) {
+      try {
+        await deleteMedia(oldFileId);
+      } catch (err) {
+        console.warn("Could not delete old avatar media:", err.message);
+      }
+    }
 
     res.status(200).json({
       success: true,

@@ -14,8 +14,17 @@ import UserService from "../services/user.service.js";
  */
 export const registerUser = async (req, res, next) => {
   try {
-    const { username, email, password, name, role } = req.body;
-    const user = await UserService.createUser({ username, email, password, name, role });
+    const { username, email, password, name } = req.body;
+
+    if (!email || typeof email !== "string") {
+      return res.status(400).json({ success: false, message: "A valid email string is required" });
+    }
+    if (!password || typeof password !== "string" || password.length < 6) {
+      return res.status(400).json({ success: false, message: "Password must be at least 6 characters long" });
+    }
+
+    // Public registration strictly creates standard "user" role
+    const user = await UserService.createUser({ username, email, password, name, role: "user" });
     res.status(201).json({
       success: true,
       message: "User registered successfully",
@@ -35,6 +44,13 @@ export const registerUser = async (req, res, next) => {
 export const createUserByAdmin = async (req, res, next) => {
   try {
     const { username, email, password, name, role } = req.body;
+
+    if (!password || typeof password !== "string" || password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 6 characters long",
+      });
+    }
 
     const allowedRoles = ["user", "instructor"];
     if (!allowedRoles.includes(role)) {
@@ -80,6 +96,12 @@ export const createUserByAdmin = async (req, res, next) => {
 export const loginUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
+    if (!email || typeof email !== "string") {
+      return res.status(400).json({ success: false, message: "Valid email or username string is required" });
+    }
+    if (!password || typeof password !== "string") {
+      return res.status(400).json({ success: false, message: "Valid password string is required" });
+    }
     const user = await UserService.authenticateUser(email, password);
 
     const token = jwt.sign({ id: user._id }, config.jwtSecret, {
@@ -139,7 +161,11 @@ export const getMe = async (req, res, next) => {
 export const forgetPasswordRequest = async (req, res, next) => {
   try {
     const { email } = req.body;
-    const user = await User.findOne({ email }).select("+otp.code");
+    if (!email || typeof email !== "string" || !email.trim()) {
+      return res.status(400).json({ success: false, message: "Valid email string is required" });
+    }
+    const cleanEmail = email.trim().toLowerCase();
+    const user = await User.findOne({ email: cleanEmail }).select("+otp.code");
 
     if (!user) {
       return res.status(200).json({
@@ -157,7 +183,7 @@ export const forgetPasswordRequest = async (req, res, next) => {
     };
 
     try {
-      await sendOTPEmail(email, otpCode);
+      await sendOTPEmail(cleanEmail, otpCode);
     } catch (emailError) {
       console.warn("Email delivery failed:", emailError.message);
     }
@@ -181,17 +207,22 @@ export const verifyOTP = async (req, res, next) => {
   try {
     const { otpCode, email, newPassword } = req.body;
 
+    if (!email || typeof email !== "string" || !email.trim()) {
+      return res.status(400).json({ success: false, message: "Valid email string is required" });
+    }
+
     if (!/^\d{6}$/.test(otpCode || "")) {
       return res.status(400).json({ success: false, message: "OTP must be a 6-digit code" });
     }
 
-    if (!newPassword) {
-      return res.status(400).json({ success: false, message: "New password is required" });
+    if (!newPassword || typeof newPassword !== "string" || newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: "Password must be at least 6 characters long" });
     }
 
-    const user = await User.findOne({ email }).select("+otp.code");
+    const cleanEmail = email.trim().toLowerCase();
+    const user = await User.findOne({ email: cleanEmail }).select("+otp.code");
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(400).json({ message: "Invalid or expired OTP" });
     }
 
     const isMatch = user.otp?.code === otpCode;

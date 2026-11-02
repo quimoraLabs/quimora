@@ -394,19 +394,24 @@ export const getQuizzesByInstructor = async (req, res, next) => {
 export const getQuizzes = async (req, res, next) => {
   try {
     let { page = 1, limit = 10 } = req.query;
-    page = Math.max(1, parseInt(page, 10));
-    limit = Math.max(1, parseInt(limit, 10));
+    page = Math.max(1, parseInt(page, 10) || 1);
+    limit = Math.min(Math.max(1, parseInt(limit, 10) || 10), 50);
 
-    const totalItems = await Quiz.countDocuments();
+    const role = req.auth?.role;
+    const filter = (role === "admin" || role === "instructor")
+      ? {}
+      : { status: "published", isActive: true };
 
-    const quizzes = await Quiz.find()
-      .populate("createdBy", "name email")
+    const totalItems = await Quiz.countDocuments(filter);
+
+    const quizzes = await Quiz.find(filter)
+      .populate("createdBy", "name username")
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit);
 
     const formattedQuizzes = quizzes.length
-      ? formatUniversalResponse(quizzes, "createdBy", ["name", "email"])
+      ? formatUniversalResponse(quizzes, "createdBy", ["name", "username"])
       : [];
 
     res.status(200).json({
@@ -435,16 +440,21 @@ export const getQuizById = async (req, res, next) => {
     const { quizId } = req.params;
 
     const quiz = await Quiz.findById(quizId)
-      .populate("createdBy", "name email")
+      .populate("createdBy", "name username")
       .lean();
 
     if (!quiz) {
       return res.status(404).json({ error: "Quiz not found" });
     }
 
+    const role = req.auth?.role;
+    if (role !== "admin" && role !== "instructor" && (quiz.status !== "published" || !quiz.isActive)) {
+      return res.status(404).json({ error: "Quiz not found or currently unavailable" });
+    }
+
     const result = formatUniversalResponse(quiz, "createdBy", [
       "name",
-      "email",
+      "username",
     ]);
 
     const totalAttempts = await QuizAttempt.countDocuments({

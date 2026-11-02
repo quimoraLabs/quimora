@@ -28,6 +28,21 @@ export const checkQuizEligibility = async (quizId, userId) => {
         };
     }
 
+    const now = new Date();
+    if (quiz.startDate && now < new Date(quiz.startDate)) {
+        return {
+            isEligible: false,
+            reason: "This quiz has not started yet.",
+        };
+    }
+
+    if (quiz.endDate && now > new Date(quiz.endDate)) {
+        return {
+            isEligible: false,
+            reason: "This quiz has already ended.",
+        };
+    }
+
     // Check completed or abandoned attempts count
     const attemptCount = await QuizAttempt.countDocuments({
         userId,
@@ -66,7 +81,8 @@ export const handleExpiredAttempt = async (attempt, quizTimeLimit) => {
     if (!attempt) return null;
 
     const serverBufferSeconds = 15;
-    const maxAllowedSeconds = quizTimeLimit ? (quizTimeLimit * 60) + serverBufferSeconds : 0;
+    const effectiveLimitSeconds = attempt.timeLimitSeconds || (quizTimeLimit ? quizTimeLimit * 60 : 0);
+    const maxAllowedSeconds = effectiveLimitSeconds > 0 ? effectiveLimitSeconds + serverBufferSeconds : 0;
 
     if (maxAllowedSeconds > 0) {
         const elapsedSeconds = Math.floor((Date.now() - new Date(attempt.startedAt).getTime()) / 1000);
@@ -179,14 +195,21 @@ export const createAttemptSession = async (userId, quizId, questionLimit = null,
         };
     });
 
+    const quizDoc = await Quiz.findById(quizId).select("timeLimit").lean();
+    const timeLimitMinutes = quizDoc?.timeLimit || Math.max(5, Math.ceil(questionSnapshots.length * 1));
+    const timeLimitSeconds = timeLimitMinutes * 60;
+    const startedAt = new Date();
+
     const attempt = await QuizAttempt.create({
         userId,
         quizId,
         totalQuestions: questionSnapshots.length,
         questionSnapshots,
         selectedDifficulty: normalizedDiff,
+        timeLimitSeconds,
         status: "started",
-        startedAt: new Date(),
+        startedAt,
+        expiresAt: new Date(startedAt.getTime() + (timeLimitSeconds + 15) * 1000),
     });
 
     return { attempt, rawQuestions: questionSnapshots };
@@ -194,12 +217,16 @@ export const createAttemptSession = async (userId, quizId, questionLimit = null,
 
 // Helper to process quiz submission, verify time, calculate score, and adjust student Elo/grade
 export const submitAttemptSession = async (attemptId, userId, userAnswers) => {
-    // 1. Fetch active attempt session with quiz settings
-    const attempt = await QuizAttempt.findOne({
-        _id: attemptId,
-        userId,
-        status: "started",
-    }).populate("quizId", "title tags timeLimit passingScore negativeMarking interestIds");
+    // 1. Atomically lock the attempt from 'started' to 'submitting' to eliminate double-submission race conditions
+    const attempt = await QuizAttempt.findOneAndUpdate(
+        {
+            _id: attemptId,
+            userId,
+            status: "started",
+        },
+        { $set: { status: "submitting" } },
+        { returnDocument: "after" }
+    );
 
     if (!attempt) {
         const err = new Error("Active quiz session not found or already submitted");
@@ -207,16 +234,18 @@ export const submitAttemptSession = async (attemptId, userId, userAnswers) => {
         throw err;
     }
 
+    await attempt.populate("quizId", "title tags timeLimit passingScore negativeMarking interestIds");
+
     // 2. Validate Time Allocated Limit
     const now = new Date();
     const timeTakenInSeconds = Math.floor(
         (now.getTime() - new Date(attempt.startedAt).getTime()) / 1000
     );
 
-    const timeLimitInMinutes = attempt.quizId?.timeLimit || 0;
     const serverBufferSeconds = 15;
-    const maxAllowedSeconds = timeLimitInMinutes > 0
-        ? (timeLimitInMinutes * 60) + serverBufferSeconds
+    const effectiveTimeLimitSeconds = attempt.timeLimitSeconds || ((attempt.quizId?.timeLimit || 0) * 60);
+    const maxAllowedSeconds = effectiveTimeLimitSeconds > 0
+        ? effectiveTimeLimitSeconds + serverBufferSeconds
         : 0;
 
     if (maxAllowedSeconds > 0 && timeTakenInSeconds > maxAllowedSeconds) {
@@ -319,25 +348,34 @@ export const submitAttemptSession = async (attemptId, userId, userAnswers) => {
     const quizDoc = attempt.quizId;
     if (quizDoc && Array.isArray(quizDoc.interestIds) && quizDoc.interestIds.length > 0) {
         for (const interestId of quizDoc.interestIds) {
-            await EloRating.findOneAndUpdate(
-                { studentId: userId, interestId },
-                {
-                    $inc: { rating: eloDelta, quizzesAttempted: 1 },
-                    $max: { highestRating: newElo },
-                    $set: { lastUpdated: new Date() },
-                },
-                { upsert: true }
-            );
+            let eloRecord = await EloRating.findOne({ studentId: userId, interestId });
+            if (!eloRecord) {
+                eloRecord = new EloRating({
+                    studentId: userId,
+                    interestId,
+                    rating: 1000,
+                    highestRating: 1000,
+                    quizzesAttempted: 0,
+                    isArchived: false,
+                });
+            }
+            const updatedRating = Math.max(0, eloRecord.rating + eloDelta);
+            eloRecord.rating = updatedRating;
+            eloRecord.highestRating = Math.max(eloRecord.highestRating || 1000, updatedRating);
+            eloRecord.quizzesAttempted = (eloRecord.quizzesAttempted || 0) + 1;
+            eloRecord.lastUpdated = new Date();
+            await eloRecord.save();
         }
     } else {
         // Update all active student EloRating records
-        await EloRating.updateMany(
-            { studentId: userId, isArchived: false },
-            {
-                $inc: { rating: eloDelta, quizzesAttempted: 1 },
-                $set: { lastUpdated: new Date() },
-            }
-        );
+        const allRatings = await EloRating.find({ studentId: userId, isArchived: false });
+        for (const r of allRatings) {
+            r.rating = Math.max(0, r.rating + eloDelta);
+            r.highestRating = Math.max(r.highestRating || 1000, r.rating);
+            r.quizzesAttempted = (r.quizzesAttempted || 0) + 1;
+            r.lastUpdated = new Date();
+            await r.save();
+        }
     }
 
     const eloSummary = {
@@ -400,14 +438,20 @@ export const saveDraftSession = async (attemptId, userId, userAnswers) => {
     }
 
     if (Array.isArray(userAnswers)) {
-        attempt.answers = userAnswers.map((ans) => ({
-            questionId: ans.questionId,
-            selectedOptions: Array.isArray(ans.selectedOptions)
-                ? ans.selectedOptions
-                : [ans.selectedOptions].filter(Boolean),
-            isCorrect: false,
-            timeSpent: ans.timeSpent || 0,
-        }));
+        const validQuestionIds = new Set(
+            (attempt.questionSnapshots || []).map((q) => q.questionId.toString())
+        );
+
+        attempt.answers = userAnswers
+            .filter((ans) => ans.questionId && validQuestionIds.has(ans.questionId.toString()))
+            .map((ans) => ({
+                questionId: ans.questionId,
+                selectedOptions: Array.isArray(ans.selectedOptions)
+                    ? ans.selectedOptions
+                    : [ans.selectedOptions].filter(Boolean),
+                isCorrect: false,
+                timeSpent: ans.timeSpent || 0,
+            }));
         await attempt.save();
     }
 
