@@ -1,8 +1,8 @@
 # Quimora — Master Roadmap (Layer 4)
 
 > **Document Type:** Layer 4 Unified Backlog & Single Source of Truth  
-> **Replaces:** Embedded roadmaps in `README.md` and outdated backlog files  
-> **Last Updated:** 2026-09-28  
+> **Milestone Status:** V4 Shipped & Hardened (Phases 1–13 Audit Remediation Complete)  
+> **Last Updated:** 2026-11-02  
 
 ---
 
@@ -33,8 +33,7 @@
   - [x] Backend session `startedAt` and duration calculation baseline (`createAttemptSession`).
   - [x] Exact server `remainingTimeSeconds` returned in session initialization payload.
   - [x] 15-second server grace buffer enforcement before marking session as `'abandoned'`.
-  - [x] Student pre-quiz eligibility check endpoint (`GET /api/v1/student/quiz/:quizId/eligibility`).
-  - [x] Automated Vitest coverage in `backend/tests/02_student_role.test.js`.
+  - [x] Student pre-quiz eligibility check endpoint (`GET /api/v2/student/quiz/:quizId/eligibility`).
 - [x] **Admin Control Suite**:
   - [x] System metrics summary endpoint & UI panel (total users, active quizzes, platform pass rates).
   - [x] User role elevation (`user` ↔ `instructor`) and account suspension toggle.
@@ -45,62 +44,67 @@
 - [x] **UX Polish**:
   - [x] Mobile-responsive quiz taking interface optimization (`TakeExamPage.jsx`).
   - [x] Dynamic dark/light theme consistency across instructor and student views.
-  - [x] 1-Click Quiz Clone / Duplication (`POST /api/v1/quizzes/:quizId/clone`).
+  - [x] 1-Click Quiz Clone / Duplication (`POST /api/v2/quizzes/:quizId/clone`).
 
 ---
 
 ## 🔵 V3 Shipped Scope (Interest-Driven Adaptive Engine — Completed & Stable)
 
-### 🎯 V3 Objective (Achieved)
-Built an **Interest-Driven Adaptive Assessment Engine** for Quimora that dynamically tailors quiz experiences to student skill levels via Elo ratings ($K=32$), maps skill progression to 6 canonical performance tiers, enforces explicit instructor assignments with student consent, and provides privacy-preserving analytics.
-
-### 🌟 Shipped V3 Capabilities
 - [x] **Interest Selection & Dynamic Quiz Filtering**: 5–6 initial selection during onboarding, max 10 profile interests.
 - [x] **Elo-Based Adaptive Engine**: $K=32$ Elo calculation with dynamic score delta bonuses on pass and tier-proportional deductions on fail.
 - [x] **6 Canonical Level Tiers**: Beginner (0–999), Learner (1000–1199), Intermediate (1200–1399), Advanced (1400–1599), Master (1600–1799), Expert (1800+).
 - [x] **1:1 Quiz Assignment & Pre-Quiz Transparency**: Transparent instructor badge on examination pre-start with explicit consent flow.
 - [x] **Elo-Aware Groq AI Question Generation**: Tier-calibrated MCQ generation.
-- [x] **Automated Vitest Test Suite**: 43/43 tests passing across 5 test suites.
+- [x] **Automated Vitest Test Suite**: Integration test suite expanded (`05_v3_adaptive_engine.test.js`).
 
 ---
 
-## 🟣 V3.5 Active Scope — Polish, Navigation & HackerRank Mission Architecture
+## 🟣 V3.5 Shipped Scope (Navigation & HackerRank Architecture — Completed & Stable)
 
-### 🎯 V3.5 Objective
-Polish the existing V3 system with modern navigation ergonomics (Header user dropdown, streamlined sidebar, quiz card faculty badges) and introduce the **HackerRank-Style Gamified Mission Architecture** (Domain Chapters, Sequential Unlocking, Domain Stars, and Live Weekly/Monthly Challenges).
-
-### 🌟 Core V3.5 Deliverables
-
-1. **Navigation & Header Polish**:
-   - **Header Avatar Dropdown**: Move Profile & Logout out of the Sidebar into a modern avatar dropdown menu in `Header.jsx`.
-   - **Streamlined Sidebar**: Remove awkward bottom profile & logout from `Sidebar.jsx`; enrich student navigation with *Dashboard, Skill Tracks, Live Challenges, All Quizzes, Leaderboard, My Attempts*.
-   - **Quiz Card Faculty Badge**: Display verified teacher/evaluator profile snippet on `QuizCard.jsx` and `QuizListPage.jsx`.
-   - **Mongoose 9 Deprecation Fixes**: Migrated `new: true` to `returnDocument: 'after'`.
-   - **Dynamic Rank Warning**: Display penalty warning only when beginner attempts higher difficulty.
-   - **Adaptive Dropdowns**: Auto-convert button groups to dropdowns when $\ge 4$ options.
-
-2. **HackerRank Progression Architecture**:
-   - **Domain ➔ Chapter Curriculum Tree**:
-     - No lengthy lessons/videos needed. Pure chapter-wise assessment ladder (5–8 chapters per domain).
-     - Average 5–6 progressive quizzes per chapter (Easy ➔ Medium ➔ Hard ➔ Boss Quiz), creating ~60–100 quizzes per domain.
-   - **Sequential Progression & Auto-Unlocking**:
-     - Passing a quiz ($\ge 50\%$) unlocks the next quiz/chapter.
-     - Direct **"Solve Next Challenge"** button on the attempt result screen.
-   - **Domain Star Ratings (1★ to 5★)**:
-     - Gamified topic mastery badges displayed prominently on the student profile.
-   - **Weekly Sprints & Monthly Grand Challenges**:
-     - Time-bound contest window with live countdown timer.
-     - Strict single attempt with active proctoring.
-     - Dedicated event leaderboards with top-10 spotlights and trophy badges.
-   - **Domain-Wise Auto-Created Faculty**:
-     - Automatic domain evaluator assignment per topic track.
-     - Future: Proctored Domain Certification Assessment with signed digital certificate.
+- [x] **Header Avatar Dropdown**: Profile & Logout cleanly housed in modern avatar dropdown menu in `Header.jsx`.
+- [x] **Streamlined Student Navigation**: Enriched student sidebar with *Dashboard, Skill Tracks, Live Challenges, All Quizzes, Leaderboard, My Attempts*.
+- [x] **Quiz Card Faculty Badge**: Verified teacher/evaluator profile snippets rendered conditionally on `QuizCard.jsx`.
+- [x] **HackerRank Progression Architecture**:
+  - [x] Domain ➔ Chapter curriculum assessment ladder.
+  - [x] Sequential progression: passing a quiz unlocks subsequent challenges.
+  - [x] Domain Star ratings (1★ to 5★) awarded based on cumulative mastery.
+  - [x] Live weekly/monthly challenge events with countdown clocks and leaderboards.
 
 ---
 
-## 🔮 Future Horizon (V4 / V5)
+## 🔴 V4 Shipped Scope (Curriculum Hierarchy, Practice Engine & Audit Remediation — Completed & Hardened)
 
-- [ ] AI Video & Webcam Proctoring with tab-switch logging.
-- [ ] Cross-Platform Mobile Application (React Native).
-- [ ] Enterprise Multi-Tenancy & Custom Organization Workspaces.
+- [x] **4-Level Curriculum Hierarchy**:
+  - [x] Structured learning tree: `Domain` ➔ `Course` ➔ `Chapter` ➔ `Quiz`.
+  - [x] Enrolled domain isolation: student views strictly filtered to enrolled curriculum branches.
+  - [x] Dynamic on-the-fly curriculum generation when student selects any interest topic.
+- [x] **Remedial Practice Engine & Demo Mode**:
+  - [x] Weak-area topic drills triggered automatically when accuracy drops below 60%.
+  - [x] Zero-stakes Tutorial Demo Mode for risk-free skill testing.
+  - [x] Daily practice streak calendar with IST boundary verification.
+- [x] **Coins Economy & Store Rewards**:
+  - [x] Performance-based coin rewards with 90%+ mastery and first-attempt pass bonuses.
+  - [x] Direct Pass and Extra Attempt allotments with verified quiz existence and atomic coin balance checks.
+  - [x] Structured admin appeal workflow for quizzes locked due to fail thresholds.
+- [x] **Comprehensive Security Audit & Mobile PWA Hardening (13 Remediation Phases)**:
+  - [x] **Phase 1**: Exam timer single source of truth, rewards role authorization fix, public registration locked to `user`, reverse proxy rate limiting, mobile proctoring grace buffer, Docker/env alignment.
+  - [x] **Phase 2**: Atomic attempt locking, atomic coin double-spend prevention, NoSQL operator injection sanitization, profile update 30-day throttle, quiz schedule window validation.
+  - [x] **Phase 3**: Redis reconnect exponential backoff & non-blocking `scanStream` eviction, database-aware health check, hierarchy domain authorization, vendor motion chunk splitting.
+  - [x] **Phase 4**: Mongoose 9 `{ returnDocument: 'after' }` migration, Docker Compose environment hardening, dead rewards cleanup.
+  - [x] **Phase 5**: Proctoring warning side-effect refactoring, Axios CORS preflight cleanup, draft save integrity, challenge leaderboard ObjectIds casting.
+  - [x] **Phase 6**: Practice streak IST calendar lifecycle, Multer 400 error interception, modern service worker (`quimora-pwa-v4`), QuizCard trust UI calibration.
+  - [x] **Phase 7**: Comprehensive user deletion cascade across profiles/attempts/gamification, mobile modal dynamic viewport scroll (`calc(100dvh-2rem)`), OTP multi-paste distribution.
+  - [x] **Phase 8**: Dynamic CORS with `Vary: Origin` header, safe avatar upload ordering, dark-mode boot theme flash elimination, Header Escape dismissal.
+  - [x] **Phase 9**: Per-interest Elo base 1000 initialization and zero lower bound guard, attempt history pagination query bounds, Google Fonts preconnect optimization.
+  - [x] **Phase 10**: Exam option card keyboard navigation (`role="button"`, `tabIndex={0}`, `Enter`/`Space`), admin user password length uniformity, Vercel build directory alignment.
+  - [x] **Phase 11**: Mobile table-to-card responsive layouts in `QuizHistoryPage.jsx` and `RecentAttemptsCard.jsx`, modal dynamic heights (`max-h-[...dvh]`), touch targets $\ge 40\text{px}$.
+  - [x] **Phase 12**: Mobile exam sticky action bar (`Prev`, `Next`, `Submit`, `Question Palette` quick pill with safe area padding), tap target calibration across all modal dismiss buttons.
+  - [x] **Phase 13**: Rewards coin burn prevention on non-existent or unpublished quizzes in `purchaseDirectPass` and `purchaseExtraPassAttempt`, strict appeal status validation (`approved`/`rejected`) and student balance verification, non-blocking `recordAttemptRewards` error guard, exam text accessibility (`select-text`), and landscape phone (360px) height protections.
 
+---
+
+## 🔮 Future Horizon (Post-V4)
+
+- [ ] AI Video & Webcam Proctoring with facial orientation & tab-switch telemetry.
+- [ ] Dedicated Cross-Platform Native Mobile Application (React Native / Flutter).
+- [ ] Enterprise Multi-Tenancy & Custom Organization Workspaces with custom domain whitelabeling.

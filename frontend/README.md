@@ -24,7 +24,7 @@
 The frontend client is continuously deployed and accessible globally on Vercel:
 
 > 🚀 **Production URL:** [https://quimora-rho.vercel.app](https://quimora-rho.vercel.app)  
-> 🔗 **Backend API:** [https://quimora.onrender.com/api/v1](https://quimora.onrender.com/api/v1) (Render)
+> 🔗 **Backend API:** [https://quimora.onrender.com/api/v2](https://quimora.onrender.com/api/v2) (Render)
 
 ---
 

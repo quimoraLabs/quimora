@@ -202,5 +202,57 @@ describe('🎓 Module 2: Student Role Dashboard & Quiz Attempt APIs', () => {
       expect(hasMatch).toBe(true);
     });
   });
+
+  it('12. GET /api/v2/rewards/overview - authorizes student role (user) and returns reward overview', async () => {
+    const res = await request(app)
+      .get('/api/v2/rewards/overview')
+      .set('Authorization', `Bearer ${authData.student.token}`);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toHaveProperty('success', true);
+    expect(res.body.data).toHaveProperty('coinsBalance');
+    expect(res.body.data).toHaveProperty('hintTokens');
+  });
+
+  it('13. POST /api/v2/student/quiz/start - rejects attempt when quiz schedule is in the future (B-12)', async () => {
+    const futureQuiz = await Quiz.create({
+      title: 'Scheduled Future Championship Quiz',
+      description: 'Not open yet',
+      tags: ['future', 'championship'],
+      createdBy: authData.instructor.user._id,
+      status: 'published',
+      isActive: true,
+      timeLimit: 15,
+      startDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      endDate: new Date(Date.now() + 48 * 60 * 60 * 1000),
+    });
+
+    await Question.create({
+      quizId: futureQuiz._id,
+      questionText: 'Future sample question?',
+      options: [
+        { optionText: 'Option A', isCorrect: true },
+        { optionText: 'Option B', isCorrect: false },
+        { optionText: 'Option C', isCorrect: false },
+        { optionText: 'Option D', isCorrect: false },
+      ],
+      marks: 1,
+    });
+
+    const eligRes = await request(app)
+      .get(`/api/v2/student/quiz/${futureQuiz._id}/eligibility`)
+      .set('Authorization', `Bearer ${authData.student.token}`);
+
+    expect(eligRes.statusCode).toBe(200);
+    expect(eligRes.body.data.isEligible).toBe(false);
+
+    const startRes = await request(app)
+      .post('/api/v2/student/quiz/start')
+      .set('Authorization', `Bearer ${authData.student.token}`)
+      .send({ quizId: futureQuiz._id });
+
+    expect(startRes.statusCode).toBe(400);
+    expect(startRes.body.success).toBe(false);
+  });
 });
 
