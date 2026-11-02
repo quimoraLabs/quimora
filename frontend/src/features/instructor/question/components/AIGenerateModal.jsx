@@ -85,14 +85,14 @@ export default function AIGenerateModal({ isOpen, onClose, quizId, initialTopic 
 
           <button
             onClick={onClose}
-            className="p-1.5 text-muted hover:text-main hover:bg-elevated rounded-xl transition-colors cursor-pointer"
+            className="w-9 h-9 min-w-[36px] min-h-[36px] flex items-center justify-center text-muted hover:text-main hover:bg-elevated rounded-xl transition-colors cursor-pointer" aria-label="Close modal"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
+        <div className="p-6 space-y-6 max-h-[75dvh] overflow-y-auto">
           {!generatedQuestions ? (
             /* Step 1: Input Prompt Form */
             <form onSubmit={handleGenerate} className="space-y-5">
@@ -311,7 +311,7 @@ export default function AIGenerateModal({ isOpen, onClose, quizId, initialTopic 
                 </button>
               </div>
 
-              <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-1">
+              <div className="space-y-4 max-h-[50dvh] overflow-y-auto pr-1">
                 {generatedQuestions.map((q, idx) => (
                   <div
                     key={idx}

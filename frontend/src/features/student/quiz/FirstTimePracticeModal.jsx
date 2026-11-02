@@ -44,7 +44,7 @@ export default function FirstTimePracticeModal({
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-xl text-muted hover:text-main hover:bg-elevated transition-colors cursor-pointer"
+            className="w-9 h-9 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-xl text-muted hover:text-main hover:bg-elevated transition-colors cursor-pointer"
             aria-label="Close"
           >
             <X size={18} />

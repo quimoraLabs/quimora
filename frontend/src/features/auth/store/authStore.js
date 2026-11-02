@@ -154,7 +154,10 @@ const useAuthStore = create((set, get) => ({
       set({ user: res.data, isAuthenticated: true });
     } catch (error) {
       console.error("Failed to fetch profile:", error);
-      get().logout();
+      // Only force logout on invalid/expired credentials (401), not on network hiccups or cold starts
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        get().logout();
+      }
     } finally {
       set({ loading: false });
     }
@@ -174,7 +177,26 @@ const useAuthStore = create((set, get) => ({
   },
 
   logout: () => {
-    localStorage.removeItem("token");
+    try {
+      // Clean all user-specific exam caches and session data so next user on shared device doesn't see old data
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (
+          k &&
+          (k.startsWith("quiz_") ||
+            k.startsWith("activeExam") ||
+            k.startsWith("selectedCourseId_") ||
+            ["token", "lastQuizResults", "lastAttemptId", "activeExamSession", "selectedDomainId"].includes(k))
+        ) {
+          keysToRemove.push(k);
+        }
+      }
+      keysToRemove.forEach((k) => localStorage.removeItem(k));
+      sessionStorage.clear();
+    } catch (e) {
+      console.warn("Storage cleanup warning during logout:", e);
+    }
     set({ user: null, token: null, isAuthenticated: false });
   },
 }));

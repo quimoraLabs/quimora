@@ -45,7 +45,20 @@ function VerifyOTP() {
   };
 
   const handleOtpChange = (value, index) => {
-    const digit = value.replace(/\D/g, "").slice(-1);
+    const cleaned = value.replace(/\D/g, "");
+    if (cleaned.length > 1) {
+      const newOtp = [...otp];
+      cleaned.slice(0, otp.length).split("").forEach((char, idx) => {
+        if (index + idx < otp.length) {
+          newOtp[index + idx] = char;
+        }
+      });
+      setOtp(newOtp);
+      const nextIndex = Math.min(index + cleaned.length, otp.length - 1);
+      otpInputRefs.current[nextIndex]?.focus();
+      return;
+    }
+    const digit = cleaned.slice(-1);
     const newOtp = [...otp];
     newOtp[index] = digit;
     setOtp(newOtp);
@@ -126,7 +139,7 @@ function VerifyOTP() {
                   pattern="[0-9]*"
                   autoComplete={i === 0 ? "one-time-code" : "off"}
                   maxLength={1}
-                  autocomplete="one-time-code"
+
                   className="w-full aspect-square
                   border border-main bg-elevated 
                   rounded-xl text-center text-xl font-bold text-muted outline-hidden transition-all"

@@ -4,7 +4,7 @@ let deferredInstallPrompt = null;
 const listeners = new Set();
 
 export const registerServiceWorker = () => {
-  if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
+  if (typeof window === "undefined" || !("serviceWorker" in navigator) || import.meta.env.DEV) {
     return;
   }
 

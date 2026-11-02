@@ -25,15 +25,24 @@ export function Header({ title, setSidebarOpen, toggleDarkMode, darkMode }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Close dropdown on outside click
+  // Close dropdown on outside click or Escape key
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setIsDropdownOpen(false);
       }
     };
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setIsDropdownOpen(false);
+      }
+    };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
   const rawRole = user?.role?.toLowerCase() || "student";
@@ -65,8 +74,12 @@ export function Header({ title, setSidebarOpen, toggleDarkMode, darkMode }) {
       }
     };
     fetchQuickStats();
+    window.addEventListener("focus", fetchQuickStats);
+    window.addEventListener("stats-updated", fetchQuickStats);
     return () => {
       isMounted = false;
+      window.removeEventListener("focus", fetchQuickStats);
+      window.removeEventListener("stats-updated", fetchQuickStats);
     };
   }, [role, user]);
 
@@ -82,7 +95,7 @@ export function Header({ title, setSidebarOpen, toggleDarkMode, darkMode }) {
       <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1 mr-2">
         <button
           type="button"
-          className="lg:hidden p-1.5 sm:p-2 rounded-full hover:bg-main transition-colors text-muted hover:text-main cursor-pointer shrink-0"
+          className="lg:hidden p-2 sm:p-2.5 min-w-10 min-h-10 flex items-center justify-center rounded-full hover:bg-main transition-colors text-muted hover:text-main cursor-pointer shrink-0"
           onClick={() => setSidebarOpen(true)}
           aria-label="Open sidebar"
         >

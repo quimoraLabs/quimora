@@ -32,7 +32,7 @@ export const ConfirmationModal = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
           {/* Backdrop Overlay - fixed to use proper Tailwind v4 variable mapping */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -48,12 +48,12 @@ export const ConfirmationModal = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ type: "spring", duration: 0.4 }}
-            className="relative w-full max-w-md overflow-hidden rounded-2xl bg-bg-surface p-6 text-center shadow-xl border border-border-main"
+            className="relative w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto my-auto rounded-2xl bg-bg-surface p-6 text-center shadow-xl border border-border-main"
           >
             {/* Close Button */}
             <button
               onClick={onClose}
-              className="absolute right-4 top-4 rounded-full p-1 text-text-muted hover:bg-bg-main hover:text-text-main transition-colors"
+              className="absolute right-4 top-4 w-9 h-9 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-xl text-text-muted hover:bg-bg-main hover:text-text-main transition-colors cursor-pointer" aria-label="Close dialog"
             >
               <X size={16} />
             </button>

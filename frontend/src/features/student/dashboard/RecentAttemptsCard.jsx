@@ -60,7 +60,7 @@ const RecentAttemptsCard = ({ dashboardLoading, recentAttempts = [] }) => {
       </div>
 
       {/* Table Section */}
-      <div className="overflow-x-auto -mx-2 sm:mx-0">
+      <div className="hidden sm:block overflow-x-auto -mx-2 sm:mx-0">
         <table className="w-full text-left border-collapse min-w-155">
           {/* Table Header */}
           <thead>
@@ -238,6 +238,85 @@ const RecentAttemptsCard = ({ dashboardLoading, recentAttempts = [] }) => {
           </tbody>
         </table>
       </div>
+      {/* Mobile Stacked Cards View (< sm) */}
+      <div className="sm:hidden divide-y divide-main/40 text-xs">
+        {dashboardLoading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="py-3.5 space-y-2 animate-pulse">
+              <div className="h-4 w-3/4 bg-slate-800 rounded" />
+              <div className="h-3 w-1/2 bg-slate-800/60 rounded" />
+              <div className="h-8 w-full bg-slate-800/40 rounded-xl" />
+            </div>
+          ))
+        ) : recentAttempts.length > 0 ? (
+          recentAttempts.map((attempt, index) => {
+            const score = attempt.score ?? 0;
+            const isPassed = score >= 50;
+            return (
+              <div key={attempt.id ?? index} className="py-3.5 space-y-2.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-main text-sm truncate">{attempt.quizTitle}</p>
+                    <p className="text-2xs text-muted mt-0.5">
+                      {new Date(attempt.completedAt).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                      {attempt.tags && attempt.tags.length > 0 ? ` • ${attempt.tags.slice(0, 2).join(", ")}` : ""}
+                    </p>
+                  </div>
+                  <span
+                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-3xs font-bold shrink-0 ${
+                      isPassed
+                        ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                        : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                    }`}
+                  >
+                    {isPassed ? "PASSED" : "REVIEW"}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between bg-main/40 px-3 py-2 rounded-xl">
+                  <div>
+                    <span className="text-2xs text-muted uppercase block">Score</span>
+                    <span className={`font-black text-sm ${isPassed ? "text-emerald-400" : "text-amber-400"}`}>
+                      {score}%
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-2xs text-muted uppercase block">Accuracy</span>
+                    <span className="font-bold text-main">
+                      {attempt.correctAnswers ?? 0} / {attempt.totalQuestions ?? 0}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => openReport(attempt)}
+                  className="w-full py-2 rounded-xl bg-elevated hover:bg-cyan-500/10 text-cyan-400 border border-main hover:border-cyan-500/30 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>View Details & Summary</span>
+                </button>
+              </div>
+            );
+          })
+        ) : (
+          <div className="py-8 text-center text-muted space-y-2">
+            <History className="w-8 h-8 mx-auto text-muted/60" />
+            <p className="font-semibold text-main text-xs">No quiz attempts yet</p>
+            <Link
+              to="/student/quizzes"
+              className="inline-flex items-center gap-1 px-3 py-1.5 bg-accent text-white font-semibold text-2xs rounded-lg mt-2"
+            >
+              <Sparkles className="w-3 h-3" />
+              <span>Browse Quizzes</span>
+            </Link>
+          </div>
+        )}
+      </div>
+    
 
       {/* Result Modal */}
       {isModalOpen && selectedAttempt && (

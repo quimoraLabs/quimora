@@ -12,8 +12,22 @@ export function useExamProctoring({
   const [hasExitedOnce, setHasExitedOnce] = useState(false);
   const isSubmittingRef = useRef(false);
   const lastWarningAtRef = useRef(0);
+  const hiddenStartRef = useRef(0);
+
+  const isFullscreenSupported = typeof document !== "undefined" && Boolean(
+    document.fullscreenEnabled ||
+    document.webkitFullscreenEnabled ||
+    document.mozFullScreenEnabled ||
+    document.msFullscreenEnabled
+  );
 
   const triggerFullscreenLock = () => {
+    if (!isFullscreenSupported) {
+      // iPhone Safari / browsers without Fullscreen API
+      setIsFullscreenLocked(true);
+      return;
+    }
+
     const element = document.documentElement;
     const requestMethod =
       element.requestFullscreen ||
@@ -22,10 +36,21 @@ export function useExamProctoring({
       element.msRequestFullscreen;
 
     if (requestMethod) {
-      requestMethod
-        .call(element)
-        .then(() => setIsFullscreenLocked(true))
-        .catch(() => setIsFullscreenLocked(false));
+      try {
+        const res = requestMethod.call(element);
+        if (res && typeof res.then === "function") {
+          res
+            .then(() => setIsFullscreenLocked(true))
+            .catch(() => {
+              // If rejected by user gesture policy on mobile, don't trap permanently
+              setIsFullscreenLocked(false);
+            });
+        } else {
+          setIsFullscreenLocked(true);
+        }
+      } catch (e) {
+        setIsFullscreenLocked(true);
+      }
     }
   };
 
@@ -35,12 +60,13 @@ export function useExamProctoring({
     const addSecurityWarning = (message) => {
       if (isSubmittingRef.current) return;
       const now = Date.now();
-      if (now - lastWarningAtRef.current < 1500) return;
+      if (now - lastWarningAtRef.current < 2500) return; // 2.5s debounce
       lastWarningAtRef.current = now;
       incrementWarning(message, navigate);
     };
 
     const handleFullscreenChange = () => {
+      if (!isFullscreenSupported) return;
       const isNowFullscreen = !!(
         document.fullscreenElement ||
         document.webkitFullscreenElement ||
@@ -59,11 +85,24 @@ export function useExamProctoring({
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        setHasExitedOnce(true);
-        setIsFullscreenLocked(false);
-        addSecurityWarning(
-          "Security Alert: Tab switching detected. Warning added.",
-        );
+        hiddenStartRef.current = Date.now();
+        if (isFullscreenSupported) {
+          setIsFullscreenLocked(false);
+        }
+      } else {
+        // Returned to tab: check how long it was hidden
+        const durationHidden = Date.now() - (hiddenStartRef.current || Date.now());
+        // If hidden for > 2 seconds, trigger warning
+        if (durationHidden > 2000) {
+          setHasExitedOnce(true);
+          addSecurityWarning(
+            "Security Alert: Tab switching detected. Warning added.",
+          );
+        }
+        // If on device without native fullscreen API (iPhone), auto-unlock on return
+        if (!isFullscreenSupported) {
+          setIsFullscreenLocked(true);
+        }
       }
     };
 

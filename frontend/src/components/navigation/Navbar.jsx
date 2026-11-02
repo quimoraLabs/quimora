@@ -6,16 +6,20 @@ import { Link } from "react-router-dom";
 import ProfileDropdown from "../ProfileDropDown";
 import logo from "../../assets/quimora.png"
 
-const Navbar = ({ darkMode, toggleDarkMode, navLinks, isLoggedIn }) => {
+const Navbar = ({ darkMode, toggleDarkMode, navLinks = [], isLoggedIn }) => {
+  const storeUser = useAuthStore((s) => s.user);
+  const isAuthed = isLoggedIn !== undefined ? isLoggedIn : Boolean(storeUser);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const logout = () => useAuthStore.getState().logout();
-  console.log(isLoggedIn);
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-gray-100 dark:border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           {/* Logo */}
-          <img src={logo} className="h-2/3"/>
+          <Link to="/" className="h-2/3 flex items-center">
+            <img src={logo} alt="Quimora Logo" className="h-full object-contain" />
+          </Link>
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
@@ -42,7 +46,7 @@ const Navbar = ({ darkMode, toggleDarkMode, navLinks, isLoggedIn }) => {
                 <Moon className="w-5 h-5 text-gray-600" />
               )}
             </button>
-            {isLoggedIn ? (
+            {isAuthed ? (
              <ProfileDropdown logout={logout}/>
             ) : (
               <>
@@ -107,8 +111,8 @@ const Navbar = ({ darkMode, toggleDarkMode, navLinks, isLoggedIn }) => {
               </Link>
             ))}
             <hr className="border-gray-100 dark:border-slate-800" />
-            {isLoggedIn ? (
-              <ProfileDropdown/>
+            {isAuthed ? (
+              <ProfileDropdown logout={logout} />
             ) : (
               <div className="flex flex-col gap-3 items-center">
                 <Link

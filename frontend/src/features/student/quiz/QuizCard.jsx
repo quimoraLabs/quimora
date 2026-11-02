@@ -12,6 +12,7 @@ export default function QuizCard({
   description,
   timeLimit,
   totalQuestions,
+  difficulty = "Adaptive",
   instructor,
   handleStart,
 }) {
@@ -73,7 +74,7 @@ export default function QuizCard({
               border-emerald-500/20
             "
             >
-              Easy
+              {difficulty}
             </span>
           </div>
 
@@ -93,15 +94,15 @@ export default function QuizCard({
           </div>
           <div>
             <p className="text-xs font-bold text-main leading-none">
-              {instructor?.name || "Quimora Faculty"}
+              {instructor?.name || "Standard Curriculum"}
             </p>
             <p className="text-2xs text-muted mt-0.5">
-              {instructor?.department || "Academic Certified Evaluator"}
+              {instructor?.department || (instructor?.name ? "Certified Faculty" : "Quimora Track")}
             </p>
           </div>
         </div>
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-2xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-          <CheckCircle2 className="w-3 h-3 text-emerald-500" /> Verified
+          <CheckCircle2 className="w-3 h-3 text-emerald-500" /> {instructor?.name ? "Verified Faculty" : "Curriculum Track"}
         </span>
       </div>
 

@@ -93,7 +93,7 @@ export default function Sidebar({ isOpen, setIsOpen, role }) {
 
       {/* Sidebar Container */}
       <aside
-        className={`fixed top-0 left-0 z-50 h-screen w-68 bg-surface border-r border-soft transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+        className={`fixed top-0 left-0 z-50 h-dvh w-68 bg-surface border-r border-soft transition-transform duration-300 ease-in-out lg:translate-x-0 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -109,7 +109,7 @@ export default function Sidebar({ isOpen, setIsOpen, role }) {
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="lg:hidden p-1.5 rounded-lg text-muted hover:text-main hover:bg-elevated transition-colors"
+              className="lg:hidden p-2 rounded-xl text-muted min-h-10 min-w-10 flex items-center justify-center cursor-pointer hover:text-main hover:bg-elevated transition-colors"
               aria-label="Close sidebar"
             >
               <X size={20} />

@@ -50,7 +50,7 @@ const CreateUserModal = ({ isOpen, onClose }) => {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -66,7 +66,7 @@ const CreateUserModal = ({ isOpen, onClose }) => {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
           transition={{ type: 'spring', duration: 0.3 }}
-          className="relative w-full max-w-lg bg-surface rounded-2xl shadow-xl border border-main p-6 overflow-hidden z-10"
+          className="relative w-full max-w-lg bg-surface rounded-2xl shadow-xl border border-main p-6 max-h-[calc(100dvh-2rem)] overflow-y-auto my-auto z-10"
         >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-main pb-4 mb-5">
@@ -81,7 +81,7 @@ const CreateUserModal = ({ isOpen, onClose }) => {
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-full text-muted hover:text-main hover:bg-elevated transition-colors"
+              className="w-9 h-9 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-xl text-muted hover:text-main hover:bg-elevated transition-colors cursor-pointer" aria-label="Close dialog"
             >
               <X className="w-5 h-5" />
             </button>

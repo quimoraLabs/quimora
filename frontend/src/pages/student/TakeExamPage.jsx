@@ -28,6 +28,17 @@ export default function TakeExamPage() {
   const [showQuestionGrid, setShowQuestionGrid] = useState(false);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        if (showQuestionGrid) setShowQuestionGrid(false);
+        if (showSubmitModal) setShowSubmitModal(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showQuestionGrid, showSubmitModal]);
+
   // Active Exam Store
   const {
     attemptQuiz,
@@ -163,7 +174,7 @@ export default function TakeExamPage() {
   const optionLetters = ["A", "B", "C", "D", "E", "F"];
 
   return (
-    <div className="relative min-h-screen w-full max-w-full overflow-x-hidden bg-main text-main select-none flex flex-col font-sans">
+    <div className="relative min-h-dvh w-full max-w-full overflow-x-hidden bg-main text-main select-none flex flex-col font-sans">
       {/* Background Security Watermark */}
       <Watermark />
 
@@ -232,7 +243,7 @@ export default function TakeExamPage() {
       </header>
 
       {/* ===== MAIN EXAM AREA ===== */}
-      <main className="flex-1 max-w-4xl w-full mx-auto px-3 sm:px-6 py-4 sm:py-6 flex flex-col justify-center">
+      <main className="flex-1 max-w-4xl w-full mx-auto px-3 sm:px-6 py-4 sm:py-6 pb-24 sm:pb-6 flex flex-col justify-center">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentIndex}
@@ -261,7 +272,7 @@ export default function TakeExamPage() {
             </div>
 
             {/* Question Text */}
-            <h2 className="text-base sm:text-xl md:text-2xl font-bold text-main leading-snug sm:leading-relaxed mb-4 sm:mb-6 wrap-break-word" style={{ overflowWrap: "anywhere" }}>
+            <h2 className="text-base sm:text-xl md:text-2xl font-bold text-main leading-snug sm:leading-relaxed mb-4 sm:mb-6 wrap-break-word select-text" style={{ overflowWrap: "anywhere" }}>
               {currentQuestion.questionText}
             </h2>
 
@@ -288,8 +299,17 @@ export default function TakeExamPage() {
                 return (
                   <motion.div
                     key={option._id || idx}
+                    role="button"
+                    tabIndex={0}
+                    aria-pressed={isSelected}
                     whileTap={{ scale: 0.99 }}
                     onClick={() => handleSelectOptionIndex(idx)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleSelectOptionIndex(idx);
+                      }
+                    }}
                     className={`relative p-3 sm:p-4 rounded-xl sm:rounded-2xl cursor-pointer transition-all flex items-center justify-between gap-2.5 sm:gap-4 border-2 w-full ${
                       isSelected
                         ? "border-brand-mid bg-linear-to-r from-brand-mid/15 via-surface to-brand-mid/5 shadow-lg shadow-indigo-500/20 text-main"
@@ -368,6 +388,44 @@ export default function TakeExamPage() {
           </motion.div>
         </AnimatePresence>
       </main>
+      {/* Sticky Mobile Exam Action Bar (< sm) */}
+      <div className="fixed bottom-0 left-0 right-0 z-20 sm:hidden bg-surface/95 backdrop-blur-md border-t border-main px-4 py-2.5 pb-safe flex items-center justify-between gap-2.5 shadow-2xl">
+        <button
+          onClick={goToPreviousQuestion}
+          disabled={currentIndex === 0}
+          className="flex-1 flex items-center justify-center gap-1 py-2.5 rounded-xl border border-main text-xs font-bold text-main bg-elevated/50 hover:bg-elevated disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          <span>Prev</span>
+        </button>
+
+        <button
+          onClick={() => setShowQuestionGrid(true)}
+          className="px-3 py-2.5 rounded-xl border border-main bg-surface text-brand-mid text-xs font-bold flex items-center justify-center gap-1 cursor-pointer"
+          aria-label="Open Question Palette"
+        >
+          <LayoutGrid className="w-3.5 h-3.5" />
+          <span>{currentIndex + 1}/{totalQuestions}</span>
+        </button>
+
+        {currentIndex === totalQuestions - 1 ? (
+          <button
+            onClick={() => setShowSubmitModal(true)}
+            className="flex-1 flex items-center justify-center gap-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer"
+          >
+            <span>Submit</span>
+            <Send className="w-3.5 h-3.5" />
+          </button>
+        ) : (
+          <button
+            onClick={goToNextQuestion}
+            className="flex-1 flex items-center justify-center gap-1 py-2.5 bg-brand-mid hover:bg-brand-primary text-white rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer"
+          >
+            <span>Next</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        )}
+      </div>
 
       {/* ===== QUESTION NAVIGATOR DRAWER / MODAL ===== */}
       <AnimatePresence>
@@ -385,7 +443,7 @@ export default function TakeExamPage() {
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="relative w-full max-w-2xl bg-surface border border-main rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl z-10 max-h-[85vh] flex flex-col"
+              className="relative w-full max-w-2xl bg-surface border border-main rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl z-10 max-h-[85dvh] flex flex-col"
             >
               <div className="flex items-center justify-between border-b border-main pb-3 sm:pb-4 mb-3 sm:mb-4">
                 <div>
@@ -394,14 +452,14 @@ export default function TakeExamPage() {
                 </div>
                 <button
                   onClick={() => setShowQuestionGrid(false)}
-                  className="p-1.5 sm:p-2 text-muted hover:text-main rounded-full hover:bg-elevated transition-colors"
+                  className="w-9 h-9 min-w-9 min-h-9 flex items-center justify-center text-muted hover:text-main rounded-xl hover:bg-elevated transition-colors cursor-pointer" aria-label="Close question palette"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               {/* Grid Items */}
-              <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2 sm:gap-2.5 overflow-y-auto p-1 max-h-96">
+              <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2 sm:gap-2.5 overflow-y-auto p-1 max-h-[min(24rem,50dvh)]">
                 {attemptQuiz.questions.map((q, idx) => {
                   const isAnswered = Boolean(answers[q._id]);
                   const isCurrent = idx === currentIndex;
@@ -413,7 +471,7 @@ export default function TakeExamPage() {
                         useStudentQuizStore.setState({ currentIndex: idx });
                         setShowQuestionGrid(false);
                       }}
-                      className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-bold text-xs transition-all ${
+                      className={`w-10 h-10 sm:w-11 sm:h-11 min-w-10 min-h-10 rounded-xl flex items-center justify-center font-bold text-xs transition-all cursor-pointer ${
                         isCurrent
                           ? "ring-2 ring-brand-mid ring-offset-2 ring-offset-surface bg-brand-mid text-white shadow-md"
                           : isAnswered
@@ -463,7 +521,7 @@ export default function TakeExamPage() {
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="relative w-full max-w-md bg-surface border border-main rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl text-center z-10"
+              className="relative w-full max-w-md bg-surface border border-main rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl text-center z-10 max-h-[calc(100dvh-2rem)] overflow-y-auto my-auto"
             >
               <div className="w-14 h-14 bg-amber-500/10 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-amber-500/20">
                 <AlertTriangle className="w-7 h-7" />

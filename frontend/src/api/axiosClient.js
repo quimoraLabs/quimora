@@ -10,9 +10,9 @@ export const CACHE_BUSTER_HEADERS = {
 };
 
 const axiosClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "https://quimora.onrender.com/api/v1",
+  baseURL: import.meta.env.VITE_API_URL || "https://quimora.onrender.com/api/v2",
   headers: {
-    ...CACHE_BUSTER_HEADERS,
+    "Content-Type": "application/json",
   },
 });
 

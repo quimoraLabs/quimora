@@ -1,4 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap");
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
@@ -15,6 +14,10 @@
   --color-brand-start: #22d3ee;
   --color-brand-mid: #3b82f6;
   --color-brand-end: #8b5cf6;
+  --color-brand-primary: #6366f1;
+
+  /* Responsive screen breakpoints */
+  --breakpoint-xs: 480px;
 
   /* Button Accents*/
   --color-brand-purple: #7336FF;
@@ -146,8 +149,10 @@ button {
   cursor: pointer;
 }
 
-button:hover {
-  transform: scale(1.02);
+@media (hover: hover) {
+  button:hover {
+    transform: scale(1.02);
+  }
 }
 
 button:active {
@@ -168,6 +173,17 @@ button:disabled {
 .scrollbar-none {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Mobile safe area & dynamic viewport utilities */
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@utility pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+@utility min-h-dvh {
+  min-height: 100dvh;
 }
 
 @import "./pages/auth/auth.css";

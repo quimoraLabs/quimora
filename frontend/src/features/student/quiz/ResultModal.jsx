@@ -53,7 +53,7 @@ function ResultModal({ selectedAttempt, closeModal }) {
           </div>
           <button
             onClick={closeModal}
-            className="text-text-muted hover:text-text-main bg-main/20 p-1.5 rounded-lg transition-colors"
+            className="w-9 h-9 min-w-[36px] min-h-[36px] flex items-center justify-center text-text-muted hover:text-text-main bg-main/20 hover:bg-main/40 rounded-xl transition-colors cursor-pointer" aria-label="Close modal"
           >
             <X className="w-4 h-4" />
           </button>

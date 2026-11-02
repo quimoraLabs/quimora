@@ -8,6 +8,13 @@ import {
 } from "../../pwa/registerServiceWorker";
 
 export default function PwaInstallBanner() {
+  // Never cover exam navigation controls on mobile or desktop during active tests
+  const isExamRoute = typeof window !== "undefined" && (
+    window.location.pathname.includes("/quiz/") ||
+    window.location.pathname.includes("/exam") ||
+    window.location.pathname.includes("/practice/room")
+  );
+
   const [isInstallable, setIsInstallable] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
@@ -60,6 +67,8 @@ export default function PwaInstallBanner() {
     sessionStorage.setItem("pwa_install_dismissed", "true");
   };
 
+  if (isExamRoute) return null;
+
   return (
     <>
       {/* Offline Alert Notification Banner */}
@@ -98,7 +107,7 @@ export default function PwaInstallBanner() {
                   </h4>
                   <button
                     onClick={handleDismiss}
-                    className="text-muted hover:text-main p-1 rounded-lg transition-colors cursor-pointer"
+                    className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center text-muted hover:text-main hover:bg-elevated rounded-xl transition-colors cursor-pointer"
                     aria-label="Dismiss banner"
                   >
                     <X className="w-3.5 h-3.5" />

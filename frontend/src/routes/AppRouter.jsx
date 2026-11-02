@@ -39,8 +39,13 @@ const PublicLayout = ({ darkMode, toggleDarkMode, navLinks }) => (
 
 const DashboardLayout = ({ darkMode, toggleDarkMode, role }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
   return (
-    <div className="min-h-screen bg-main text-main flex">
+    <div className="min-h-dvh bg-main text-main flex">
       <Sidebar
         isOpen={isSidebarOpen}
         setIsOpen={setIsSidebarOpen}

@@ -1,4 +1,4 @@
-const CACHE_NAME = "quimora-pwa-v1";
+const CACHE_NAME = "quimora-pwa-v4";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
@@ -16,9 +16,7 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(CACHE_NAME)
-      .then((cache) => {
-        return cache.addAll(STATIC_ASSETS);
-      })
+      .then((cache) => cache.addAll(STATIC_ASSETS))
       .then(() => self.skipWaiting())
   );
 });
@@ -51,39 +49,26 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Handle API Requests: Network-First with graceful fallback
+  // Pass API requests directly through to network without synthetic 503
   if (url.pathname.startsWith("/api/")) {
-    event.respondWith(
-      fetch(request).catch(() => {
-        return new Response(
-          JSON.stringify({
-            success: false,
-            offline: true,
-            error: "You are currently offline. Please check your internet connection.",
-          }),
-          {
-            headers: { "Content-Type": "application/json" },
-            status: 503,
-          }
-        );
-      })
-    );
     return;
   }
 
-  // Handle SPA Navigation requests: Network-First with index.html fallback
+  // Handle SPA Navigation requests: Network-First with cached index.html fallback
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          // Cache latest HTML
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+          if (response && response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+          }
           return response;
         })
-        .catch(() => {
-          // Serve cached root index.html so React router can render offline shell
-          return caches.match("/index.html") || caches.match("/");
+        .catch(async () => {
+          const cached = await caches.match("/index.html");
+          if (cached) return cached;
+          return caches.match("/");
         })
     );
     return;

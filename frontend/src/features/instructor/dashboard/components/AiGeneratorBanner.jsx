@@ -131,7 +131,7 @@ const AiGeneratorBanner = ({ onQuizGenerated }) => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-surface border border-main rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-5 my-8 max-h-[90vh] overflow-y-auto"
+              className="bg-surface border border-main rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-5 my-8 max-h-[90dvh] overflow-y-auto"
             >
               <div className="flex justify-between items-center border-b border-main pb-3">
                 <div className="flex items-center gap-2 text-purple-400 font-semibold text-base">

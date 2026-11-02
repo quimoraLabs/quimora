@@ -57,10 +57,15 @@ export default function QuizHistoryPage() {
   }
 
   const results = Array.isArray(quizResults) ? quizResults : [];
-  const totalTests = stats?.totalTestsTaken || results.length || 0;
-  const avgScore = stats?.averageScore ?? (results.length > 0 ? Math.round(results.reduce((acc, r) => acc + (r.score || 0), 0) / results.length) : 0);
-  const maxScore = stats?.maxScore ?? (results.length > 0 ? Math.max(...results.map((r) => r.score || 0)) : 0);
-  const passedTests = results.filter((a) => (a.score || 0) >= 50).length;
+  const completedResults = results.filter((r) => !r.status || r.status === "completed");
+  const totalTests = stats?.totalTestsTaken || completedResults.length || 0;
+  const avgScore = stats?.averageScore ?? (completedResults.length > 0 ? Math.round(completedResults.reduce((acc, r) => acc + (r.score || 0), 0) / completedResults.length) : 0);
+  const maxScore = stats?.maxScore ?? (completedResults.length > 0 ? Math.max(...completedResults.map((r) => r.score || 0)) : 0);
+  const passedTests = completedResults.filter((a) => {
+    if (typeof a.passed === "boolean") return a.passed;
+    const passingThreshold = a?.quizId?.passingScore ?? 50;
+    return (a.score || 0) >= passingThreshold;
+  }).length;
 
   return (
     <div className="p-4 md:p-8 text-main min-h-screen space-y-8 max-w-7xl mx-auto">
@@ -151,7 +156,7 @@ export default function QuizHistoryPage() {
           </span>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse text-sm">
             <thead>
               <tr className="border-b border-main bg-main/50 text-2xs uppercase tracking-wider text-muted font-bold">
@@ -183,7 +188,9 @@ export default function QuizHistoryPage() {
               ) : (
                 results.map((attempt, index) => {
                   const score = Number(attempt?.score ?? 0);
-                  const isPassed = score >= 50;
+                  const isPassed = typeof attempt?.passed === "boolean"
+                    ? attempt.passed
+                    : score >= (attempt?.quizId?.passingScore ?? 50);
                   const attemptId = attempt?._id || attempt?.id;
                   const durationSecs = Number(attempt?.timeTakenInSeconds || attempt?.timeTaken || 0);
                   const mins = Math.floor(durationSecs / 60);
@@ -272,6 +279,91 @@ export default function QuizHistoryPage() {
               )}
             </tbody>
           </table>
+        </div>
+        {/* Mobile Responsive Cards View (< md) */}
+        <div className="md:hidden divide-y divide-main">
+          {results.length === 0 ? (
+            <div className="p-8 text-center text-muted space-y-3">
+              <FileText className="w-10 h-10 mx-auto text-muted/40" />
+              <p className="text-sm font-semibold text-main">No quiz attempts recorded yet</p>
+              <Link
+                to="/student/quizzes"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-all cursor-pointer shadow-sm"
+              >
+                Start First Quiz
+              </Link>
+            </div>
+          ) : (
+            results.map((attempt, index) => {
+              const score = Number(attempt?.score ?? 0);
+              const isPassed = typeof attempt?.passed === "boolean"
+                ? attempt.passed
+                : score >= (attempt?.quizId?.passingScore ?? 50);
+              const attemptId = attempt?._id || attempt?.id;
+              const durationSecs = Number(attempt?.timeTakenInSeconds || attempt?.timeTaken || 0);
+              const mins = Math.floor(durationSecs / 60);
+              const secs = durationSecs % 60;
+              const durationFormatted = `${mins}m ${secs}s`;
+
+              return (
+                <div key={attemptId || index} className="p-4 space-y-3 hover:bg-main/30 transition-colors">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <h3 className="font-bold text-main text-sm truncate">{attempt?.quizTitle}</h3>
+                      <p className="text-2xs text-muted mt-0.5">
+                        ID: #{String(attemptId).slice(-6).toUpperCase()} • {formatDate(attempt?.completedAt || attempt?.startedAt || new Date())}
+                      </p>
+                    </div>
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-3xs font-bold uppercase shrink-0 ${
+                        isPassed
+                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                          : "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20"
+                      }`}
+                    >
+                      {isPassed ? "PASSED" : "FAILED"}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-muted bg-main/40 p-2.5 rounded-xl">
+                    <div>
+                      <span className="text-2xs uppercase text-muted block">Score</span>
+                      <span className={`font-black text-sm ${isPassed ? "text-emerald-500" : "text-red-500"}`}>
+                        {score}%
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-2xs uppercase text-muted block">Accuracy</span>
+                      <span className="font-semibold text-main">
+                        {attempt?.correctAnswersCount ?? 0} / {attempt?.totalQuestions ?? 0}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-2xs uppercase text-muted block">Duration</span>
+                      <span className="font-semibold text-main">{durationFormatted}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      onClick={() => openReport(attempt)}
+                      className="flex-1 py-2 text-xs font-semibold text-muted hover:text-main bg-main hover:bg-elevated rounded-xl border border-main transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-indigo-500" />
+                      <span>Quick View</span>
+                    </button>
+                    <Link
+                      to={`/student/attempts/${attemptId}/report`}
+                      className="flex-1 py-2 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-white hover:bg-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 rounded-xl border border-indigo-200 dark:border-indigo-800 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                    >
+                      <Printer className="w-3.5 h-3.5" />
+                      <span>Full Report</span>
+                    </Link>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
 

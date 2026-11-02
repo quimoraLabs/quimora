@@ -85,6 +85,7 @@ const useStudentQuizStore = create((set, get) => ({
       answers: {},
       warningCount: 0,
       isFinished: false,
+      isSubmitting: false,
       quizResults: null,
       lastAttemptId: null,
     });
@@ -226,14 +227,14 @@ const useStudentQuizStore = create((set, get) => ({
 
   // ⏱️ 3. Live Clock Engine (Ticks every second)
   tickTimer: (navigate) => {
-    const { timer, isFinished } = get();
-    if (isFinished) return;
+    const { timer, isFinished, isSubmitting, loading } = get();
+    if (isFinished || loading || isSubmitting) return;
 
     if (timer > 1) {
       set({ timer: timer - 1 });
     } else {
       toast.error("Time's up! Your quiz will be submitted automatically.");
-      set({ timer: 0 });
+      set({ timer: 0, isSubmitting: true });
       get().submitAttempt(navigate);
     }
   },
@@ -241,16 +242,15 @@ const useStudentQuizStore = create((set, get) => ({
   // 4 anti-cheat warning incrementer
   incrementWarning: (message, navigate) => {
     toast.error(message);
-    set((state) => {
-      const newCount = state.warningCount + 1;
-      if (newCount >= 3) {
-        toast.error(
-          "You have exceeded the maximum number of warnings. Your quiz will be submitted.",
-        );
-        get().submitAttempt(navigate);
-      }
-      return { warningCount: newCount };
-    });
+    const newCount = (get().warningCount || 0) + 1;
+    set({ warningCount: newCount });
+
+    if (newCount >= 3) {
+      toast.error(
+        "You have exceeded the maximum number of warnings. Your quiz will be submitted.",
+      );
+      get().submitAttempt(navigate);
+    }
   },
 
   // 5. Pagination Controls
@@ -270,17 +270,16 @@ const useStudentQuizStore = create((set, get) => ({
 
   // 2. Submit Attempt
   submitAttempt: async (navigate) => {
-    const { attemptId, attemptQuiz, answers, isFinished, loading } = get();
+    const { attemptId, attemptQuiz, answers, isFinished, loading, isSubmitting } = get();
     if (!attemptId || !attemptQuiz) {
       toast.error("Attempt ID is required to submit an attempt.");
       return false;
     }
-    if (isFinished || loading) {
-      toast.error("This quiz attempt has already been submitted.");
+    if (isFinished || loading || (isSubmitting && loading)) {
       return false;
     }
 
-    set({ loading: true });
+    set({ loading: true, isSubmitting: true });
     try {
       const formattedAnswers = Object.entries(answers).map(
         ([questionId, selectedOptions]) => ({
@@ -300,6 +299,7 @@ const useStudentQuizStore = create((set, get) => ({
           quizResults: response.data.data,
           isFinished: true,
           loading: false,
+          isSubmitting: false,
         });
         localStorage.setItem("lastAttemptId", attemptId);
         localStorage.setItem(
@@ -314,7 +314,7 @@ const useStudentQuizStore = create((set, get) => ({
       console.error("Error submitting quiz attempt:", error);
       return false;
     } finally {
-      set({ loading: false });
+      set({ loading: false, isSubmitting: false });
     }
   },
 

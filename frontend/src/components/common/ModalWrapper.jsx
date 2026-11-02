@@ -1,6 +1,17 @@
-// import React from 'react';
+import React, { useEffect } from 'react';
 
 const ModalWrapper = ({ isOpen, onClose, title, children }) => {
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onClose?.();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
@@ -13,21 +24,22 @@ const ModalWrapper = ({ isOpen, onClose, title, children }) => {
 
       {/* 2. Modal Box Content */}
       <div className="relative w-full max-w-2xl mx-auto my-6 z-50">
-        <div className="relative flex flex-col w-full bg-surface border border-main rounded-xl shadow-xl outline-none focus:outline-none">
+        <div className="relative flex flex-col w-full bg-surface border border-main rounded-2xl shadow-xl outline-none focus:outline-none overflow-hidden">
           
           {/* Header */}
           <div className="flex items-center justify-between p-5 border-b border-main rounded-t">
             <h3 className="text-xl font-bold font-display text-main">{title}</h3>
             <button
-              className="p-1 rounded-md hover:bg-main text-muted hover:text-main text-2xl leading-none transition-colors outline-none focus:outline-none"
+              className="w-9 h-9 min-w-9 min-h-9 flex items-center justify-center rounded-xl hover:bg-main text-muted hover:text-main text-2xl leading-none transition-colors outline-none focus:outline-none cursor-pointer"
               onClick={onClose}
+              aria-label="Close modal"
             >
               ×
             </button>
           </div>
 
           {/* Body */}
-          <div className="relative p-6 flex-auto max-h-[70vh] overflow-y-auto bg-surface text-main">
+          <div className="relative p-6 flex-auto max-h-[70dvh] overflow-y-auto bg-surface text-main">
             {children} 
           </div>
 

@@ -79,7 +79,7 @@ export default function AttemptReviewModal({
                     No attempt details available.
                   </div>
                 ) : (
-                  <div className="mt-4 space-y-6 max-h-[70vh] overflow-y-auto pr-1">
+                  <div className="mt-4 space-y-6 max-h-[70dvh] overflow-y-auto pr-1">
                     {/* Summary KPI Strip */}
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       <div className="p-3 rounded-xl bg-elevated border border-main text-center">

@@ -52,7 +52,7 @@ export default function QuizDetailsModal({ isOpen, onClose, quiz, onStartQuiz })
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
           transition={{ duration: 0.2 }}
-          className="relative w-full max-w-2xl bg-surface border border-main rounded-3xl p-6 shadow-2xl z-10 max-h-[90vh] flex flex-col overflow-hidden"
+          className="relative w-full max-w-2xl bg-surface border border-main rounded-3xl p-6 shadow-2xl z-10 max-h-[90dvh] flex flex-col overflow-hidden"
         >
           {/* Header */}
           <div className="flex items-start justify-between border-b border-main pb-4 mb-4 gap-3">
